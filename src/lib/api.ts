@@ -6,7 +6,9 @@ import type {
   PoolInfo,
   QuoteView,
   RequestQueue,
+  SentTransaction,
   StrategyView,
+  TransactionStatus,
   UserPosition,
   VaultDetail,
   VaultSummary,
@@ -79,4 +81,7 @@ export const api = {
     ),
   build: <T = BuiltTransaction>(path: string, body: Record<string, unknown>) =>
     post<T>(`/api/tx/${path}`, body),
+  send: (transaction: string) => post<SentTransaction>("/api/tx/send", { transaction }),
+  txStatus: (signature: string, blockhash: string) =>
+    get<TransactionStatus>(`/api/tx/status?signature=${signature}&blockhash=${blockhash}`),
 };

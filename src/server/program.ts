@@ -5,8 +5,8 @@ import idl from "@/idl/hedge_vault.json";
 import type { HedgeVault } from "@/idl/hedge_vault";
 
 export const CLUSTER = (process.env.NEXT_PUBLIC_CLUSTER ?? "mainnet-beta") as Cluster;
-/** The server read endpoint. Exported only so `errors.ts` can redact it out of messages — never returned to a client. */
-export const RPC_URL = process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || clusterApiUrl(CLUSTER);
+/** The only RPC endpoint (reads, simulation, send). Exported only so `errors.ts` can redact it out of messages — never returned to a client. */
+export const RPC_URL = process.env.RPC_URL || clusterApiUrl(CLUSTER);
 
 export const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID || idl.address);
 

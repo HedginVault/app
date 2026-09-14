@@ -1,8 +1,7 @@
-import { clusterApiUrl, type Cluster } from "@solana/web3.js";
+import type { Cluster } from "@solana/web3.js";
 import idl from "@/idl/hedge_vault.json";
 
 export const CLUSTER = (process.env.NEXT_PUBLIC_CLUSTER ?? "mainnet-beta") as Cluster;
-export const SEND_RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || clusterApiUrl(CLUSTER);
 export const PROGRAM_ID = process.env.NEXT_PUBLIC_PROGRAM_ID || idl.address;
 
 export const MAX_BPS = 10_000;

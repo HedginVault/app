@@ -168,6 +168,14 @@ export interface BuiltTransaction {
   simulation: { unitsConsumed: number };
 }
 
+export interface SentTransaction {
+  signature: string;
+}
+
+export type TransactionStatus =
+  | { status: "pending" | "confirmed" | "expired" }
+  | { status: "failed"; code: string; message: string; logs: string[] };
+
 export interface ApiError {
   error: { code: string; message: string; logs?: string[] };
 }

@@ -9,14 +9,15 @@ Next.js 16 (App Router), React 19, Tailwind v4, TanStack Query, Anchor 0.31.1.
 
 Two rules shape the whole codebase:
 
-- **Every read goes through a server route handler.** The browser never holds the read RPC URL and
-  never imports the Anchor library; `NEXT_PUBLIC_RPC_URL` is only used to send signed transactions.
-  `src/server/` decodes accounts into the view models in
-  `src/lib/types.ts`; route handlers in `src/app/api/` just validate input and return JSON.
-- **Every write is built on the server and signed in the browser.** `POST /api/tx/*` assembles a v0
-  transaction, **simulates it**, and returns it unsigned in base64. The server holds no keys. The
-  wallet signs and sends to `NEXT_PUBLIC_RPC_URL`. A failed simulation comes back as a `422` with
-  the decoded Anchor error code and the program logs.
+- **The browser never talks to an RPC.** There is no client RPC URL and no `ConnectionProvider`;
+  the browser never imports the Anchor library. `src/server/` decodes accounts into the view models
+  in `src/lib/types.ts`; route handlers in `src/app/api/` just validate input and return JSON.
+- **Every write is built on the server, signed in the browser, and sent by the server.**
+  `POST /api/tx/*` assembles a v0 transaction, **simulates it**, and returns it unsigned in base64.
+  The server holds no keys. The wallet only signs (`signTransaction`, never `sendTransaction`); the
+  signed bytes go to `POST /api/tx/send`, and the client polls `GET /api/tx/status` until the
+  signature is confirmed. A failed simulation, preflight or on-chain execution comes back with the
+  decoded Anchor error code and the program logs.
 
 There is no database in this version. Off-chain vault metadata lives in a static file
 (`src/server/registry.ts`); reads are memoized in-process for 10–15 s. See
@@ -44,17 +45,11 @@ defaults to `mainnet-beta`.
 
 | Variable | Side | Required | Purpose |
 | --- | --- | --- | --- |
-| `NEXT_PUBLIC_CLUSTER` | both | no (defaults to `mainnet-beta`) | `devnet` \| `testnet` \| `mainnet-beta`. Selects explorer links, the known-mint table and the public RPC fallback on both sides. |
-| `RPC_URL` | **server only** | recommended | The endpoint used for *every* read, simulation and lookup-table fetch. Never shipped to the browser, so it can hold an API key. Falls back to `NEXT_PUBLIC_RPC_URL`, then to the public endpoint for the cluster. |
-| `NEXT_PUBLIC_RPC_URL` | **client** | no | The endpoint the user's wallet sends the *signed* transaction to. This one is in the browser bundle — anyone can read it, so do not put a keyed URL here. Defaults to the public endpoint for the cluster. |
+| `NEXT_PUBLIC_CLUSTER` | both | no (defaults to `mainnet-beta`) | `devnet` \| `testnet` \| `mainnet-beta`. Selects explorer links, the known-mint table and the server's public RPC fallback. |
+| `RPC_URL` | **server only** | recommended | The one RPC endpoint: *every* read, simulation, lookup-table fetch, transaction send and confirmation. Never shipped to the browser, so it can hold an API key. Falls back to the public endpoint for the cluster. |
 | `NEXT_PUBLIC_PROGRAM_ID` | both | no | Overrides the program id baked into `src/idl/hedge_vault.json`. Used for devnet deployments. |
 | `JUPITER_API_HOST` | server | no | Jupiter API base. Defaults to `https://lite-api.jup.ag` without a key and `https://api.jup.ag` with one. |
 | `JUPITER_API_KEY` | server | no | Sent as `x-api-key`. Raises the rate limit on token metadata, prices and swap instructions. |
-
-`RPC_URL` vs `NEXT_PUBLIC_RPC_URL` is the one distinction worth reading twice: the first is the
-server's private read path, the second is the browser's public send path. They are separate because
-the server does hundreds of reads (and should use a keyed endpoint) while the browser does one
-`sendTransaction` per user action (and cannot keep a secret).
 
 ## IDL
 
@@ -134,6 +129,13 @@ the position account will actually store). Every builder is rate limited per IP.
 | `/api/tx/dlmm/remove` | `position`, `bpsToRemove` | vault authority |
 | `/api/tx/dlmm/claim-fee` | `position` | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
+
+### API — send and confirm
+
+| Path | What it does |
+| --- | --- |
+| `POST /api/tx/send` | Body `{ transaction }`: the wallet-signed transaction in base64. Relays it through `RPC_URL` with preflight and returns `{ signature }`. Only forwards transactions that invoke the hedge_vault program and carry a fee-payer signature; a preflight failure is a `422` with the decoded error. Shares the per-IP builder rate limit. |
+| `GET /api/tx/status?signature=&blockhash=` | `{ status: "pending" \| "confirmed" \| "expired" }`, or `{ status: "failed", code, message, logs }`. `expired` means the blockhash can no longer land and the signature was never seen. Uncached, with its own per-IP rate limit bucket. |
 
 Manager-only routes call `assertAuthority` before assembling anything; the UI guard is convenience,
 the server check plus the program's `validate_authority()` check in each handler is the enforcement.

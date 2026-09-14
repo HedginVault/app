@@ -1,10 +1,10 @@
 "use client";
 
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ApiRequestError } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { explorerUrl } from "@/lib/constants";
 import type { BuiltTransaction } from "@/lib/types";
 import { useInvalidateVault } from "./queries";
@@ -16,6 +16,10 @@ export interface SendOptions {
   onSuccess?: (signatures: string[]) => void;
 }
 
+const POLL_MS = 2_000;
+/** Backstop only: a blockhash expires after ~60–90 s, which the status route reports as `expired`. */
+const CONFIRM_TIMEOUT_MS = 120_000;
+
 /**
  * Narrow wallet-rejection detection. A server-decoded program error is never a rejection, even when
  * its message happens to contain "cancel" (e.g. `RequestNotCancellable`).
@@ -24,19 +28,42 @@ const isRejection = (e: unknown) => {
   if (e instanceof ApiRequestError) return false;
   if (!(e instanceof Error)) return false;
   if (e.name === "WalletSignTransactionError") return true;
-  if (e.name === "WalletSendTransactionError" && /reject|denied|cancel/i.test(e.message)) {
-    return true;
-  }
   return /user rejected|user denied/i.test(e.message);
 };
 
-/** Browser-safe base64 -> bytes; avoids depending on a Node `Buffer` global in the client bundle. */
+/** Browser-safe base64 <-> bytes; avoids depending on a Node `Buffer` global in the client bundle. */
 const decodeBase64 = (value: string) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+const encodeBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 
-/** Build on the server, sign in the wallet, confirm, then refresh the vault's queries. */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Polls the server until the signature is confirmed; throws on an on-chain failure or expiry. */
+async function waitForConfirmation(signature: string, blockhash: string) {
+  const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await sleep(POLL_MS);
+    let result;
+    try {
+      result = await api.txStatus(signature, blockhash);
+    } catch (e) {
+      // A throttled or briefly unavailable status check says nothing about the transaction.
+      if (e instanceof ApiRequestError && (e.status === 429 || e.status >= 500)) continue;
+      throw e;
+    }
+    if (result.status === "confirmed") return;
+    if (result.status === "failed") {
+      throw new ApiRequestError(422, result.code, result.message, result.logs);
+    }
+    if (result.status === "expired") {
+      throw new Error("Transaction expired before it was confirmed, try again");
+    }
+  }
+  throw new Error(`Timed out waiting for confirmation of ${signature}`);
+}
+
+/** Build on the server, sign in the wallet, send and confirm through the server, then refresh the vault's queries. */
 export function useSendTransaction() {
-  const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
   const invalidate = useInvalidateVault();
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -49,6 +76,10 @@ export function useSendTransaction() {
   }: SendOptions): Promise<string[] | null> => {
     if (!publicKey) {
       toast.error("Connect a wallet first");
+      return null;
+    }
+    if (!signTransaction) {
+      toast.error("This wallet does not support transaction signing");
       return null;
     }
     if (inFlight.current) {
@@ -68,21 +99,14 @@ export function useSendTransaction() {
         toast.info(`${label}: nothing to do`, { id });
         return [];
       }
-      // One RPC for the confirmation height; each transaction is confirmed against its own blockhash.
-      const { lastValidBlockHeight } = await connection.getLatestBlockhash();
       for (const [i, b] of list.entries()) {
         const step = total > 1 ? ` (${i + 1}/${total})` : "";
         toast.loading(`${label}${step}: approve in wallet`, { id });
-        const tx = VersionedTransaction.deserialize(decodeBase64(b.transaction));
-        const signature = await sendTransaction(tx, connection);
+        const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));
+        toast.loading(`${label}${step}: sending`, { id });
+        const { signature } = await api.send(encodeBase64(signed.serialize()));
         toast.loading(`${label}${step}: confirming`, { id, description: signature });
-        const result = await connection.confirmTransaction(
-          { signature, blockhash: tx.message.recentBlockhash, lastValidBlockHeight },
-          "confirmed",
-        );
-        if (result.value.err) {
-          throw new Error(`Transaction failed on-chain: ${JSON.stringify(result.value.err)}`);
-        }
+        await waitForConfirmation(signature, signed.message.recentBlockhash);
         signatures.push(signature);
       }
       toast.success(`${label}: confirmed`, {

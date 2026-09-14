@@ -64,7 +64,7 @@ export function handleGet<T>(fn: (params: Params, search: URLSearchParams, req?:
 
 /**
  * Wraps a POST handler: parses the body with `schema`, `fn(body, params)` → JSON. Every POST route is
- * a `/api/tx/**` builder that costs RPC (build + simulate), so each caller is rate limited.
+ * a `/api/tx/**` route that costs RPC (build + simulate, or send), so each caller is rate limited.
  */
 export function handlePost<S extends ZodType, T>(schema: S, fn: (body: z.infer<S>, params: Params) => Promise<T>) {
   return async (req: Request, ctx?: { params: Promise<Params> }) => {

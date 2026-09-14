@@ -1,0 +1,6476 @@
+{
+  "address": "r2ahBQ6gbPCJ9FxBymYcXuwXi8NmenRry7SE7QR7FAt",
+  "metadata": {
+    "name": "hedge_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "admin_accept",
+      "discriminator": [
+        61,
+        129,
+        238,
+        74,
+        197,
+        79,
+        54,
+        208
+      ],
+      "accounts": [
+        {
+          "name": "pending_admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_add_manager",
+      "discriminator": [
+        67,
+        71,
+        104,
+        251,
+        38,
+        45,
+        93,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "authority"
+        },
+        {
+          "name": "manager",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  97,
+                  103,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_claim_platform_fee",
+      "discriminator": [
+        215,
+        119,
+        58,
+        3,
+        206,
+        229,
+        46,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "treasury_authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "share_mint",
+          "writable": true
+        },
+        {
+          "name": "treasury_authority_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury_authority"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_initialize",
+      "discriminator": [
+        129,
+        48,
+        207,
+        45,
+        143,
+        130,
+        95,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ConfigInitializeArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "config_migrate",
+      "discriminator": [
+        94,
+        99,
+        105,
+        213,
+        117,
+        8,
+        237,
+        106
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_pause",
+      "discriminator": [
+        217,
+        42,
+        85,
+        11,
+        91,
+        202,
+        36,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "guardian",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_remove_manager",
+      "discriminator": [
+        196,
+        241,
+        135,
+        246,
+        141,
+        94,
+        248,
+        7
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "manager",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "config_update",
+      "discriminator": [
+        80,
+        37,
+        109,
+        136,
+        82,
+        135,
+        89,
+        241
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ConfigUpdateArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deposit_request_cancel",
+      "discriminator": [
+        84,
+        4,
+        96,
+        197,
+        138,
+        180,
+        185,
+        16
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "deposit_request",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "depositor_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit_request_create",
+      "discriminator": [
+        175,
+        29,
+        37,
+        184,
+        7,
+        77,
+        15,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "deposit_request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "depositor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "depositor_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "depositor_share_token_account",
+          "docs": [
+            "Created upfront so the request can be resolved permissionlessly."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "deposit_request_reject",
+      "discriminator": [
+        113,
+        13,
+        54,
+        175,
+        88,
+        232,
+        135,
+        39
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "depositor",
+          "writable": true
+        },
+        {
+          "name": "deposit_request",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "depositor_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit_request_resolve",
+      "discriminator": [
+        142,
+        130,
+        96,
+        79,
+        107,
+        196,
+        216,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "resolver",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "depositor",
+          "writable": true
+        },
+        {
+          "name": "deposit_request",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint",
+          "writable": true
+        },
+        {
+          "name": "depositor_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "jupiter_initialize_strategy",
+      "discriminator": [
+        29,
+        99,
+        0,
+        109,
+        134,
+        205,
+        250,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "strategy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  101,
+                  103,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "destination_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "destination_mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "jupiter_swap",
+      "discriminator": [
+        116,
+        207,
+        0,
+        196,
+        252,
+        120,
+        243,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "source_mint"
+        },
+        {
+          "name": "destination_mint"
+        },
+        {
+          "name": "vault_source_token_account",
+          "docs": [
+            "Pinned to the vault's ATA so the deposit and share escrows can never be the source."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "source_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "source_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_destination_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "destination_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "destination_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "source_token_program"
+        },
+        {
+          "name": "destination_token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "event_authority",
+          "address": "D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf"
+        },
+        {
+          "name": "jupiter_program",
+          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+        }
+      ],
+      "args": [
+        {
+          "name": "swap_data",
+          "type": "bytes"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_add_liquidity",
+      "discriminator": [
+        214,
+        108,
+        176,
+        68,
+        92,
+        135,
+        32,
+        35
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vault_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "bin_array_bitmap_extension",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "MeteoraDlmmAddLiquidityParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_claim_fee",
+      "discriminator": [
+        78,
+        116,
+        98,
+        78,
+        50,
+        82,
+        72,
+        37
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vault_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_authority"
+        },
+        {
+          "name": "treasury_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury_authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury_authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_initialize_position",
+      "discriminator": [
+        223,
+        94,
+        215,
+        96,
+        175,
+        181,
+        195,
+        204
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "strategy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  101,
+                  103,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "dlmm_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "lower_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "upper_bin_id",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_remove_liquidity",
+      "discriminator": [
+        185,
+        228,
+        248,
+        124,
+        57,
+        133,
+        19,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vault_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "bin_array_bitmap_extension",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "MeteoraDlmmRemoveLiquidityParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "nav_override",
+      "discriminator": [
+        64,
+        177,
+        154,
+        150,
+        27,
+        191,
+        22,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "vault_token_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "total_assets",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "nav_update",
+      "discriminator": [
+        160,
+        233,
+        51,
+        210,
+        244,
+        205,
+        116,
+        61
+      ],
+      "accounts": [
+        {
+          "name": "nav_updater",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "vault_token_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "total_assets",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "vault_claim_manager_fee",
+      "discriminator": [
+        18,
+        28,
+        36,
+        145,
+        97,
+        137,
+        184,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "share_mint",
+          "writable": true
+        },
+        {
+          "name": "authority_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vault_close",
+      "discriminator": [
+        81,
+        73,
+        155,
+        182,
+        37,
+        130,
+        252,
+        91
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vault_close_strategy",
+      "discriminator": [
+        4,
+        42,
+        86,
+        18,
+        195,
+        86,
+        62,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vault_initialize",
+      "discriminator": [
+        164,
+        192,
+        189,
+        148,
+        250,
+        255,
+        120,
+        250
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "manager"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "deposit_escrow",
+          "docs": [
+            "Holds pending deposits until resolved."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_escrow",
+          "docs": [
+            "Holds pending withdrawal shares until resolved."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "VaultInitializeArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "vault_pause",
+      "discriminator": [
+        61,
+        128,
+        15,
+        186,
+        96,
+        201,
+        243,
+        60
+      ],
+      "accounts": [
+        {
+          "name": "guardian",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vault_update",
+      "discriminator": [
+        128,
+        43,
+        102,
+        9,
+        194,
+        204,
+        17,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "VaultUpdateArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdrawal_request_cancel",
+      "discriminator": [
+        237,
+        193,
+        42,
+        53,
+        129,
+        151,
+        162,
+        253
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "withdrawal_request",
+          "writable": true
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "withdrawer_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "share_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdrawal_request_create",
+      "discriminator": [
+        193,
+        105,
+        100,
+        175,
+        230,
+        216,
+        84,
+        246
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "withdrawal_request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  95,
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "withdrawer_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "withdrawer_token_account",
+          "docs": [
+            "Created upfront so the request can be resolved permissionlessly."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "share_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawal_request_reject",
+      "discriminator": [
+        229,
+        19,
+        254,
+        250,
+        208,
+        152,
+        36,
+        0
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "withdrawer",
+          "writable": true
+        },
+        {
+          "name": "withdrawal_request",
+          "writable": true
+        },
+        {
+          "name": "share_mint"
+        },
+        {
+          "name": "withdrawer_share_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              },
+              {
+                "kind": "account",
+                "path": "share_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "share_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdrawal_request_resolve",
+      "discriminator": [
+        176,
+        218,
+        60,
+        55,
+        25,
+        158,
+        8,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "resolver",
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "withdrawer",
+          "writable": true
+        },
+        {
+          "name": "withdrawal_request",
+          "writable": true
+        },
+        {
+          "name": "deposit_mint"
+        },
+        {
+          "name": "share_mint",
+          "writable": true
+        },
+        {
+          "name": "withdrawer_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "deposit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "share_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "share_token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "DepositRequest",
+      "discriminator": [
+        86,
+        27,
+        56,
+        8,
+        25,
+        62,
+        62,
+        243
+      ]
+    },
+    {
+      "name": "Manager",
+      "discriminator": [
+        221,
+        78,
+        171,
+        233,
+        213,
+        142,
+        113,
+        56
+      ]
+    },
+    {
+      "name": "PositionV2",
+      "discriminator": [
+        117,
+        176,
+        212,
+        199,
+        245,
+        180,
+        133,
+        182
+      ]
+    },
+    {
+      "name": "Strategy",
+      "discriminator": [
+        174,
+        110,
+        39,
+        119,
+        82,
+        106,
+        169,
+        102
+      ]
+    },
+    {
+      "name": "Vault",
+      "discriminator": [
+        211,
+        8,
+        232,
+        43,
+        2,
+        152,
+        117,
+        119
+      ]
+    },
+    {
+      "name": "WithdrawalRequest",
+      "discriminator": [
+        242,
+        88,
+        147,
+        173,
+        182,
+        62,
+        229,
+        193
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AdminAccepted",
+      "discriminator": [
+        174,
+        12,
+        76,
+        139,
+        158,
+        99,
+        110,
+        254
+      ]
+    },
+    {
+      "name": "AdminNominated",
+      "discriminator": [
+        22,
+        247,
+        53,
+        33,
+        59,
+        59,
+        68,
+        112
+      ]
+    },
+    {
+      "name": "ConfigInitialized",
+      "discriminator": [
+        181,
+        49,
+        200,
+        156,
+        19,
+        167,
+        178,
+        91
+      ]
+    },
+    {
+      "name": "ConfigMigrated",
+      "discriminator": [
+        115,
+        69,
+        99,
+        100,
+        192,
+        77,
+        40,
+        50
+      ]
+    },
+    {
+      "name": "ConfigUpdated",
+      "discriminator": [
+        40,
+        241,
+        230,
+        122,
+        11,
+        19,
+        198,
+        194
+      ]
+    },
+    {
+      "name": "DepositCancelled",
+      "discriminator": [
+        233,
+        23,
+        42,
+        206,
+        203,
+        207,
+        147,
+        35
+      ]
+    },
+    {
+      "name": "DepositRejected",
+      "discriminator": [
+        142,
+        2,
+        235,
+        2,
+        171,
+        247,
+        250,
+        10
+      ]
+    },
+    {
+      "name": "DepositRequested",
+      "discriminator": [
+        35,
+        33,
+        229,
+        138,
+        116,
+        238,
+        192,
+        22
+      ]
+    },
+    {
+      "name": "DepositResolved",
+      "discriminator": [
+        216,
+        235,
+        58,
+        75,
+        83,
+        136,
+        113,
+        227
+      ]
+    },
+    {
+      "name": "JupiterSwapped",
+      "discriminator": [
+        239,
+        53,
+        117,
+        117,
+        250,
+        201,
+        183,
+        8
+      ]
+    },
+    {
+      "name": "ManagerAdded",
+      "discriminator": [
+        247,
+        109,
+        115,
+        63,
+        146,
+        116,
+        41,
+        135
+      ]
+    },
+    {
+      "name": "ManagerFeeClaimed",
+      "discriminator": [
+        242,
+        234,
+        59,
+        70,
+        44,
+        77,
+        41,
+        66
+      ]
+    },
+    {
+      "name": "ManagerRemoved",
+      "discriminator": [
+        66,
+        207,
+        129,
+        195,
+        19,
+        142,
+        75,
+        244
+      ]
+    },
+    {
+      "name": "MeteoraDlmmFeeClaimed",
+      "discriminator": [
+        164,
+        135,
+        44,
+        23,
+        232,
+        212,
+        45,
+        232
+      ]
+    },
+    {
+      "name": "MeteoraDlmmLiquidityAdded",
+      "discriminator": [
+        93,
+        143,
+        20,
+        62,
+        126,
+        36,
+        99,
+        25
+      ]
+    },
+    {
+      "name": "MeteoraDlmmLiquidityRemoved",
+      "discriminator": [
+        2,
+        49,
+        227,
+        227,
+        123,
+        30,
+        243,
+        144
+      ]
+    },
+    {
+      "name": "NavUpdated",
+      "discriminator": [
+        182,
+        153,
+        142,
+        26,
+        205,
+        24,
+        110,
+        154
+      ]
+    },
+    {
+      "name": "PlatformFeeClaimed",
+      "discriminator": [
+        11,
+        13,
+        236,
+        247,
+        101,
+        255,
+        94,
+        243
+      ]
+    },
+    {
+      "name": "ProtocolPaused",
+      "discriminator": [
+        35,
+        111,
+        245,
+        138,
+        237,
+        199,
+        79,
+        223
+      ]
+    },
+    {
+      "name": "StrategyClosed",
+      "discriminator": [
+        168,
+        163,
+        135,
+        255,
+        218,
+        189,
+        204,
+        196
+      ]
+    },
+    {
+      "name": "StrategyInitialized",
+      "discriminator": [
+        154,
+        42,
+        211,
+        241,
+        56,
+        30,
+        246,
+        99
+      ]
+    },
+    {
+      "name": "VaultClosed",
+      "discriminator": [
+        238,
+        129,
+        38,
+        228,
+        227,
+        118,
+        249,
+        215
+      ]
+    },
+    {
+      "name": "VaultInitialized",
+      "discriminator": [
+        180,
+        43,
+        207,
+        2,
+        18,
+        71,
+        3,
+        75
+      ]
+    },
+    {
+      "name": "VaultPaused",
+      "discriminator": [
+        198,
+        157,
+        22,
+        151,
+        68,
+        100,
+        162,
+        35
+      ]
+    },
+    {
+      "name": "VaultUpdated",
+      "discriminator": [
+        93,
+        187,
+        145,
+        216,
+        134,
+        201,
+        3,
+        105
+      ]
+    },
+    {
+      "name": "WithdrawalCancelled",
+      "discriminator": [
+        119,
+        175,
+        207,
+        80,
+        186,
+        237,
+        229,
+        9
+      ]
+    },
+    {
+      "name": "WithdrawalRejected",
+      "discriminator": [
+        44,
+        169,
+        123,
+        79,
+        197,
+        74,
+        90,
+        230
+      ]
+    },
+    {
+      "name": "WithdrawalRequested",
+      "discriminator": [
+        75,
+        207,
+        21,
+        12,
+        160,
+        102,
+        150,
+        55
+      ]
+    },
+    {
+      "name": "WithdrawalResolved",
+      "discriminator": [
+        202,
+        37,
+        47,
+        142,
+        92,
+        145,
+        146,
+        145
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidProgramId",
+      "msg": "Invalid Program"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidPubkey",
+      "msg": "Pubkey cannot be the default pubkey"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidTransferAmount",
+      "msg": "Transfer amount must be greater than zero"
+    },
+    {
+      "code": 6003,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6004,
+      "name": "ConversionFailed",
+      "msg": "Math conversion failed"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidBasisPoints",
+      "msg": "Basis points cannot exceed 10,000"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid amount of remaining accounts passed"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidInstructionData",
+      "msg": "Instruction data is malformed"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidMinimumAmount",
+      "msg": "Minimum deposit and withdrawal amounts must be greater than zero"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidTokenAccountMint",
+      "msg": "Invalid Token Account Mint"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidTokenAccountOwner",
+      "msg": "Invalid Token Account Owner"
+    },
+    {
+      "code": 6011,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidTokenProgram",
+      "msg": "Token program is not a supported SPL token program"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidConfig",
+      "msg": "Config address does not match"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidConfigVersion",
+      "msg": "Config layout is not the expected version for this migration"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidAdmin",
+      "msg": "Admin does not match"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidNavUpdater",
+      "msg": "NAV updater does not match"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidTreasuryAuthority",
+      "msg": "Treasury authority does not match"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidGuardian",
+      "msg": "Guardian does not match"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidPendingAdmin",
+      "msg": "Signer is not the pending admin"
+    },
+    {
+      "code": 6020,
+      "name": "ProtocolNotOperational",
+      "msg": "Protocol is paused or in reduce-only status"
+    },
+    {
+      "code": 6021,
+      "name": "ProtocolNotWithdrawable",
+      "msg": "Protocol is not in a withdrawable status"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidManager",
+      "msg": "Manager address does not match"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidManagerAuthority",
+      "msg": "Manager authority does not match"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidVault",
+      "msg": "Vault address does not match"
+    },
+    {
+      "code": 6025,
+      "name": "InvalidVaultAuthority",
+      "msg": "Vault authority does not match"
+    },
+    {
+      "code": 6026,
+      "name": "VaultNotOperational",
+      "msg": "Vault is paused or in reduce-only status"
+    },
+    {
+      "code": 6027,
+      "name": "VaultNotWithdrawable",
+      "msg": "Vault is not in a withdrawable status"
+    },
+    {
+      "code": 6028,
+      "name": "DepositCapReached",
+      "msg": "Deposit cap for the vault has been reached"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidDepositMint",
+      "msg": "Deposit mint does not match"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidShareMint",
+      "msg": "Share mint does not match"
+    },
+    {
+      "code": 6031,
+      "name": "VaultHasOutstandingShares",
+      "msg": "Vault cannot be closed until all shares are redeemed"
+    },
+    {
+      "code": 6032,
+      "name": "VaultHasPendingRequests",
+      "msg": "Vault cannot be closed until all pending requests are resolved"
+    },
+    {
+      "code": 6033,
+      "name": "VaultHasUnclaimedFees",
+      "msg": "Vault cannot be closed until all fee shares are claimed"
+    },
+    {
+      "code": 6034,
+      "name": "VaultHasOpenStrategies",
+      "msg": "Vault cannot be closed until all strategies are closed"
+    },
+    {
+      "code": 6035,
+      "name": "VaultHasAssets",
+      "msg": "Vault cannot be closed until its total assets are zero"
+    },
+    {
+      "code": 6036,
+      "name": "InvalidSharesAmount",
+      "msg": "Shares amount must be greater than zero"
+    },
+    {
+      "code": 6037,
+      "name": "NoFeeToClaim",
+      "msg": "Unclaimed fee shares is 0"
+    },
+    {
+      "code": 6038,
+      "name": "InvalidDepositMintExtension",
+      "msg": "Deposit mint has a Token-2022 extension the vault does not support"
+    },
+    {
+      "code": 6039,
+      "name": "VaultNavIsZero",
+      "msg": "Vault NAV is zero, deposits are closed until NAV is restored"
+    },
+    {
+      "code": 6040,
+      "name": "DepositBelowMinimum",
+      "msg": "Deposit is below the vault minimum"
+    },
+    {
+      "code": 6041,
+      "name": "WithdrawalBelowMinimum",
+      "msg": "Withdrawal is below the vault minimum and is not the full share balance"
+    },
+    {
+      "code": 6042,
+      "name": "NavAlreadyUpdatedThisEpoch",
+      "msg": "NAV has already been updated for the current epoch"
+    },
+    {
+      "code": 6043,
+      "name": "FeeExceedsTotalAssets",
+      "msg": "Total fee cannot exceed total assets"
+    },
+    {
+      "code": 6044,
+      "name": "NavDeviationExceeded",
+      "msg": "NAV change exceeds the max deviation allowed per update"
+    },
+    {
+      "code": 6045,
+      "name": "TotalAssetsBelowIdleBalance",
+      "msg": "Total assets cannot be lower than the vault's idle balance"
+    },
+    {
+      "code": 6046,
+      "name": "EpochOutflowCapReached",
+      "msg": "Withdrawals resolved this epoch have reached the outflow cap"
+    },
+    {
+      "code": 6047,
+      "name": "InvalidRequest",
+      "msg": "Request address does not match"
+    },
+    {
+      "code": 6048,
+      "name": "InvalidRequestAuthority",
+      "msg": "Request authority does not match"
+    },
+    {
+      "code": 6049,
+      "name": "InvalidRequestVault",
+      "msg": "Request vault does not match"
+    },
+    {
+      "code": 6050,
+      "name": "PendingRequestNotResolved",
+      "msg": "A request from a previous epoch is pending resolution"
+    },
+    {
+      "code": 6051,
+      "name": "RequestNotResolvable",
+      "msg": "Request cannot be resolved until NAV is updated in a later epoch"
+    },
+    {
+      "code": 6052,
+      "name": "RequestNotCancellable",
+      "msg": "Request can no longer be cancelled, it must be resolved"
+    },
+    {
+      "code": 6053,
+      "name": "ZeroSharesMinted",
+      "msg": "Deposit is too small to mint any shares at the current NAV"
+    },
+    {
+      "code": 6054,
+      "name": "InvalidStrategy",
+      "msg": "Strategy address does not match"
+    },
+    {
+      "code": 6055,
+      "name": "InvalidStrategyType",
+      "msg": "Strategy type is invalid for this operation"
+    },
+    {
+      "code": 6056,
+      "name": "InvalidTargetMint",
+      "msg": "Target mint does not match strategy target mint"
+    },
+    {
+      "code": 6057,
+      "name": "InvalidStrategyMint",
+      "msg": "Strategy mint cannot be the vault deposit or share mint"
+    },
+    {
+      "code": 6058,
+      "name": "InvalidTargetMintTokenAccount",
+      "msg": "Target mint of token account does not match"
+    },
+    {
+      "code": 6059,
+      "name": "InvalidSwapMints",
+      "msg": "Source and destination mint of a swap must differ"
+    },
+    {
+      "code": 6060,
+      "name": "SlippageExceedsCap",
+      "msg": "Swap slippage exceeds the protocol maximum"
+    },
+    {
+      "code": 6061,
+      "name": "SwapOutputBelowMinimum",
+      "msg": "Swap moved less than the quote and slippage cap allow"
+    },
+    {
+      "code": 6062,
+      "name": "InvalidPosition",
+      "msg": "Position address does not match"
+    }
+  ],
+  "types": [
+    {
+      "name": "AccountsType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "TransferHookX"
+          },
+          {
+            "name": "TransferHookY"
+          },
+          {
+            "name": "TransferHookReward"
+          },
+          {
+            "name": "TransferHookMultiReward",
+            "fields": [
+              "u8"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "AdminAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "previous_admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AdminNominated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_admin",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "Authority allowed to update config parameters and manage the manager whitelist."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "nav_updater",
+            "docs": [
+              "Authority allowed to post vault NAV updates."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury_authority",
+            "docs": [
+              "Authority allowed to claim platform fee shares."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "docs": [
+              "Authority allowed to pause the protocol, and nothing else."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "next_vault_id",
+            "docs": [
+              "Vault ID, increments with each new vault."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "platform_performance_fee_bps",
+            "docs": [
+              "Fee taken from profits above the high water mark that goes to the platform, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "platform_management_fee_bps",
+            "docs": [
+              "Annualized fee taken on total assets that goes to the platform, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "max_nav_deviation_bps",
+            "docs": [
+              "Max NAV per share change accepted from the updater in a single update, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "max_epoch_outflow_bps",
+            "docs": [
+              "Max share of total assets that withdrawals can pay out per epoch, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Determines operational status of the protocol."
+            ],
+            "type": {
+              "defined": {
+                "name": "ProtocolStatus"
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "type": {
+              "array": [
+                "u8",
+                6
+              ]
+            }
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Layout version, see [CONFIG_VERSION]."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "pending_admin",
+            "docs": [
+              "Admin nominated through `config_update`, becomes admin once it signs `admin_accept`. Default pubkey when none."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "max_slippage_bps",
+            "docs": [
+              "Max slippage accepted on a routed swap, denoted in basis points. Zero means [DEFAULT_MAX_SLIPPAGE_BPS]."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u8",
+                6
+              ]
+            }
+          },
+          {
+            "name": "reserve",
+            "type": {
+              "array": [
+                "u64",
+                18
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigInitializeArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nav_updater",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          },
+          {
+            "name": "platform_performance_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "platform_management_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_nav_deviation_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_epoch_outflow_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_slippage_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "nav_updater",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigMigrated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigUpdateArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pending_admin",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "nav_updater",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "treasury_authority",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "guardian",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "platform_performance_fee_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "platform_management_fee_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "max_nav_deviation_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "max_epoch_outflow_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "max_slippage_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "ProtocolStatus"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "nav_updater",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          },
+          {
+            "name": "platform_performance_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "platform_management_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_nav_deviation_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_epoch_outflow_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_slippage_bps",
+            "type": "u16"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "ProtocolStatus"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositRejected",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositRequest",
+      "docs": [
+        "Pending deposit, resolvable once the vault NAV is updated in a later epoch."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Authority of the request, receives the minted shares."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "docs": [
+              "The vault this request is for."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Deposit mint amount held in the vault's deposit escrow."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
+            "docs": [
+              "Epoch the request was made in."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "created_ts",
+            "docs": [
+              "Timestamp the request was created."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositRequested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "pending_amount",
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "nav_per_share",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeInfo",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "fee_x_per_token_complete",
+            "type": "u128"
+          },
+          {
+            "name": "fee_y_per_token_complete",
+            "type": "u128"
+          },
+          {
+            "name": "fee_x_pending",
+            "type": "u64"
+          },
+          {
+            "name": "fee_y_pending",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "JupiterSwapped",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "source_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "destination_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LiquidityParameterByStrategy",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount_x",
+            "type": "u64"
+          },
+          {
+            "name": "amount_y",
+            "type": "u64"
+          },
+          {
+            "name": "active_id",
+            "type": "i32"
+          },
+          {
+            "name": "max_active_bin_slippage",
+            "type": "i32"
+          },
+          {
+            "name": "strategy_parameters",
+            "type": {
+              "defined": {
+                "name": "StrategyParameters"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Manager",
+      "docs": [
+        "Whitelist entry allowing `authority` to create vaults. Created and closed by the config admin."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Authority allowed to create vaults."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManagerAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManagerFeeClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManagerRemoved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MeteoraDlmmAddLiquidityParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "liquidity_parameter",
+            "type": {
+              "defined": {
+                "name": "LiquidityParameterByStrategy"
+              }
+            }
+          },
+          {
+            "name": "remaining_accounts_info",
+            "type": {
+              "defined": {
+                "name": "RemainingAccountsInfo"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MeteoraDlmmFeeClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "position",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_x",
+            "docs": [
+              "Total fees claimed into the vault, including the treasury share."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "amount_y",
+            "type": "u64"
+          },
+          {
+            "name": "treasury_amount_x",
+            "type": "u64"
+          },
+          {
+            "name": "treasury_amount_y",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MeteoraDlmmLiquidityAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "position",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_x",
+            "type": "u64"
+          },
+          {
+            "name": "amount_y",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MeteoraDlmmLiquidityRemoved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "position",
+            "type": "pubkey"
+          },
+          {
+            "name": "bps_to_remove",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MeteoraDlmmRemoveLiquidityParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bps_to_remove",
+            "docs": [
+              "Portion of liquidity to remove across the full position range."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "remaining_accounts_info",
+            "type": {
+              "defined": {
+                "name": "RemainingAccountsInfo"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NavUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "epoch",
+            "type": "u64"
+          },
+          {
+            "name": "total_assets",
+            "type": "u64"
+          },
+          {
+            "name": "nav_per_share",
+            "type": "u64"
+          },
+          {
+            "name": "high_water_mark",
+            "type": "u64"
+          },
+          {
+            "name": "manager_fee_shares",
+            "type": "u64"
+          },
+          {
+            "name": "platform_fee_shares",
+            "type": "u64"
+          },
+          {
+            "name": "overridden",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlatformFeeClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PositionV2",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lb_pair",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "liquidity_shares",
+            "type": {
+              "array": [
+                "u128",
+                70
+              ]
+            }
+          },
+          {
+            "name": "reward_infos",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "UserRewardInfo"
+                  }
+                },
+                70
+              ]
+            }
+          },
+          {
+            "name": "fee_infos",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "FeeInfo"
+                  }
+                },
+                70
+              ]
+            }
+          },
+          {
+            "name": "lower_bin_id",
+            "type": "i32"
+          },
+          {
+            "name": "upper_bin_id",
+            "type": "i32"
+          },
+          {
+            "name": "last_updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "total_claimed_fee_x_amount",
+            "type": "u64"
+          },
+          {
+            "name": "total_claimed_fee_y_amount",
+            "type": "u64"
+          },
+          {
+            "name": "total_claimed_rewards",
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "lock_release_point",
+            "type": "u64"
+          },
+          {
+            "name": "_padding_0",
+            "type": "u8"
+          },
+          {
+            "name": "fee_owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                87
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolPaused",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolStatus",
+      "repr": {
+        "kind": "rust"
+      },
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Normal"
+          },
+          {
+            "name": "Paused"
+          },
+          {
+            "name": "ReduceOnly"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemainingAccountsInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slices",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "RemainingAccountsSlice"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemainingAccountsSlice",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accounts_type",
+            "type": {
+              "defined": {
+                "name": "AccountsType"
+              }
+            }
+          },
+          {
+            "name": "length",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Strategy",
+      "docs": [
+        "Record of where a vault's funds are utilized. Holds no accounting, NAV is tracked off-chain."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "docs": [
+              "The vault this strategy belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "created_ts",
+            "docs": [
+              "Timestamp the strategy was created."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "last_action_ts",
+            "docs": [
+              "Timestamp of the last execute/exit on the strategy."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "id",
+            "docs": [
+              "ID unique to the strategy within the vault."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Layout version, see [STRATEGY_VERSION]."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields, the enum has to stay last."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "strategy_type",
+            "docs": [
+              "Details about the underlying protocol and action of the strategy."
+            ],
+            "type": {
+              "defined": {
+                "name": "hedge_vault::state::strategy::StrategyType"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StrategyClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StrategyInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u32"
+          },
+          {
+            "name": "strategy_type",
+            "type": {
+              "defined": {
+                "name": "hedge_vault::state::strategy::StrategyType"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StrategyParameters",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "min_bin_id",
+            "type": "i32"
+          },
+          {
+            "name": "max_bin_id",
+            "type": "i32"
+          },
+          {
+            "name": "strategy_type",
+            "type": {
+              "defined": {
+                "name": "hedge_vault::dlmm::types::StrategyType"
+              }
+            }
+          },
+          {
+            "name": "parameteres",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserRewardInfo",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reward_per_token_completes",
+            "type": {
+              "array": [
+                "u128",
+                2
+              ]
+            }
+          },
+          {
+            "name": "reward_pendings",
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vault",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "docs": [
+              "Unique vault ID."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority allowed to manage the vault."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Name of the vault (utf8 bytes, padded with 0s)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "reserved_keys",
+            "docs": [
+              "80..144, reserved for two future `Pubkey` fields (e.g. `pending_authority`, `delegate`).",
+              "Vault metadata beyond `name` lives off-chain."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "deposit_mint",
+            "docs": [
+              "Mint accepted as vault deposits."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "share_mint",
+            "docs": [
+              "Mint of the tokenized vault shares, authority is the vault."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "deposit_cap",
+            "docs": [
+              "Max total assets accepted including pending deposits, denoted in deposit mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_assets",
+            "docs": [
+              "Last reported total value of vault holdings, adjusted on request resolution. Denoted in deposit mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nav_per_share",
+            "docs": [
+              "Last recorded value of one share, scaled by [NAV_PRECISION]. Denoted in deposit mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "high_water_mark",
+            "docs": [
+              "All-time highest recorded NAV per share after fees.",
+              "",
+              "Performance fees are only taken on profits above this mark."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nav_epoch",
+            "docs": [
+              "Epoch of the last NAV update."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_nav_ts",
+            "docs": [
+              "Timestamp of the last NAV update, used to prorate management fees."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "pending_deposits",
+            "docs": [
+              "Total deposit mint held in deposit escrow awaiting resolution."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pending_withdrawal_shares",
+            "docs": [
+              "Total shares held in share escrow awaiting resolution."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "unclaimed_manager_fee_shares",
+            "docs": [
+              "Fee shares accrued to the vault manager, minted on claim."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "unclaimed_platform_fee_shares",
+            "docs": [
+              "Fee shares accrued to the platform, minted on claim."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "epoch_outflow",
+            "docs": [
+              "Deposit mint paid out to withdrawals since the last NAV update."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "next_strategy_id",
+            "docs": [
+              "Next strategy ID, increments with each new strategy."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "performance_fee_bps",
+            "docs": [
+              "Fee taken from profits above the high water mark that goes to the vault manager, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "management_fee_bps",
+            "docs": [
+              "Annualized fee taken on total assets that goes to the vault manager, denoted in basis points."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Determines operational status of the vault."
+            ],
+            "type": {
+              "defined": {
+                "name": "VaultStatus"
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Layout version, see [VAULT_VERSION]."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          },
+          {
+            "name": "reserved0",
+            "docs": [
+              "312..320, reserved for `epoch_duration`."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "min_deposit",
+            "docs": [
+              "Smallest deposit accepted per request, denoted in deposit mint. Zero disables the check."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "min_withdrawal_shares",
+            "docs": [
+              "Smallest shares accepted per withdrawal request unless it is the withdrawer's full balance. Zero disables the check."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reserved1",
+            "docs": [
+              "336..360, reserved for `last_override_ts`, `total_deposited`, `total_withdrawn`."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                24
+              ]
+            }
+          },
+          {
+            "name": "fee_effective_ts",
+            "docs": [
+              "Timestamp from which the pending fees apply, zero when no fee change is pending."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "reserved2",
+            "docs": [
+              "368..380, reserved for `epoch_inflow` and per-vault deviation/outflow bps."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                12
+              ]
+            }
+          },
+          {
+            "name": "pending_performance_fee_bps",
+            "docs": [
+              "Performance fee that replaces [Vault::performance_fee_bps] once [Vault::fee_effective_ts] has passed."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "pending_management_fee_bps",
+            "docs": [
+              "Management fee that replaces [Vault::management_fee_bps] once [Vault::fee_effective_ts] has passed."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "open_strategy_count",
+            "docs": [
+              "Strategies currently open on the vault, must be zero before the vault can be closed."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "reserved3",
+            "docs": [
+              "388..424, reserved for `nav_update_count` and future fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                36
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultInitializeArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "performance_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "management_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "deposit_cap",
+            "type": "u64"
+          },
+          {
+            "name": "min_deposit",
+            "type": "u64"
+          },
+          {
+            "name": "min_withdrawal_shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "deposit_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "share_mint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultPaused",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "guardian",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultStatus",
+      "repr": {
+        "kind": "rust"
+      },
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Normal"
+          },
+          {
+            "name": "Paused"
+          },
+          {
+            "name": "ReduceOnly"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultUpdateArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "performance_fee_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "management_fee_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "deposit_cap",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "min_deposit",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "min_withdrawal_shares",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "VaultStatus"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VaultUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "performance_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "management_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "pending_performance_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "pending_management_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "fee_effective_ts",
+            "type": "i64"
+          },
+          {
+            "name": "deposit_cap",
+            "type": "u64"
+          },
+          {
+            "name": "min_deposit",
+            "type": "u64"
+          },
+          {
+            "name": "min_withdrawal_shares",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "VaultStatus"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalRejected",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalRequest",
+      "docs": [
+        "Pending withdrawal, resolvable once the vault NAV is updated in a later epoch."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Authority of the request, receives the redeemed deposit mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "docs": [
+              "The vault this request is for."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "docs": [
+              "Shares held in the vault's share escrow."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
+            "docs": [
+              "Epoch the request was made in."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "created_ts",
+            "docs": [
+              "Timestamp the request was created."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalRequested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "pending_shares",
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawalResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "nav_per_share",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "hedge_vault::dlmm::types::StrategyType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "SpotOneSide"
+          },
+          {
+            "name": "CurveOneSide"
+          },
+          {
+            "name": "BidAskOneSide"
+          },
+          {
+            "name": "SpotBalanced"
+          },
+          {
+            "name": "CurveBalanced"
+          },
+          {
+            "name": "BidAskBalanced"
+          },
+          {
+            "name": "SpotImBalanced"
+          },
+          {
+            "name": "CurveImBalanced"
+          },
+          {
+            "name": "BidAskImBalanced"
+          }
+        ]
+      }
+    },
+    {
+      "name": "hedge_vault::state::strategy::StrategyType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "JupiterSwap",
+            "fields": [
+              {
+                "name": "target_mint",
+                "type": "pubkey"
+              }
+            ]
+          },
+          {
+            "name": "MeteoraDlmm",
+            "fields": [
+              {
+                "name": "position",
+                "type": "pubkey"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "CONFIG_VERSION",
+      "docs": [
+        "Layout versions, bumped whenever an account grows. Zero means the pre-versioned layout."
+      ],
+      "type": "u8",
+      "value": "2"
+    },
+    {
+      "name": "DEFAULT_MAX_SLIPPAGE_BPS",
+      "docs": [
+        "Max embedded Jupiter slippage accepted when [Config::max_slippage_bps] is unset (legacy zero)."
+      ],
+      "type": "u16",
+      "value": "300"
+    },
+    {
+      "name": "EPOCH_DURATION",
+      "docs": [
+        "Duration of a NAV epoch in seconds. NAV is updated at most once per epoch."
+      ],
+      "type": "i64",
+      "value": "86400"
+    },
+    {
+      "name": "FEE_INCREASE_DELAY",
+      "docs": [
+        "Delay before a manager fee increase takes effect, so depositors can exit first."
+      ],
+      "type": "i64",
+      "value": "604800"
+    },
+    {
+      "name": "MAX_BPS",
+      "type": "u16",
+      "value": "10000"
+    },
+    {
+      "name": "NAV_PRECISION",
+      "docs": [
+        "Precision of NAV per share, 1e9 = 1 deposit mint unit per share."
+      ],
+      "type": "u64",
+      "value": "1000000000"
+    },
+    {
+      "name": "SECONDS_PER_YEAR",
+      "docs": [
+        "Used to prorate annualized management fees."
+      ],
+      "type": "i64",
+      "value": "31536000"
+    },
+    {
+      "name": "STRATEGY_VERSION",
+      "type": "u8",
+      "value": "1"
+    },
+    {
+      "name": "TREASURY_CLAIM_FEE_BPS",
+      "docs": [
+        "Share of fees claimed from a protocol position that is sent to the treasury."
+      ],
+      "type": "u16",
+      "value": "1000"
+    },
+    {
+      "name": "VAULT_VERSION",
+      "type": "u8",
+      "value": "1"
+    }
+  ]
+}

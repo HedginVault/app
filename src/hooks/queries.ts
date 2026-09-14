@@ -1,0 +1,120 @@
+"use client";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type QuoteParams } from "@/lib/api";
+
+export const queryKeys = {
+  config: ["config"] as const,
+  vaults: ["vaults"] as const,
+  vault: (address: string) => ["vault", address] as const,
+  position: (address: string, owner: string) => ["position", address, owner] as const,
+  requests: (address: string) => ["requests", address] as const,
+  strategies: (address: string) => ["strategies", address] as const,
+  manager: (wallet: string) => ["manager", wallet] as const,
+  pool: (lbPair: string) => ["pool", lbPair] as const,
+  quote: (q: QuoteParams) => ["quote", q] as const,
+};
+
+const REFRESH = 20_000;
+
+/**
+ * Post-confirmation freshness. TanStack invalidation only makes the client refetch; the server would
+ * still answer a 10–15 s memoized entry, so the UI would show pre-transaction state. `useInvalidateVault`
+ * marks the affected query keys here and the next fetch of each sends `cache-control: no-cache` once.
+ * Markers are JSON key prefixes, so `["position", address]` covers every owner under that vault.
+ */
+const freshNext = new Set<string>();
+const markFresh = (key: readonly unknown[]) => freshNext.add(JSON.stringify(key).slice(0, -1));
+const takeFresh = (key: readonly unknown[]): { fresh: boolean } => {
+  const k = JSON.stringify(key);
+  for (const prefix of freshNext)
+    if (k.startsWith(prefix)) {
+      freshNext.delete(prefix);
+      return { fresh: true };
+    }
+  return { fresh: false };
+};
+
+export const useConfig = () =>
+  useQuery({ queryKey: queryKeys.config, queryFn: () => api.config(), refetchInterval: REFRESH });
+
+export const useVaults = () =>
+  useQuery({
+    queryKey: queryKeys.vaults,
+    queryFn: () => api.vaults(takeFresh(queryKeys.vaults)),
+    refetchInterval: REFRESH,
+  });
+
+export const useVault = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.vault(address),
+    queryFn: () => api.vault(address, takeFresh(queryKeys.vault(address))),
+    refetchInterval: REFRESH,
+  });
+
+export const usePosition = (address: string, owner: string | undefined) =>
+  useQuery({
+    queryKey: queryKeys.position(address, owner ?? ""),
+    queryFn: () => api.position(address, owner!, takeFresh(queryKeys.position(address, owner ?? ""))),
+    enabled: !!owner,
+    refetchInterval: REFRESH,
+  });
+
+export const useRequests = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.requests(address),
+    queryFn: () => api.requests(address, takeFresh(queryKeys.requests(address))),
+    refetchInterval: REFRESH,
+  });
+
+export const useStrategies = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.strategies(address),
+    queryFn: () => api.strategies(address, takeFresh(queryKeys.strategies(address))),
+    refetchInterval: REFRESH,
+  });
+
+export const useManager = (wallet: string | undefined) =>
+  useQuery({
+    queryKey: queryKeys.manager(wallet ?? ""),
+    queryFn: () => api.manager(wallet!, takeFresh(queryKeys.manager(wallet ?? ""))),
+    enabled: !!wallet,
+  });
+
+export const usePool = (lbPair: string | undefined) =>
+  useQuery({
+    queryKey: queryKeys.pool(lbPair ?? ""),
+    queryFn: () => api.pool(lbPair!),
+    enabled: !!lbPair,
+    retry: false,
+  });
+
+export const useQuote = (q: QuoteParams, enabled: boolean) =>
+  useQuery({
+    queryKey: queryKeys.quote(q),
+    queryFn: () => api.quote(q),
+    enabled,
+    retry: false,
+    staleTime: 10_000,
+  });
+
+/** Invalidates everything derived from one vault after a confirmed transaction. */
+export function useInvalidateVault() {
+  const client = useQueryClient();
+  return (address?: string) => {
+    markFresh(queryKeys.vaults);
+    void client.invalidateQueries({ queryKey: queryKeys.vaults });
+    markFresh(["manager"]);
+    void client.invalidateQueries({ queryKey: ["manager"] });
+    if (!address) return;
+    for (const key of [
+      queryKeys.vault(address),
+      ["position", address],
+      queryKeys.requests(address),
+      queryKeys.strategies(address),
+    ] as const) {
+      markFresh(key);
+      void client.invalidateQueries({ queryKey: key });
+    }
+  };
+}

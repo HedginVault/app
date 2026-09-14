@@ -1,0 +1,37 @@
+import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
+import { z } from "zod";
+import { getProgram } from "@/server/program";
+import { readConfig } from "@/server/readers/vaults";
+import { amountString, handlePost, pubkey } from "@/server/route";
+import { assemble } from "@/server/tx/assemble";
+import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
+import { jupiterSwapIx } from "@/server/tx/jupiter";
+
+export const POST = handlePost(
+  z.object({
+    payer: pubkey,
+    vault: pubkey,
+    sourceMint: pubkey,
+    destinationMint: pubkey,
+    amount: amountString,
+    slippageBps: z.number().int().min(1).max(10_000),
+  }),
+  async (b) => {
+    const authority = new PublicKey(b.payer);
+    const ctx = await loadVaultCtx(b.vault);
+    assertAuthority(ctx, authority);
+    const config = await readConfig();
+    const slippage = Math.min(b.slippageBps, config.maxSlippageBps);
+    const { ix, lookupTables } = await jupiterSwapIx(
+      getProgram(),
+      ctx,
+      authority,
+      new PublicKey(b.sourceMint),
+      new PublicKey(b.destinationMint),
+      new BN(b.amount),
+      slippage,
+    );
+    return assemble(authority, [ix], { lookupTables });
+  },
+);

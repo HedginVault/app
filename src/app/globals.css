@@ -1,25 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --accent: #059669;
+  --accent-foreground: #ffffff;
+  --accent-soft: #ecfdf5;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --radius: 12px;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --radius-card: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* wallet-adapter button, restyled to the light theme */
+.wallet-adapter-button-trigger {
+  background: var(--foreground) !important;
+  border-radius: 10px !important;
+  height: 40px !important;
+  font-family: var(--font-geist-sans) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+.wallet-adapter-dropdown-list {
+  font-family: var(--font-geist-sans) !important;
 }

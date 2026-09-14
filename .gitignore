@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Next 16 generates these when it detects an AI coding agent; never commit them.
+AGENTS.md
+CLAUDE.md

@@ -2,11 +2,11 @@
 
 import { PublicKey } from "@solana/web3.js";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokenLogo } from "@/components/token/token-logo";
+import { TokenScore, VerifiedMark } from "@/components/token/token-trust";
 import { useTokenSearch } from "@/hooks/queries";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatTokenAmount, formatUsd, shortAddress } from "@/lib/format";
@@ -41,7 +41,8 @@ function Row({ token, balance, onPick }: { token: TokenInfo & Partial<TokenSearc
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-sm font-medium">
             {token.symbol}
-            {token.verified === false && <Badge tone="warning">Unverified</Badge>}
+            {token.verified && <VerifiedMark />}
+            {token.organicScore != null && <TokenScore score={token.organicScore} label={token.organicScoreLabel ?? null} />}
           </span>
           <span className="block truncate text-[12px] text-muted">
             {token.name ?? token.symbol} · {shortAddress(token.mint)}

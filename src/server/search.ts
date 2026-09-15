@@ -1,5 +1,5 @@
 import "server-only";
-import type { PoolSearchPage, PoolSearchResult, TokenSearchResult } from "@/lib/types";
+import type { OrganicScoreLabel, PoolSearchPage, PoolSearchResult, TokenSearchResult } from "@/lib/types";
 import { cached } from "./cache";
 import { ApiError } from "./errors";
 import { JUPITER_HOST, jupiterHeaders } from "./prices";
@@ -33,7 +33,11 @@ interface JupiterSearchToken {
   usdPrice?: number | null;
   liquidity?: number | null;
   isVerified?: boolean;
+  organicScore?: number | null;
+  organicScoreLabel?: string | null;
 }
+
+const SCORE_LABELS = new Set(["high", "medium", "low"]);
 
 /** Jupiter token search by symbol, name or mint. One HTTP call per distinct query per hour. */
 export const searchTokens = (query: string) => {
@@ -52,6 +56,8 @@ export const searchTokens = (query: string) => {
       priceUsd: t.usdPrice ?? null,
       verified: t.isVerified ?? false,
       liquidityUsd: t.liquidity ?? null,
+      organicScore: typeof t.organicScore === "number" ? t.organicScore : null,
+      organicScoreLabel: t.organicScoreLabel && SCORE_LABELS.has(t.organicScoreLabel) ? (t.organicScoreLabel as OrganicScoreLabel) : null,
     }));
   });
 };

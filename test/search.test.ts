@@ -8,7 +8,7 @@ const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 const jupToken = (id: string, over: Record<string, unknown> = {}) => ({
   id, symbol: id === SOL ? "SOL" : "USDC", name: "n", icon: `https://x/${id}.png`, decimals: id === SOL ? 9 : 6,
-  usdPrice: 100, liquidity: 5_000_000, isVerified: true, ...over,
+  usdPrice: 100, liquidity: 5_000_000, isVerified: true, organicScore: 98.4, organicScoreLabel: "high", ...over,
 });
 
 const meteoraPool = (over: Record<string, unknown> = {}) => ({
@@ -35,7 +35,9 @@ beforeEach(() => {
       const q = u.searchParams.get("query")!;
       if (q === "boom") return new Response("nope", { status: 500 });
       const ids = q.includes(",") ? q.split(",") : [SOL, USDC];
-      return new Response(JSON.stringify(ids.map((id) => jupToken(id, id === USDC ? { isVerified: false, usdPrice: null } : {}))));
+      return new Response(
+        JSON.stringify(ids.map((id) => jupToken(id, id === USDC ? { isVerified: false, usdPrice: null, organicScore: undefined, organicScoreLabel: "bogus" } : {}))),
+      );
     }
     if (u.pathname === "/pools") {
       return new Response(
@@ -51,8 +53,8 @@ afterEach(() => vi.unstubAllGlobals());
 describe("searchTokens", () => {
   it("maps Jupiter results and caches per trimmed query", async () => {
     const r = await searchTokens(" SOL ");
-    expect(r[0]).toEqual({ mint: SOL, symbol: "SOL", name: "n", decimals: 9, logo: `https://x/${SOL}.png`, priceUsd: 100, verified: true, liquidityUsd: 5_000_000 });
-    expect(r[1]).toMatchObject({ mint: USDC, verified: false, priceUsd: null });
+    expect(r[0]).toEqual({ mint: SOL, symbol: "SOL", name: "n", decimals: 9, logo: `https://x/${SOL}.png`, priceUsd: 100, verified: true, liquidityUsd: 5_000_000, organicScore: 98.4, organicScoreLabel: "high" });
+    expect(r[1]).toMatchObject({ mint: USDC, verified: false, priceUsd: null, organicScore: null, organicScoreLabel: null });
     await searchTokens("SOL");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

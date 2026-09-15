@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PairLogo } from "@/components/token/token-logo";
+import { VerifiedMark } from "@/components/token/token-trust";
 import { usePoolSearch } from "@/hooks/queries";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatUsd, shortAddress } from "@/lib/format";
@@ -82,9 +83,14 @@ export function PoolSelect({
                 >
                   <div className="flex items-center gap-2">
                     <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
-                    <span className="text-sm font-medium">{p.name}</span>
+                    <span className="flex items-center gap-1 text-sm font-medium">
+                      {p.tokenX.symbol}
+                      {p.tokenX.verified && <VerifiedMark />}
+                      <span className="text-muted">-</span>
+                      {p.tokenY.symbol}
+                      {p.tokenY.verified && <VerifiedMark />}
+                    </span>
                     <Badge>bin {p.binStep}</Badge>
-                    {[p.tokenX, p.tokenY].some((t) => !t.verified) && <Badge tone="warning">Unverified token</Badge>}
                   </div>
                   <div className="mt-1.5 grid grid-cols-4 gap-2 text-[12px] tabular-nums">
                     <span><span className="block text-muted">TVL</span>{formatUsd(p.tvl, { compact: true })}</span>

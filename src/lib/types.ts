@@ -266,9 +266,14 @@ export interface ErrorPositionView {
 
 export type PositionView = IdlePositionView | SwapPositionView | LpPositionView | ErrorPositionView;
 
+export type OrganicScoreLabel = "high" | "medium" | "low";
+
 export interface TokenSearchResult extends TokenInfo {
   verified: boolean;
   liquidityUsd: number | null;
+  /** Jupiter organic score, 0–100; null when Jupiter has not scored the token. */
+  organicScore: number | null;
+  organicScoreLabel: OrganicScoreLabel | null;
 }
 
 export interface PoolSearchToken {

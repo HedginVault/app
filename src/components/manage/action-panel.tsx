@@ -9,6 +9,7 @@ import { isOperational } from "@/lib/swap-logic";
 import type { HoldingsView, LpPositionView, VaultDetail } from "@/lib/types";
 import { LiquidityCard } from "./liquidity-card";
 import { ManagePosition } from "./manage-position";
+import { PoweredBy } from "./powered-by";
 import { SwapCard } from "./swap-card";
 
 export function ActionPanel({
@@ -47,6 +48,7 @@ export function ActionPanel({
           value={state.panel}
           onChange={(id) => onPrefill(id === "swap" ? { panel: "swap" } : { panel: "lp" })}
         />
+        <PoweredBy protocol={state.panel === "swap" ? "jupiter" : "meteora"} />
         {!isOperational(v) && (
           <p className="rounded-[10px] border border-amber-200 bg-warning-soft px-3 py-2 text-[12px] text-amber-800">
             {v.protocol.status !== "normal" ? `Protocol is ${v.protocol.status}` : `Vault is ${v.status}`}: strategy actions are disabled.

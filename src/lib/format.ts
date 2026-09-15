@@ -99,3 +99,46 @@ export function parseTokenAmount(input: string, decimals: number): bigint | null
     BigInt(int || "0") * 10n ** BigInt(decimals) + BigInt((frac || "0").padEnd(decimals, "0"));
   return raw;
 }
+
+/** USD value of a base-unit amount, or null when the price is unknown. */
+export function usdValue(raw: string | bigint, decimals: number, priceUsd: number | null): number | null {
+  if (priceUsd === null) return null;
+  return toUiNumber(raw, decimals) * priceUsd;
+}
+
+export function formatUsd(n: number | null, opts: { compact?: boolean } = {}): string {
+  if (n === null || !Number.isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const abs = Math.abs(n);
+  if (abs === 0) return "$0.00";
+  if (abs < 0.01) return `${sign}<$0.01`;
+  if (opts.compact && abs >= 100_000) {
+    const [size, suffix] = abs >= 1e9 ? [1e9, "B"] : abs >= 1e6 ? [1e6, "M"] : [1e3, "K"];
+    return `${sign}$${(abs / size).toFixed(2).replace(/\.?0+$/, "")}${suffix}`;
+  }
+  return `${sign}$${abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** Token prices: two decimals at or above 1, four significant digits below. */
+export function formatPrice(n: number | null): string {
+  if (n === null || !Number.isFinite(n)) return "—";
+  if (Math.abs(n) >= 1) return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Number(n.toPrecision(4)).toString();
+}
+
+export function formatShare(bps: number | null): string {
+  if (bps === null) return "—";
+  if (bps > 0 && bps < 10) return "<0.1%";
+  return `${(bps / 100).toFixed(1)}%`;
+}
+
+/** Fraction digits for display: 2 at or above 1,000, 4 at or above 1, 6 below. */
+export function displayFraction(raw: string | bigint, decimals: number): number {
+  const ui = Math.abs(toUiNumber(raw, decimals));
+  return ui >= 1000 ? 2 : ui >= 1 ? 4 : 6;
+}
+
+/** Base units as a plain decimal string for an input field (no grouping, no trailing zeros). */
+export function rawToInput(raw: string | bigint, decimals: number): string {
+  return formatTokenAmount(raw, decimals).replace(/,/g, "");
+}

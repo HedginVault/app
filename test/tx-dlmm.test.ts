@@ -124,3 +124,36 @@ describe("POST /api/tx/dlmm/initialize", () => {
     expect((await res.json()).error.code).toBe("Validation");
   });
 });
+
+describe("POST /api/tx/dlmm/open validation", () => {
+  const post = async (body: Record<string, unknown>) => {
+    const { POST } = await import("@/app/api/tx/dlmm/open/route");
+    return POST(
+      new Request("http://x/api/tx/dlmm/open", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-forwarded-for": `open-${Math.random()}` },
+        body: JSON.stringify({
+          payer: pk(5).toBase58(), vault: pk(1).toBase58(), lbPair: pk(7).toBase58(),
+          lowerBinId: 0, upperBinId: 10, amountX: "1", amountY: "0", shape: "spot", maxActiveBinSlippage: 5,
+          ...body,
+        }),
+      }),
+    );
+  };
+
+  it("rejects ranges wider than 70 bins", async () => {
+    const res = await post({ lowerBinId: 0, upperBinId: 71 });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.message).toMatch(/70 bins/);
+  });
+
+  it("rejects an empty or inverted range", async () => {
+    expect((await post({ lowerBinId: 5, upperBinId: 5 })).status).toBe(400);
+  });
+
+  it("rejects zero amounts on both sides", async () => {
+    const res = await post({ amountX: "0", amountY: "0" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.message).toMatch(/amount/);
+  });
+});

@@ -50,6 +50,7 @@ defaults to `mainnet-beta`.
 | `NEXT_PUBLIC_PROGRAM_ID` | both | no | Overrides the program id baked into `src/idl/hedge_vault.json`. Used for devnet deployments. |
 | `JUPITER_API_HOST` | server | no | Jupiter API base. Defaults to `https://lite-api.jup.ag` without a key and `https://api.jup.ag` with one. |
 | `JUPITER_API_KEY` | server | no | Sent as `x-api-key`. Raises the rate limit on token metadata, prices and swap instructions. |
+| `METEORA_DLMM_API_HOST` | server | no | Meteora DLMM pool search API base. Defaults to `https://dlmm.datapi.meteora.ag`. |
 
 ## IDL
 
@@ -82,9 +83,9 @@ it means the app builds instructions against a stale program interface.
 | Path | What it is |
 | --- | --- |
 | `/` | Vault list: every vault with TVL, NAV, fees and status. |
-| `/vault/[address]` | Vault detail: metrics, how-it-works, strategy list, your position, deposit and withdraw forms, pending-request panel. |
+| `/vault/[address]` | Vault detail: NAV summary, live allocation by token and by position (logos, USD, share), position cards (Jupiter holdings, DLMM range, fees, bin chart), vault details, your position with deposit/withdraw. |
 | `/manage` | Manager home: the vaults your connected wallet is the authority of, plus the create-vault form. |
-| `/manage/[address]` | Manager console for one vault, behind a guard on `vault.authority`: overview (vault stats and the fee claim), requests, settings, Jupiter and DLMM panels, danger zone (close the vault). |
+| `/manage/[address]` | Manager console behind a guard on `vault.authority`: overview (holdings with per-position actions and a Swap / Liquidity panel whose state lives in the URL), requests, settings, danger zone. |
 
 ### API — reads (GET)
 
@@ -99,6 +100,9 @@ it means the app builds instructions against a stale program interface.
 | `/api/manager/[wallet]` | `ManagerView` — `isManager` plus the vaults that wallet authorizes |
 | `/api/dlmm/pool/[lbPair]` | `PoolInfo` — token X/Y, bin step, active bin id and price |
 | `/api/jupiter/quote?vault=&inputMint=&outputMint=&amount=&slippageBps=` | `QuoteView`, with `slippageBps` clamped to the protocol maximum. `vault` is required: one side of the quote must be that vault's deposit mint, which is the only swap the program will accept. Rate limited per IP. |
+| `/api/vaults/[address]/holdings` | `HoldingsView` — live valuation (keeper rules: deposit units, fees at 90%), token exposure and positions, NAV delta; `partial` when a price is missing. |
+| `/api/tokens/search?query=` | `TokenSearchResult[]` from Jupiter token search, cached 1 h per query, rate limited. |
+| `/api/dlmm/pools/search?query=&page=` | `PoolSearchPage` from Meteora's DLMM data API (logos from Jupiter), cached 60 s, rate limited. |
 
 ### API — transaction builders (POST)
 
@@ -107,7 +111,9 @@ array of them for `resolve-batch`. All take `payer` and, except for vault creati
 routes return more than the transaction: `vault/initialize` returns `BuiltTransaction & { vault }`
 (the PDA the client navigates to) and `dlmm/initialize` returns
 `BuiltTransaction & { position, lowerBinId, upperBinId }` (the generated position key and the range
-the position account will actually store). Every builder is rate limited per IP.
+the position account will actually store). A builder that cannot fit its work in one transaction
+returns the first transaction plus `next: { path, body }` (`BuiltStep`); the client builds it after
+the first confirms. Every builder is rate limited per IP.
 
 | Path | Body beyond `payer`/`vault` | Who may call |
 | --- | --- | --- |
@@ -123,8 +129,9 @@ the position account will actually store). Every builder is rate limited per IP.
 | `/api/tx/withdrawal/resolve` | `withdrawer` | anyone |
 | `/api/tx/resolve-batch` | — | anyone; returns every resolvable request, chunked into transactions |
 | `/api/tx/jupiter/initialize` | `targetMint` | vault authority |
-| `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps` | vault authority |
+| `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps`; initializes the Jupiter strategy for the target mint when missing (`initializesStrategy`) | vault authority |
 | `/api/tx/dlmm/initialize` | `lbPair`, and either `width` or `lowerBinId`/`upperBinId` (at most 70 bins — the DLMM cap for a position created without an extend) | vault authority |
+| `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 70 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/remove` | `position`, `bpsToRemove` | vault authority |
 | `/api/tx/dlmm/claim-fee` | `position` | vault authority |

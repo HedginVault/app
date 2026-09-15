@@ -6,14 +6,17 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, ApiRequestError } from "@/lib/api";
 import { explorerUrl } from "@/lib/constants";
-import type { BuiltTransaction } from "@/lib/types";
+import { runSteps, StepsError, type StepProgress } from "@/lib/tx-steps";
+import type { BuiltStep } from "@/lib/types";
 import { useInvalidateVault } from "./queries";
 
 export interface SendOptions {
   label: string;
-  build: () => Promise<BuiltTransaction | BuiltTransaction[]>;
+  build: () => Promise<BuiltStep | BuiltStep[]>;
   vault?: string;
   onSuccess?: (signatures: string[]) => void;
+  /** Per-transaction progress, for step lists in review dialogs. */
+  onProgress?: (p: StepProgress) => void;
 }
 
 const POLL_MS = 2_000;
@@ -68,12 +71,7 @@ export function useSendTransaction() {
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
-  const send = async ({
-    label,
-    build,
-    vault,
-    onSuccess,
-  }: SendOptions): Promise<string[] | null> => {
+  const send = async ({ label, build, vault, onSuccess, onProgress }: SendOptions): Promise<string[] | null> => {
     if (!publicKey) {
       toast.error("Connect a wallet first");
       return null;
@@ -86,62 +84,61 @@ export function useSendTransaction() {
       toast("A transaction is already in progress");
       return null;
     }
-    const signatures: string[] = [];
-    let total = 0;
+    const payer = publicKey.toBase58();
     const id = toast.loading(`${label}: preparing`);
     inFlight.current = true;
     setPending(true);
     try {
-      const built = await build();
-      const list = Array.isArray(built) ? built : [built];
-      total = list.length;
-      if (total === 0) {
+      const signatures = await runSteps({
+        first: build,
+        buildNext: (next) => api.build(next.path, { ...next.body, payer }),
+        onProgress,
+        execute: async (b, index, report) => {
+          const step = index > 0 || b.next ? ` (step ${index + 1})` : "";
+          report("signing");
+          toast.loading(`${label}${step}: approve in wallet`, { id });
+          const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));
+          report("sending");
+          toast.loading(`${label}${step}: sending`, { id });
+          const { signature } = await api.send(encodeBase64(signed.serialize()));
+          report("confirming");
+          toast.loading(`${label}${step}: confirming`, { id, description: signature });
+          await waitForConfirmation(signature, signed.message.recentBlockhash);
+          return signature;
+        },
+      });
+      if (signatures.length === 0) {
         toast.info(`${label}: nothing to do`, { id });
         return [];
-      }
-      for (const [i, b] of list.entries()) {
-        const step = total > 1 ? ` (${i + 1}/${total})` : "";
-        toast.loading(`${label}${step}: approve in wallet`, { id });
-        const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));
-        toast.loading(`${label}${step}: sending`, { id });
-        const { signature } = await api.send(encodeBase64(signed.serialize()));
-        toast.loading(`${label}${step}: confirming`, { id, description: signature });
-        await waitForConfirmation(signature, signed.message.recentBlockhash);
-        signatures.push(signature);
       }
       toast.success(`${label}: confirmed`, {
         id,
         description: signatures.length === 1 ? signatures[0] : `${signatures.length} transactions`,
         action: {
           label: "Explorer",
-          onClick: () =>
-            window.open(explorerUrl("tx", signatures[signatures.length - 1]), "_blank"),
+          onClick: () => window.open(explorerUrl("tx", signatures[signatures.length - 1]), "_blank"),
         },
       });
       invalidate(vault);
       onSuccess?.(signatures);
       return signatures;
     } catch (e) {
-      // Earlier transactions in a batch may already be on-chain: refresh and hand them back.
-      const partial = signatures.length > 0;
+      const cause = e instanceof StepsError ? e.cause : e;
+      const done = e instanceof StepsError ? e.signatures : [];
+      // Earlier transactions may already be on-chain: refresh and hand them back.
+      const partial = done.length > 0;
       if (partial) invalidate(vault);
-      if (isRejection(e)) {
+      if (isRejection(cause)) {
         toast.dismiss(id);
-        toast(
-          partial
-            ? `Transaction cancelled (${signatures.length}/${total} confirmed)`
-            : "Transaction cancelled",
-        );
-        return partial ? signatures : null;
+        toast(partial ? `Transaction cancelled (${done.length} confirmed)` : "Transaction cancelled");
+        return partial ? done : null;
       }
-      const message = e instanceof Error ? e.message : String(e);
-      const logs = e instanceof ApiRequestError ? e.logs : undefined;
-      const progress = partial ? `${signatures.length}/${total} confirmed before the failure` : "";
-      const description = [progress, message, logs ? logs.slice(-6).join("\n") : ""]
-        .filter(Boolean)
-        .join("\n\n");
+      const message = cause instanceof Error ? cause.message : String(cause);
+      const logs = cause instanceof ApiRequestError ? cause.logs : undefined;
+      const progress = partial ? `${done.length} confirmed before the failure` : "";
+      const description = [progress, message, logs ? logs.slice(-6).join("\n") : ""].filter(Boolean).join("\n\n");
       toast.error(`${label}: failed`, { id, description, duration: 12_000 });
-      return partial ? signatures : null;
+      return partial ? done : null;
     } finally {
       inFlight.current = false;
       setPending(false);

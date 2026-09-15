@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  displayFraction,
   formatBps,
   formatNav,
   formatPercent,
   formatRelative,
   formatTokenAmount,
   parseTokenAmount,
+  rawToInput,
   shortAddress,
   toUiNumber,
+  usdValue,
+  formatUsd,
+  formatPrice,
+  formatShare,
 } from "@/lib/format";
 
 describe("formatTokenAmount", () => {
@@ -69,5 +75,43 @@ describe("parseTokenAmount / toUiNumber", () => {
   });
   it("converts raw to ui number", () => {
     expect(toUiNumber("1500000", 6)).toBe(1.5);
+  });
+});
+
+describe("money formatting", () => {
+  it("usdValue converts base units and propagates null prices", () => {
+    expect(usdValue("2500000", 6, 2)).toBe(5);
+    expect(usdValue(1n, 6, null)).toBeNull();
+  });
+  it("formatUsd", () => {
+    expect(formatUsd(null)).toBe("—");
+    expect(formatUsd(0)).toBe("$0.00");
+    expect(formatUsd(0.004)).toBe("<$0.01");
+    expect(formatUsd(1234.5)).toBe("$1,234.50");
+    expect(formatUsd(1_234_567, { compact: true })).toBe("$1.23M");
+    expect(formatUsd(-12.3)).toBe("-$12.30");
+  });
+  it("formatPrice keeps significant digits for small prices", () => {
+    expect(formatPrice(null)).toBe("—");
+    expect(formatPrice(142.3456)).toBe("142.35");
+    expect(formatPrice(0.000123456)).toBe("0.0001235");
+  });
+  it("formatShare", () => {
+    expect(formatShare(null)).toBe("—");
+    expect(formatShare(3333)).toBe("33.3%");
+    expect(formatShare(4)).toBe("<0.1%");
+  });
+});
+
+describe("amount display helpers", () => {
+  it("displayFraction shrinks precision as amounts grow", () => {
+    expect(displayFraction("1500000000", 6)).toBe(2); // 1,500
+    expect(displayFraction("2500000", 6)).toBe(4); // 2.5
+    expect(displayFraction("2500", 6)).toBe(6); // 0.0025
+  });
+  it("rawToInput writes a plain decimal string", () => {
+    expect(rawToInput("1234500000", 6)).toBe("1234.5");
+    expect(rawToInput(0n, 9)).toBe("0");
+    expect(rawToInput("1", 9)).toBe("0.000000001");
   });
 });

@@ -134,13 +134,27 @@ export interface DlmmStrategyView extends StrategyBase {
   lowerBinId: number;
   upperBinId: number;
   activeBinId: number;
+  binStep: number;
+  /** Human prices (token Y per token X) of the lower, upper and active bins. */
+  lowerPrice: string;
+  upperPrice: string;
+  activePrice: string;
   amountX: string;
   amountY: string;
   pendingFeeX: string;
   pendingFeeY: string;
+  /** Per-bin amounts held by this position, base units. */
+  bins: { binId: number; amountX: string; amountY: string }[];
 }
 
-export type StrategyView = JupiterStrategyView | DlmmStrategyView;
+/** A DLMM strategy whose position could not be read; reported instead of dropped. */
+export interface UnreadableStrategyView extends StrategyBase {
+  type: "unreadable";
+  position: string;
+  reason: string;
+}
+
+export type StrategyView = JupiterStrategyView | DlmmStrategyView | UnreadableStrategyView;
 
 export interface ManagerView {
   isManager: boolean;
@@ -181,3 +195,135 @@ export interface ApiError {
 }
 
 export type DlmmShape = "spot" | "curve" | "bidAsk";
+
+/** A value in deposit base units with its USD estimate and share of the live total. */
+export interface Money {
+  value: string | null;
+  usd: number | null;
+  shareBps: number | null;
+}
+
+export interface TokenExposure extends Money {
+  token: TokenInfo;
+  amount: string;
+}
+
+export interface IdlePositionView extends Money {
+  kind: "idle";
+  token: TokenInfo;
+  amount: string;
+}
+
+export interface SwapPositionView extends Money {
+  kind: "swap";
+  strategy: string;
+  token: TokenInfo;
+  amount: string;
+  lastActionTs: number;
+  closable: boolean;
+}
+
+export interface LpRange {
+  lowerBinId: number;
+  /** Inclusive: the last bin the position owns. */
+  upperBinId: number;
+  activeBinId: number;
+  binStep: number;
+  lowerPrice: string;
+  upperPrice: string;
+  activePrice: string;
+  inRange: boolean;
+}
+
+export interface LpPositionView extends Money {
+  kind: "lp";
+  strategy: string;
+  position: string;
+  lbPair: string;
+  tokenX: TokenInfo;
+  tokenY: TokenInfo;
+  amountX: string;
+  amountY: string;
+  feeX: string;
+  feeY: string;
+  lastActionTs: number;
+  range: LpRange;
+  bins: { binId: number; amountX: string; amountY: string }[];
+  closable: boolean;
+}
+
+/** A strategy whose position could not be read; it has no value. */
+export interface ErrorPositionView {
+  kind: "error";
+  strategy: string;
+  position: string;
+  reason: string;
+  value: null;
+  usd: null;
+  shareBps: null;
+  lastActionTs: number;
+}
+
+export type PositionView = IdlePositionView | SwapPositionView | LpPositionView | ErrorPositionView;
+
+export interface TokenSearchResult extends TokenInfo {
+  verified: boolean;
+  liquidityUsd: number | null;
+}
+
+export interface PoolSearchToken {
+  mint: string;
+  symbol: string;
+  decimals: number;
+  verified: boolean;
+  logo: string | null;
+}
+
+export interface PoolSearchResult {
+  address: string;
+  name: string;
+  tokenX: PoolSearchToken;
+  tokenY: PoolSearchToken;
+  binStep: number;
+  /** Percent, e.g. 0.04 = 0.04 %. */
+  baseFeePct: number;
+  tvl: number;
+  volume24h: number;
+  fees24h: number;
+  /** Percent, 24 h fees / TVL. */
+  feeTvl24h: number;
+  /** Token Y per token X. */
+  currentPrice: number;
+}
+
+export interface PoolSearchPage {
+  total: number;
+  page: number;
+  pages: number;
+  pools: PoolSearchResult[];
+}
+
+export interface HoldingsView {
+  depositToken: TokenInfo;
+  /** Live estimate, deposit base units. */
+  totalValue: string;
+  totalUsd: number | null;
+  /** On-chain NAV total assets, for comparison. */
+  navTotalAssets: string;
+  navDeltaBps: number | null;
+  partial: boolean;
+  /** Symbols of tokens with no price. */
+  unpriced: string[];
+  tokens: TokenExposure[];
+  positions: PositionView[];
+}
+
+/** A follow-up transaction the client builds after the previous one confirms. `body` excludes `payer`. */
+export interface NextStep {
+  path: string;
+  body: Record<string, unknown>;
+}
+
+export interface BuiltStep extends BuiltTransaction {
+  next?: NextStep;
+}

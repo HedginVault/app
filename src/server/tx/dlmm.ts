@@ -1,25 +1,28 @@
 import "server-only";
 import type { IdlTypes, Program } from "@coral-xyz/anchor";
-import type DLMM from "@meteora-ag/dlmm";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { DlmmShape, PoolInfo } from "@/lib/types";
 import { cached } from "../cache";
 import {
+  deriveBinArray,
   getActiveBinIds,
   getBinArrayAccountMetasCoverage,
+  getBinArrayIndexesCoverage,
   getPool,
   StrategyType,
   toStrategyParameters,
+  type DLMM,
   type StrategyTypeValue,
 } from "../dlmm-pool";
 import { getConfigPda, getStrategyPda } from "../pda";
-import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, MEMO_PROGRAM_ID, getProgram } from "../program";
+import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, MEMO_PROGRAM_ID, getConnection, getProgram } from "../program";
+import { getMultipleAccounts } from "../rpc";
 import { getTokenInfos } from "../tokens";
 import type { VaultCtx } from "./context";
 
@@ -74,35 +77,23 @@ export const readPoolInfo = (address: string) => {
   });
 };
 
-/**
- * Accounts and remaining accounts shared by the liquidity and claim-fee builders (port of
- * `tests/handler/dlmm.ts`). The lbPair comes off the position account, so callers only name the
- * position. Costs 1 RPC for the position plus the pool hydration (cached 5 minutes).
- */
-export async function getDlmmContext(vault: PublicKey, position: PublicKey, payer: PublicKey) {
-  const program = getProgram();
-  const positionAccount = await program.account.positionV2.fetch(position);
-  const lbPair = positionAccount.lbPair;
-  const dlmm = await getPool(lbPair);
-  const { lowerBinId, upperBinId } = positionAccount;
+export type DlmmContext = ReturnType<typeof dlmmContextFor>;
 
+/** Accounts and remaining accounts for a position over `[lowerBinId, upperBinId]` (inclusive) in `dlmm`. No I/O. */
+export function dlmmContextFor(
+  vault: PublicKey,
+  position: PublicKey,
+  payer: PublicKey,
+  dlmm: DLMM,
+  lowerBinId: number,
+  upperBinId: number,
+) {
+  const lbPair = dlmm.pubkey;
   const vaultTokenX = getAssociatedTokenAddressSync(dlmm.tokenX.publicKey, vault, true, dlmm.tokenX.owner);
   const vaultTokenY = getAssociatedTokenAddressSync(dlmm.tokenY.publicKey, vault, true, dlmm.tokenY.owner);
   const createAtaIxs = [
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      vaultTokenX,
-      vault,
-      dlmm.tokenX.publicKey,
-      dlmm.tokenX.owner,
-    ),
-    createAssociatedTokenAccountIdempotentInstruction(
-      payer,
-      vaultTokenY,
-      vault,
-      dlmm.tokenY.publicKey,
-      dlmm.tokenY.owner,
-    ),
+    createAssociatedTokenAccountIdempotentInstruction(payer, vaultTokenX, vault, dlmm.tokenX.publicKey, dlmm.tokenX.owner),
+    createAssociatedTokenAccountIdempotentInstruction(payer, vaultTokenY, vault, dlmm.tokenY.publicKey, dlmm.tokenY.owner),
   ];
 
   const transferHookX = dlmm.tokenX.transferHookAccountMetas;
@@ -138,6 +129,16 @@ export async function getDlmmContext(vault: PublicKey, position: PublicKey, paye
   return { dlmm, lowerBinId, upperBinId, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts };
 }
 
+/**
+ * Context for an existing position (port of `tests/handler/dlmm.ts`): the lbPair and range come off
+ * the position account. Costs 1 RPC for the position plus the pool hydration (cached 5 minutes).
+ */
+export async function getDlmmContext(vault: PublicKey, position: PublicKey, payer: PublicKey) {
+  const positionAccount = await getProgram().account.positionV2.fetch(position);
+  const dlmm = await getPool(positionAccount.lbPair);
+  return dlmmContextFor(vault, position, payer, dlmm, positionAccount.lowerBinId, positionAccount.upperBinId);
+}
+
 /** The position account is created by the DLMM program, so the caller must sign for the new keypair. */
 export async function dlmmInitializePositionIx(
   program: P,
@@ -170,18 +171,21 @@ const SHAPES: Record<DlmmShape, StrategyTypeValue> = {
   bidAsk: StrategyType.BidAsk,
 };
 
-export async function dlmmAddLiquidityIx(
+/** Add liquidity over a known range, for a position that may not exist on-chain yet. */
+export async function dlmmAddLiquidityForRangeIx(
   program: P,
   ctx: VaultCtx,
   authority: PublicKey,
   position: PublicKey,
+  dlmm: DLMM,
+  lowerBinId: number,
+  upperBinIdInclusive: number,
   amountX: BN,
   amountY: BN,
   shape: DlmmShape,
   maxActiveBinSlippage: number,
-) {
-  const { dlmm, lowerBinId, upperBinId, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } =
-    await getDlmmContext(ctx.key, position, authority);
+): Promise<TransactionInstruction[]> {
+  const c = dlmmContextFor(ctx.key, position, authority, dlmm, lowerBinId, upperBinIdInclusive);
   const activeId = (await getActiveBinIds([dlmm])).get(dlmm.pubkey.toBase58()) ?? dlmm.lbPair.activeId;
   const ix = await program.methods
     .meteoraDlmmAddLiquidity({
@@ -192,16 +196,46 @@ export async function dlmmAddLiquidityIx(
         maxActiveBinSlippage,
         strategyParameters: toStrategyParameters({
           minBinId: lowerBinId,
-          maxBinId: upperBinId,
+          maxBinId: upperBinIdInclusive,
           strategyType: SHAPES[shape],
         }),
       },
-      remainingAccountsInfo,
+      remainingAccountsInfo: c.remainingAccountsInfo,
     })
-    .accounts({ ...accounts, authority })
-    .remainingAccounts(remainingAccounts)
+    .accounts({ ...c.accounts, authority })
+    .remainingAccounts(c.remainingAccounts)
     .instruction();
-  return [...createAtaIxs, ix];
+  return [...c.createAtaIxs, ix];
+}
+
+export async function dlmmAddLiquidityIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  amountX: BN,
+  amountY: BN,
+  shape: DlmmShape,
+  maxActiveBinSlippage: number,
+) {
+  const { dlmm, lowerBinId, upperBinId } = await getDlmmContext(ctx.key, position, authority);
+  return dlmmAddLiquidityForRangeIx(
+    program, ctx, authority, position, dlmm, lowerBinId, upperBinId, amountX, amountY, shape, maxActiveBinSlippage,
+  );
+}
+
+/** Instructions creating any bin array the range needs that does not exist yet (1 batched RPC). */
+export async function missingBinArrayIxs(
+  dlmm: DLMM,
+  lowerBinId: number,
+  upperBinIdInclusive: number,
+  funder: PublicKey,
+): Promise<TransactionInstruction[]> {
+  const indexes = getBinArrayIndexesCoverage(new BN(lowerBinId), new BN(upperBinIdInclusive));
+  const keys = indexes.map((i) => deriveBinArray(dlmm.pubkey, i, DLMM_PROGRAM_ID)[0]);
+  const infos = await getMultipleAccounts(getConnection(), keys);
+  const missing = indexes.filter((_, i) => !infos[i]);
+  return missing.length ? dlmm.initializeBinArrays(missing, funder) : [];
 }
 
 export async function dlmmRemoveLiquidityIx(

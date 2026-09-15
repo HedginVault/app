@@ -1,37 +1,44 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import { z } from "zod";
-import { getProgram } from "@/server/program";
+import { ApiError } from "@/server/errors";
+import { getStrategyPda } from "@/server/pda";
+import { getConnection, getProgram } from "@/server/program";
 import { readConfig } from "@/server/readers/vaults";
-import { amountString, handlePost, pubkey } from "@/server/route";
+import { handlePost } from "@/server/route";
 import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
-import { jupiterSwapIx } from "@/server/tx/jupiter";
+import { jupiterInitializeIx, jupiterSwapIx } from "@/server/tx/jupiter";
+import { swapNextStep } from "@/server/tx/next-steps";
+import { jupiterSwapBody } from "@/server/tx/schemas";
+import { fitsInTransaction, swapPlan } from "@/server/tx/size";
 
-export const POST = handlePost(
-  z.object({
-    payer: pubkey,
-    vault: pubkey,
-    sourceMint: pubkey,
-    destinationMint: pubkey,
-    amount: amountString,
-    slippageBps: z.number().int().min(1).max(10_000),
-  }),
-  async (b) => {
-    const authority = new PublicKey(b.payer);
-    const ctx = await loadVaultCtx(b.vault);
-    assertAuthority(ctx, authority);
-    const config = await readConfig();
-    const slippage = Math.min(b.slippageBps, config.maxSlippageBps);
-    const { ix, lookupTables } = await jupiterSwapIx(
-      getProgram(),
-      ctx,
-      authority,
-      new PublicKey(b.sourceMint),
-      new PublicKey(b.destinationMint),
-      new BN(b.amount),
-      slippage,
-    );
-    return assemble(authority, [ix], { lookupTables });
-  },
-);
+export const POST = handlePost(jupiterSwapBody, async (b) => {
+  const authority = new PublicKey(b.payer);
+  const ctx = await loadVaultCtx(b.vault);
+  assertAuthority(ctx, authority);
+  const source = new PublicKey(b.sourceMint);
+  const destination = new PublicKey(b.destinationMint);
+  if (source.equals(destination))
+    throw new ApiError(400, "Validation", "sourceMint and destinationMint must differ");
+  if (source.equals(ctx.depositMint) === destination.equals(ctx.depositMint))
+    throw new ApiError(400, "Validation", "one side of the swap must be the vault deposit mint");
+
+  const config = await readConfig();
+  const slippage = Math.min(b.slippageBps, config.maxSlippageBps);
+  const targetMint = source.equals(ctx.depositMint) ? destination : source;
+  const program = getProgram();
+
+  // The strategy PDA must exist before `jupiter_swap`; the first swap into a token creates it.
+  const exists = (await getConnection().getAccountInfo(getStrategyPda(ctx.key, targetMint))) !== null;
+  const { ix, lookupTables } = await jupiterSwapIx(program, ctx, authority, source, destination, new BN(b.amount), slippage);
+  const init = exists ? null : await jupiterInitializeIx(program, ctx, authority, targetMint);
+
+  switch (swapPlan(exists, init !== null && fitsInTransaction(authority, [init, ix], lookupTables))) {
+    case "swap":
+      return { ...(await assemble(authority, [ix], { lookupTables })), initializesStrategy: false };
+    case "initAndSwap":
+      return { ...(await assemble(authority, [init!, ix], { lookupTables })), initializesStrategy: true };
+    case "initThenSwap":
+      return { ...(await assemble(authority, [init!])), initializesStrategy: true, next: swapNextStep(b) };
+  }
+});

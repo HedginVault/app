@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TokenAmount } from "@/components/token/token-amount";
 import { Address } from "@/components/ui/address";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Table, Td, Th } from "@/components/ui/table";
 import { useRequests } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
-import { formatRelative, formatTokenAmount } from "@/lib/format";
+import { formatRelative, formatTokenAmount, usdValue } from "@/lib/format";
 import type { BuiltTransaction, RequestState, VaultDetail } from "@/lib/types";
 
 const StateBadge = ({ state }: { state: RequestState }) => (
@@ -96,7 +97,12 @@ export function RequestsTab({ v, owner }: { v: VaultDetail; owner: string }) {
                         <Address value={r.owner} />
                       </Td>
                       <Td className="text-right">
-                        {formatTokenAmount(r.amount, v.depositDecimals)} {v.depositSymbol}
+                        <TokenAmount
+                          raw={r.amount}
+                          token={{ symbol: v.depositSymbol, decimals: v.depositDecimals }}
+                          usd={usdValue(r.amount, v.depositDecimals, v.depositPriceUsd)}
+                          align="right"
+                        />
                       </Td>
                       <Td>{r.epoch}</Td>
                       <Td className="text-muted">{formatRelative(r.createdTs)}</Td>

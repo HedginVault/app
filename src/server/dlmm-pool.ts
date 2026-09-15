@@ -19,7 +19,13 @@ const DLMM = (sdk.default ?? (sdk as unknown as Sdk["default"])) as Sdk["default
  * Named SDK helpers, re-exported off the same CJS handle. Nothing outside this module may
  * `import ... from "@meteora-ag/dlmm"` at runtime: the ESM entry breaks the Next build.
  */
-export const { getBinArrayAccountMetasCoverage, StrategyType, toStrategyParameters } = sdk;
+export const {
+  deriveBinArray,
+  getBinArrayAccountMetasCoverage,
+  getBinArrayIndexesCoverage,
+  StrategyType,
+  toStrategyParameters,
+} = sdk;
 /** The enum's value type (the re-exported `StrategyType` const only carries the value meaning). */
 export type StrategyTypeValue = import("@meteora-ag/dlmm").StrategyType;
 export type { DLMM };

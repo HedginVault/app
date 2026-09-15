@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState } from "react";
+import { Suspense, use, useState } from "react";
 import { DangerZone } from "@/components/manage/danger-zone";
-import { DlmmPanel } from "@/components/manage/dlmm-panel";
 import { ManagerGuard } from "@/components/manage/guard";
-import { JupiterPanel } from "@/components/manage/jupiter-panel";
 import { OverviewTab } from "@/components/manage/overview-tab";
 import { RequestsTab } from "@/components/manage/requests-tab";
 import { SettingsTab } from "@/components/manage/settings-tab";
@@ -15,22 +13,20 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs } from "@/components/ui/tabs";
-import { useStrategies, useVault } from "@/hooks/queries";
+import { useVault } from "@/hooks/queries";
 
-type Tab = "overview" | "settings" | "requests" | "strategies" | "danger";
+type Tab = "overview" | "requests" | "settings" | "danger";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "settings", label: "Settings" },
   { id: "requests", label: "Requests" },
-  { id: "strategies", label: "Strategies" },
+  { id: "settings", label: "Settings" },
   { id: "danger", label: "Danger zone" },
 ];
 
 export default function ManageVaultPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params);
   const vault = useVault(address);
-  const strategies = useStrategies(address);
   const [tab, setTab] = useState<Tab>("overview");
 
   if (vault.error) {
@@ -70,34 +66,14 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
       <ManagerGuard vault={v}>
         {(owner) => (
           <div className="space-y-6">
-            <div className="max-w-2xl">
+            <div className="max-w-xl">
               <Tabs tabs={TABS} value={tab} onChange={setTab} />
             </div>
-            {tab === "overview" && <OverviewTab v={v} owner={owner} />}
-            {tab === "settings" && <SettingsTab v={v} owner={owner} />}
+            <Suspense fallback={<Skeleton className="h-96" />}>
+              {tab === "overview" && <OverviewTab v={v} owner={owner} />}
+            </Suspense>
             {tab === "requests" && <RequestsTab v={v} owner={owner} />}
-            {tab === "strategies" &&
-              (strategies.error ? (
-                <ErrorState
-                  message={strategies.error.message}
-                  onRetry={() => void strategies.refetch()}
-                />
-              ) : !strategies.data ? (
-                <Skeleton className="h-64" />
-              ) : (
-                <div className="space-y-6">
-                  <JupiterPanel
-                    v={v}
-                    owner={owner}
-                    strategies={strategies.data.filter((s) => s.type === "jupiter")}
-                  />
-                  <DlmmPanel
-                    v={v}
-                    owner={owner}
-                    strategies={strategies.data.filter((s) => s.type === "dlmm")}
-                  />
-                </div>
-              ))}
+            {tab === "settings" && <SettingsTab v={v} owner={owner} />}
             {tab === "danger" && <DangerZone v={v} owner={owner} />}
           </div>
         )}

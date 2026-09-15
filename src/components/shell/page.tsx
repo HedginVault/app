@@ -25,7 +25,7 @@ export const Page = ({
     {aside ? (
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-6">{children}</div>
-        <div className="lg:sticky lg:top-24 lg:self-start">{aside}</div>
+        <div className="order-first lg:order-none lg:sticky lg:top-24 lg:self-start">{aside}</div>
       </div>
     ) : (
       children

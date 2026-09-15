@@ -2,12 +2,15 @@ import type {
   ApiError,
   BuiltTransaction,
   ConfigView,
+  HoldingsView,
   ManagerView,
   PoolInfo,
+  PoolSearchPage,
   QuoteView,
   RequestQueue,
   SentTransaction,
   StrategyView,
+  TokenSearchResult,
   TransactionStatus,
   UserPosition,
   VaultDetail,
@@ -73,6 +76,7 @@ export const api = {
     get<RequestQueue>(`/api/vaults/${address}/requests`, o),
   strategies: (address: string, o?: GetOptions) =>
     get<StrategyView[]>(`/api/vaults/${address}/strategies`, o),
+  holdings: (address: string, o?: GetOptions) => get<HoldingsView>(`/api/vaults/${address}/holdings`, o),
   manager: (wallet: string, o?: GetOptions) => get<ManagerView>(`/api/manager/${wallet}`, o),
   pool: (lbPair: string) => get<PoolInfo>(`/api/dlmm/pool/${lbPair}`),
   quote: (q: QuoteParams) =>
@@ -84,4 +88,8 @@ export const api = {
   send: (transaction: string) => post<SentTransaction>("/api/tx/send", { transaction }),
   txStatus: (signature: string, blockhash: string) =>
     get<TransactionStatus>(`/api/tx/status?signature=${signature}&blockhash=${blockhash}`),
+  searchTokens: (query: string) =>
+    get<TokenSearchResult[]>(`/api/tokens/search?query=${encodeURIComponent(query)}`),
+  searchPools: (query: string, page = 1) =>
+    get<PoolSearchPage>(`/api/dlmm/pools/search?query=${encodeURIComponent(query)}&page=${page}`),
 };

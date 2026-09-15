@@ -8,16 +8,18 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TokenLogo } from "@/components/token/token-logo";
+import { HoldingsSection } from "@/components/holdings/holdings-section";
+import { SummaryStrip } from "@/components/holdings/summary-strip";
+import { VaultDetails } from "@/components/holdings/vault-details";
 import { HowItWorks } from "@/components/vault/how-it-works";
-import { Metrics } from "@/components/vault/metrics";
 import { PositionPanel } from "@/components/vault/position-panel";
-import { StrategyList } from "@/components/vault/strategy-list";
-import { useStrategies, useVault } from "@/hooks/queries";
+import { useHoldings, useVault } from "@/hooks/queries";
 
 export default function VaultPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params);
   const vault = useVault(address);
-  const strategies = useStrategies(address);
+  const holdings = useHoldings(address);
 
   if (vault.error) {
     return (
@@ -40,6 +42,7 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
     <Page
       title={
         <span className="flex flex-wrap items-center gap-3">
+          <TokenLogo token={{ symbol: v.depositSymbol, logo: v.depositLogo }} size="lg" />
           {v.name}
           <StatusBadge status={v.status} />
           {v.metadata?.tags.map((t) => <Badge key={t}>{t}</Badge>)}
@@ -63,11 +66,9 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
           </CardBody>
         </Card>
       )}
-      <Metrics v={v} />
-      <Card>
-        <CardHeader title="Strategies" description="Where the vault's capital is currently deployed" />
-        {strategies.error ? <p className="px-5 py-4 text-sm text-danger">{strategies.error.message}</p> : !strategies.data ? <Skeleton className="m-5 h-16" /> : <StrategyList strategies={strategies.data} />}
-      </Card>
+      <SummaryStrip v={v} holdings={holdings.data} />
+      <HoldingsSection address={address} />
+      <VaultDetails v={v} />
       <Card>
         <CardHeader title="How requests work" />
         <HowItWorks />

@@ -127,3 +127,9 @@ export async function getTokenInfos(mints: PublicKey[]): Promise<Map<string, Tok
 }
 
 export const getTokenInfo = async (mint: PublicKey) => (await getTokenInfos([mint])).get(mint.toBase58())!;
+
+/** Logos only, from the Jupiter metadata cache (no RPC); unknown mints map to null. */
+export async function getTokenLogos(mints: string[]): Promise<Map<string, string | null>> {
+  const meta = await getMetadata([...new Set(mints)]);
+  return new Map(mints.map((m) => [m, meta.get(m)?.icon ?? null]));
+}

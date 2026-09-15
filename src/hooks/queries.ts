@@ -9,10 +9,12 @@ export const queryKeys = {
   vault: (address: string) => ["vault", address] as const,
   position: (address: string, owner: string) => ["position", address, owner] as const,
   requests: (address: string) => ["requests", address] as const,
-  strategies: (address: string) => ["strategies", address] as const,
+  holdings: (address: string) => ["holdings", address] as const,
   manager: (wallet: string) => ["manager", wallet] as const,
   pool: (lbPair: string) => ["pool", lbPair] as const,
   quote: (q: QuoteParams) => ["quote", q] as const,
+  tokenSearch: (q: string) => ["tokenSearch", q] as const,
+  poolSearch: (q: string, page: number) => ["poolSearch", q, page] as const,
 };
 
 const REFRESH = 20_000;
@@ -67,10 +69,10 @@ export const useRequests = (address: string) =>
     refetchInterval: REFRESH,
   });
 
-export const useStrategies = (address: string) =>
+export const useHoldings = (address: string) =>
   useQuery({
-    queryKey: queryKeys.strategies(address),
-    queryFn: () => api.strategies(address, takeFresh(queryKeys.strategies(address))),
+    queryKey: queryKeys.holdings(address),
+    queryFn: () => api.holdings(address, takeFresh(queryKeys.holdings(address))),
     refetchInterval: REFRESH,
   });
 
@@ -98,6 +100,25 @@ export const useQuote = (q: QuoteParams, enabled: boolean) =>
     staleTime: 10_000,
   });
 
+export const useTokenSearch = (query: string) =>
+  useQuery({
+    queryKey: queryKeys.tokenSearch(query.trim()),
+    queryFn: () => api.searchTokens(query.trim()),
+    enabled: query.trim() !== "",
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+export const usePoolSearch = (query: string, page = 1) =>
+  useQuery({
+    queryKey: queryKeys.poolSearch(query.trim(), page),
+    queryFn: () => api.searchPools(query.trim(), page),
+    enabled: query.trim() !== "",
+    staleTime: 60_000,
+    retry: false,
+    placeholderData: (prev) => prev,
+  });
+
 /** Invalidates everything derived from one vault after a confirmed transaction. */
 export function useInvalidateVault() {
   const client = useQueryClient();
@@ -111,7 +132,7 @@ export function useInvalidateVault() {
       queryKeys.vault(address),
       ["position", address],
       queryKeys.requests(address),
-      queryKeys.strategies(address),
+      queryKeys.holdings(address),
     ] as const) {
       markFresh(key);
       void client.invalidateQueries({ queryKey: key });

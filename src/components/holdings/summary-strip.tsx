@@ -12,7 +12,7 @@ export function SummaryStrip({ v, holdings: h }: { v: VaultDetail; holdings: Hol
   const partial = h?.partial ?? false;
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Stat label="Total assets (NAV)" value={t(v.totalAssets)} sub={formatUsd(usdValue(v.totalAssets, v.depositDecimals, v.depositPriceUsd))} />
+      <Stat label="Total assets" value={t(v.totalAssets)} sub={formatUsd(usdValue(v.totalAssets, v.depositDecimals, v.depositPriceUsd))} />
       <Stat
         label="Live value"
         value={h ? formatUsd(h.totalUsd) : <Skeleton className="h-6 w-24" />}
@@ -30,7 +30,7 @@ export function SummaryStrip({ v, holdings: h }: { v: VaultDetail; holdings: Hol
         }
         tone={!partial && delta != null && delta <= -100 ? "warning" : undefined}
       />
-      <Stat label="NAV per share" value={formatNav(v.navPerShare)} sub={`High-water mark ${formatNav(v.highWaterMark)}`} />
+      <Stat label="Share price" value={formatNav(v.navPerShare)} sub={`High-water mark ${formatNav(v.highWaterMark)}`} />
       <Stat
         label="Deployed"
         value={partial || deployedBps == null ? "—" : `${(deployedBps / 100).toFixed(1)}%`}

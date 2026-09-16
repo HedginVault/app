@@ -11,14 +11,14 @@ export function Address({ value, chars = 4 }: { value: string; chars?: number })
         href={explorerUrl("address", value)}
         target="_blank"
         rel="noreferrer"
-        className="text-slate-700 underline-offset-2 hover:underline"
+        className="text-white/80 underline-offset-2 hover:underline"
       >
         {shortAddress(value, chars)}
       </a>
       <button
         type="button"
         aria-label="Copy address"
-        className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        className="rounded p-0.5 text-white/40 hover:bg-white/[0.06] hover:text-white/80"
         onClick={() =>
           navigator.clipboard.writeText(value).then(() => toast("Address copied"))
         }

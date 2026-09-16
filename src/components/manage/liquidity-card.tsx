@@ -209,7 +209,7 @@ function ConfigurePosition({
 
   const shortfall = (token: TokenInfo, amount: bigint | null, bal: bigint) =>
     amount !== null && amount > bal && token.mint !== deposit.mint ? (
-      <div className="flex items-center justify-between rounded-[10px] bg-warning-soft px-3 py-2 text-[12px] text-amber-800">
+      <div className="flex items-center justify-between rounded-[10px] bg-warning-soft px-3 py-2 text-[12px] text-amber-200">
         <span>Vault holds {formatTokenAmount(bal, token.decimals, { maxFraction: 4 })} {token.symbol}</span>
         <Button
           size="sm"

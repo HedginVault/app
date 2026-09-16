@@ -105,7 +105,7 @@ export function ManagePosition({
             usd={amountY ? usdValue(amountY, y.decimals, y.priceUsd) : undefined}
             error={!sides.y ? `Position range is above the price: ${y.symbol} not used` : amountY === null ? "Invalid amount" : null} />
           {addShort && (
-            <div className="flex items-center justify-between rounded-[10px] bg-warning-soft px-3 py-2 text-[12px] text-amber-800">
+            <div className="flex items-center justify-between rounded-[10px] bg-warning-soft px-3 py-2 text-[12px] text-amber-200">
               <span>Not enough in the vault</span>
               <Button size="sm" variant="secondary" onClick={() => onSwapFor({ to: (amountX ?? 0n) > balX ? x.mint : y.mint })}>
                 Swap for {(amountX ?? 0n) > balX ? x.symbol : y.symbol}

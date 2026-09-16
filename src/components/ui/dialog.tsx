@@ -38,25 +38,25 @@ export function Dialog({
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        "m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-border bg-surface p-0 text-foreground shadow-xl backdrop:bg-slate-900/40",
+        "m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-border bg-surface p-0 text-foreground shadow-xl backdrop:bg-black/70",
         className,
       )}
     >
       {open && (
         <div className="flex max-h-[85vh] flex-col">
-          <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+          <header className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h2 className="font-serif text-2xl">{title}</h2>
             <button
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-md p-1 text-white/40 hover:bg-white/[0.06] hover:text-white/80"
             >
               ✕
             </button>
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <footer className="border-t border-border px-5 py-3.5">{footer}</footer>}
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+          {footer && <footer className="border-t border-border px-6 py-4">{footer}</footer>}
         </div>
       )}
     </dialog>

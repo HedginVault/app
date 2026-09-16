@@ -5,21 +5,26 @@ export const Page = ({
   description,
   children,
   aside,
+  action,
 }: {
   title?: ReactNode;
   description?: ReactNode;
   children: ReactNode;
   aside?: ReactNode;
+  action?: ReactNode;
 }) => (
-  <main className="mx-auto w-full max-w-6xl px-6 py-8">
+  <main className="mx-auto w-full max-w-6xl px-6 pt-10 pb-24">
     {(title || description) && (
-      <div className="mb-6">
-        {title && (
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        )}
-        {description && (
-          <div className="mt-1 text-sm text-muted">{description}</div>
-        )}
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          {title && (
+            <h1 className="font-serif text-4xl tracking-tight md:text-5xl">{title}</h1>
+          )}
+          {description && (
+            <div className="mt-3 text-white/60">{description}</div>
+          )}
+        </div>
+        {action}
       </div>
     )}
     {aside ? (

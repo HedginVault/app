@@ -55,7 +55,7 @@ export function PoolSelect({
         <button
           type="button"
           onClick={() => onSelect({ address: pasted } as PoolSearchResult)}
-          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-emerald-300 hover:bg-slate-50"
+          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-emerald-400/40 hover:bg-white/[0.03]"
         >
           Open pool {shortAddress(pasted)}
         </button>
@@ -79,7 +79,7 @@ export function PoolSelect({
                 <button
                   type="button"
                   onClick={() => onSelect(p)}
-                  className="w-full rounded-card border border-border px-3 py-2.5 text-left hover:border-emerald-300 hover:bg-slate-50"
+                  className="w-full rounded-card border border-border px-3 py-2.5 text-left hover:border-emerald-400/40 hover:bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-2">
                     <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
@@ -99,7 +99,7 @@ export function PoolSelect({
                     <span><span className="block text-muted">24h fee/TVL</span>{p.feeTvl24h.toFixed(2)}%</span>
                   </div>
                   {held.length > 0 && (
-                    <div className="mt-1.5 text-[12px] text-emerald-700">Vault holds {held.map((t) => t.symbol).join(" / ")}</div>
+                    <div className="mt-1.5 text-[12px] text-emerald-400">Vault holds {held.map((t) => t.symbol).join(" / ")}</div>
                   )}
                 </button>
               </li>

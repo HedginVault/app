@@ -1,4 +1,3 @@
-import { Card, CardHeader } from "@/components/ui/card";
 import { formatBps, formatDate, formatRelative, formatTokenAmount } from "@/lib/format";
 import type { VaultDetail } from "@/lib/types";
 import { capHeadroom, epochOf, feeSchedule, nextEpochStart } from "@/lib/vault-logic";
@@ -37,16 +36,13 @@ export function VaultDetails({ v }: { v: VaultDetail }) {
     ],
   ];
   return (
-    <Card>
-      <CardHeader title="Vault details" />
-      <dl className="divide-y divide-border">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-0.5 px-5 py-2.5 text-[13px] sm:flex-row sm:justify-between sm:gap-6">
-            <dt className="text-muted">{label}</dt>
-            <dd className="tabular-nums sm:text-right">{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </Card>
+    <dl className="divide-y divide-border">
+      {rows.map(([label, value]) => (
+        <div key={label} className="flex flex-col gap-0.5 py-3 text-sm sm:flex-row sm:justify-between sm:gap-6">
+          <dt className="text-muted">{label}</dt>
+          <dd className="tabular-nums sm:text-right">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

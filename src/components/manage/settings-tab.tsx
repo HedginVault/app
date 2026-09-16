@@ -99,7 +99,7 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
       />
       <CardBody>
         {scheduled && !scheduled.applied && (
-          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-800">
+          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
             A fee change to {formatBps(scheduled.performanceFeeBps)} performance /{" "}
             {formatBps(scheduled.managementFeeBps)} management is scheduled for{" "}
             {formatDate(scheduled.effectiveTs)}. Submitting new fees replaces it.
@@ -172,7 +172,7 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
               Reset
             </Button>
             {feeIncrease && (
-              <span className="text-[13px] text-amber-700">
+              <span className="text-[13px] text-amber-300">
                 Fee increase: effective{" "}
                 {formatDate(Math.floor(now) + FEE_INCREASE_DELAY)}
               </span>

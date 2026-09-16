@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import type { MenuItem } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Stat } from "@/components/ui/stat";
 import { useHoldings } from "@/hooks/queries";
 import { usePanel } from "@/hooks/use-panel";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
@@ -84,32 +83,41 @@ export function OverviewTab({ v, owner }: { v: VaultDetail; owner: string }) {
   return (
     <div className="space-y-6">
       <SummaryStrip v={v} holdings={holdings.data} />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Pending deposits" value={t(v.pendingDeposits)} tone={BigInt(v.pendingDeposits) > 0n ? "warning" : undefined} />
-        <Stat label="Pending withdrawals" value={sh(v.pendingWithdrawalShares)} tone={BigInt(v.pendingWithdrawalShares) > 0n ? "warning" : undefined} />
-        <Stat label="Epoch outflow" value={t(v.epochOutflow)} sub={`Cap ${t(outflowCap(v).toString())} (${formatBps(v.protocol.maxEpochOutflowBps)})`} />
-        <Stat
-          label="Manager fee"
-          value={sh(v.unclaimedManagerFeeShares)}
-          sub={
-            <Button
-              size="sm"
-              variant="secondary"
-              className="mt-1"
-              disabled={unclaimed === 0n}
-              loading={pending}
-              onClick={() =>
-                void send({
-                  label: "Claim manager fee",
-                  vault: v.address,
-                  build: () => api.build("vault/claim-fee", { payer: owner, vault: v.address }),
-                })
-              }
-            >
-              Claim
-            </Button>
-          }
-        />
+      {/* secondary numbers: one quiet line instead of another row of cards */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-card border border-border bg-white/[0.02] px-6 py-4 text-sm">
+        <span>
+          <span className="text-muted">Pending deposits </span>
+          <span className={cn("tabular-nums", BigInt(v.pendingDeposits) > 0n && "text-amber-300")}>{t(v.pendingDeposits)}</span>
+        </span>
+        <span>
+          <span className="text-muted">Pending withdrawals </span>
+          <span className={cn("tabular-nums", BigInt(v.pendingWithdrawalShares) > 0n && "text-amber-300")}>{sh(v.pendingWithdrawalShares)}</span>
+        </span>
+        <span title={`Cap ${t(outflowCap(v).toString())} (${formatBps(v.protocol.maxEpochOutflowBps)})`}>
+          <span className="text-muted">Outflow this epoch </span>
+          <span className="tabular-nums">{t(v.epochOutflow)}</span>
+        </span>
+        <span className="ml-auto flex items-center gap-3">
+          <span>
+            <span className="text-muted">Your fees </span>
+            <span className="tabular-nums">{sh(v.unclaimedManagerFeeShares)}</span>
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={unclaimed === 0n}
+            loading={pending}
+            onClick={() =>
+              void send({
+                label: "Claim manager fee",
+                vault: v.address,
+                build: () => api.build("vault/claim-fee", { payer: owner, vault: v.address }),
+              })
+            }
+          >
+            Claim
+          </Button>
+        </span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">

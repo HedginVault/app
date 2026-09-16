@@ -18,10 +18,10 @@ export function PriceRangeLine({
   const pos = span > 0 ? Math.min(1, Math.max(0, (active - lower) / span)) : 0.5;
   return (
     <div>
-      <div className="relative h-1.5 rounded-full bg-slate-100">
-        <div className={inRange ? "absolute inset-0 rounded-full bg-emerald-200" : "absolute inset-0 rounded-full bg-amber-100"} />
+      <div className="relative h-1.5 rounded-full bg-white/[0.06]">
+        <div className={inRange ? "absolute inset-0 rounded-full bg-emerald-400/25" : "absolute inset-0 rounded-full bg-amber-400/15"} />
         <div
-          className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface ${inRange ? "bg-emerald-600" : "bg-amber-500"}`}
+          className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface ${inRange ? "bg-emerald-400" : "bg-amber-500"}`}
           style={{ left: `${pos * 100}%` }}
         />
       </div>

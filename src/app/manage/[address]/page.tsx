@@ -53,12 +53,10 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
         </span>
       }
       description={
-        <span className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            Vault <Address value={v.address} />
-          </span>
-          <Link href={`/vault/${v.address}`} className="text-emerald-700 hover:underline">
-            Public page →
+        <span className="flex flex-wrap items-center gap-x-6 gap-y-1">
+          <Address value={v.address} />
+          <Link href={`/vault/${v.address}`} className="text-emerald-400 hover:underline">
+            View public page →
           </Link>
         </span>
       }
@@ -66,7 +64,7 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
       <ManagerGuard vault={v}>
         {(owner) => (
           <div className="space-y-6">
-            <div className="max-w-xl">
+            <div className="max-w-lg">
               <Tabs tabs={TABS} value={tab} onChange={setTab} />
             </div>
             <Suspense fallback={<Skeleton className="h-96" />}>

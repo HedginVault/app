@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Segmented } from "@/components/ui/segmented";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
 import { parseTokenAmount } from "@/lib/format";
@@ -24,7 +25,7 @@ const pct = (s: string) => {
   return s.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 100) : null;
 };
 
-export function CreateVaultForm({ owner }: { owner: string }) {
+export function CreateVaultDialog({ owner, open, onClose }: { owner: string; open: boolean; onClose: () => void }) {
   const router = useRouter();
   const { send, pending } = useSendTransaction();
   const [form, setForm] = useState({
@@ -37,7 +38,7 @@ export function CreateVaultForm({ owner }: { owner: string }) {
     minWithdraw: "1",
   });
   const set =
-    (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [k]: e.target.value }));
   const decimals = MINTS.find((m) => m.mint === form.mint)?.decimals ?? 6;
 
@@ -58,87 +59,99 @@ export function CreateVaultForm({ owner }: { owner: string }) {
   const valid = Object.values(errors).every((e) => e === null);
 
   return (
-    <Card>
-      <CardHeader
-        title="Create a vault"
-        description="Your wallet is a whitelisted manager. The vault authority will be this wallet."
-      />
-      <CardBody>
-        <form
-          className="grid gap-4 sm:grid-cols-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!valid) return;
-            // Captured from the build response so navigation uses the real vault PDA.
-            let created = "";
-            void send({
-              label: "Create vault",
-              build: () =>
-                api
-                  .build<BuiltTransaction & { vault: string }>("vault/initialize", {
-                    payer: owner,
-                    name: form.name,
-                    depositMint: form.mint,
-                    performanceFeeBps: perf,
-                    managementFeeBps: mgmt,
-                    depositCap: cap!.toString(),
-                    minDeposit: minDeposit!.toString(),
-                    minWithdrawalShares: minWithdraw!.toString(),
-                  })
-                  .then((b) => {
-                    created = b.vault;
-                    return b;
-                  }),
-              onSuccess: () => router.push(`/manage/${created}`),
-            });
-          }}
-        >
-          <Field label="Name" error={errors.name} hint={`${nameBytes}/32 bytes`}>
-            <Input value={form.name} onChange={set("name")} placeholder="USDC Market Neutral" />
-          </Field>
-          <Field label="Deposit token">
-            <select
-              className="h-10 w-full rounded-[10px] border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-              value={form.mint}
-              onChange={set("mint")}
-            >
-              {MINTS.map((m) => (
-                <option key={m.mint} value={m.mint}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field
-            label="Performance fee (%)"
-            error={errors.perf}
-            hint="Charged on NAV above the high-water mark"
-          >
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Create a vault"
+      className="max-w-lg"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-vault" disabled={!valid} loading={pending}>
+            Create vault
+          </Button>
+        </div>
+      }
+    >
+      <form
+        id="create-vault"
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!valid) return;
+          // Captured from the build response so navigation uses the real vault PDA.
+          let created = "";
+          void send({
+            label: "Create vault",
+            build: () =>
+              api
+                .build<BuiltTransaction & { vault: string }>("vault/initialize", {
+                  payer: owner,
+                  name: form.name,
+                  depositMint: form.mint,
+                  performanceFeeBps: perf,
+                  managementFeeBps: mgmt,
+                  depositCap: cap!.toString(),
+                  minDeposit: minDeposit!.toString(),
+                  minWithdrawalShares: minWithdraw!.toString(),
+                })
+                .then((b) => {
+                  created = b.vault;
+                  return b;
+                }),
+            onSuccess: () => router.push(`/manage/${created}`),
+          });
+        }}
+      >
+        <p className="text-[13px] text-muted">This wallet becomes the vault&apos;s authority.</p>
+        <Field label="Name" error={form.name === "" ? null : errors.name} hint={`${nameBytes}/32 bytes`}>
+          <Input value={form.name} onChange={set("name")} placeholder="USDC Market Neutral" autoFocus />
+        </Field>
+        <Field label="Deposit token">
+          <Segmented
+            className="flex w-full *:flex-1"
+            options={MINTS.map((m) => ({ id: m.mint, label: m.label }))}
+            value={form.mint}
+            onChange={(mint) => setForm((prev) => ({ ...prev, mint }))}
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Performance fee (%)" error={errors.perf} hint="On gains above the high-water mark">
             <Input inputMode="decimal" value={form.perf} onChange={set("perf")} />
           </Field>
-          <Field label="Management fee (% / year)" error={errors.mgmt}>
+          <Field label="Management fee (%/yr)" error={errors.mgmt}>
             <Input inputMode="decimal" value={form.mgmt} onChange={set("mgmt")} />
           </Field>
-          <Field label="Deposit cap" error={errors.cap}>
-            <Input inputMode="decimal" value={form.cap} onChange={set("cap")} />
-          </Field>
-          <Field label="Minimum deposit" error={errors.minDeposit} hint="Must be above zero">
-            <Input inputMode="decimal" value={form.minDeposit} onChange={set("minDeposit")} />
-          </Field>
-          <Field
-            label="Minimum withdrawal (shares)"
-            error={errors.minWithdraw}
-            hint="Must be above zero; a full-balance withdrawal is always allowed"
-          >
-            <Input inputMode="decimal" value={form.minWithdraw} onChange={set("minWithdraw")} />
-          </Field>
-          <div className="flex items-end">
-            <Button type="submit" disabled={!valid} loading={pending}>
-              Create vault
-            </Button>
+        </div>
+
+        {/* ponytail: limits have sane defaults, so they stay folded unless one is invalid */}
+        <details
+          open={!!(errors.cap || errors.minDeposit || errors.minWithdraw)}
+          className="group rounded-xl border border-border px-4 py-3"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium [&::-webkit-details-marker]:hidden">
+            Limits
+            <span className="text-[13px] font-normal text-muted group-open:hidden">
+              Cap {form.cap} · min {form.minDeposit}
+            </span>
+          </summary>
+          <div className="mt-4 space-y-4">
+            <Field label="Deposit cap" error={errors.cap}>
+              <Input inputMode="decimal" value={form.cap} onChange={set("cap")} />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Minimum deposit" error={errors.minDeposit}>
+                <Input inputMode="decimal" value={form.minDeposit} onChange={set("minDeposit")} />
+              </Field>
+              <Field label="Min. withdrawal (shares)" error={errors.minWithdraw} hint="Full balance always allowed">
+                <Input inputMode="decimal" value={form.minWithdraw} onChange={set("minWithdraw")} />
+              </Field>
+            </div>
           </div>
-        </form>
-      </CardBody>
-    </Card>
+        </details>
+      </form>
+    </Dialog>
   );
 }

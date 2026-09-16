@@ -36,7 +36,7 @@ const DEFAULT_QUERY = [
 function Row({ token, balance, onPick }: { token: TokenInfo & Partial<TokenSearchResult>; balance?: string; onPick: () => void }) {
   return (
     <li>
-      <button type="button" onClick={onPick} className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left hover:bg-slate-50">
+      <button type="button" onClick={onPick} className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left hover:bg-white/[0.03]">
         <TokenLogo token={token} size="md" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -113,7 +113,7 @@ export function TokenSelect({
           <button
             type="button"
             onClick={() => pick(pasted)}
-            className="mt-1 w-full rounded-[10px] px-2 py-2 text-left text-sm font-medium hover:bg-slate-50"
+            className="mt-1 w-full rounded-[10px] px-2 py-2 text-left text-sm font-medium hover:bg-white/[0.03]"
           >
             Use token {shortAddress(pasted.mint)}
           </button>

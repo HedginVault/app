@@ -42,8 +42,8 @@ export function AmountInput({
   return (
     <div
       className={cn(
-        "rounded-card border bg-slate-50/60 px-4 py-3",
-        error ? "border-red-300" : "border-border",
+        "rounded-card border bg-white/[0.02] px-4 py-3",
+        error ? "border-red-400/40" : "border-border",
         disabled && "opacity-60",
       )}
     >
@@ -64,7 +64,7 @@ export function AmountInput({
           disabled={disabled}
           aria-label={`${label} amount`}
           onChange={(e) => onChange?.(e.target.value.replace(/,/g, "."))}
-          className="min-w-0 flex-1 bg-transparent text-2xl font-semibold tabular-nums tracking-tight outline-none placeholder:text-slate-300"
+          className="min-w-0 flex-1 bg-transparent text-2xl font-semibold tabular-nums tracking-tight outline-none placeholder:text-white/30"
         />
         {tokenSlot ??
           (token && (
@@ -86,7 +86,7 @@ export function AmountInput({
                 type="button"
                 disabled={disabled || !token || balance == null}
                 onClick={() => setPct(pct)}
-                className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-emerald-700 hover:bg-accent-soft disabled:text-slate-400"
+                className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-emerald-400 hover:bg-accent-soft disabled:text-white/40"
               >
                 {pct === 100 ? "Max" : `${pct}%`}
               </button>

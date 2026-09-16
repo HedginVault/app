@@ -73,7 +73,7 @@ export function AllocationCard({ holdings: h }: { holdings: HoldingsView }) {
         }
       />
       <CardBody className="space-y-4">
-        <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label="Allocation bar">
+        <div className="flex h-2.5 overflow-hidden rounded-full bg-white/[0.06]" role="img" aria-label="Allocation bar">
           {slices.map((s, i) => (
             <div key={s.key} style={{ width: `${widths[i]}%`, background: s.color }} title={`${s.label} ${formatShare(s.shareBps)}`} />
           ))}
@@ -94,12 +94,12 @@ export function AllocationCard({ holdings: h }: { holdings: HoldingsView }) {
           })}
         </ul>
         {h.unpriced.length > 0 && (
-          <p className="text-[12px] text-amber-700">
+          <p className="text-[12px] text-amber-300">
             Price unavailable for {h.unpriced.join(", ")}; excluded from percentages and totals.
           </p>
         )}
         {h.positions.some((p) => p.kind === "error") && (
-          <p className="text-[12px] text-amber-700">
+          <p className="text-[12px] text-amber-300">
             Some positions could not be read; excluded from percentages and totals.
           </p>
         )}

@@ -23,7 +23,7 @@ export function PendingRequest(props: Props) {
   const claimLabel = kind === "deposit" ? "Claim shares" : `Claim ${v.depositSymbol}`;
 
   return (
-    <div className="rounded-[10px] border border-border bg-slate-50 p-3">
+    <div className="rounded-[10px] border border-border bg-white/[0.03] p-3">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium capitalize">{kind} request</span>
         <Badge tone={ready ? "accent" : "warning"}>{ready ? "Ready to claim" : "Pending NAV update"}</Badge>

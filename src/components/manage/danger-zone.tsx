@@ -11,20 +11,20 @@ export function DangerZone({ v, owner }: { v: VaultDetail; owner: string }) {
   const { send, pending } = useSendTransaction();
   const unmet = closePreconditions(v);
   return (
-    <Card className="border-red-200">
+    <Card className="border-red-400/30">
       <CardHeader
         title="Close vault"
         description="Closes the vault, share mint and escrows and returns rent to the authority. Irreversible."
       />
       <CardBody className="space-y-4">
         {unmet.length > 0 ? (
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-white/80">
             {unmet.map((u) => (
               <li key={u}>{u}</li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-slate-700">All preconditions are met.</p>
+          <p className="text-sm text-white/80">All preconditions are met.</p>
         )}
         <Button
           variant="danger"

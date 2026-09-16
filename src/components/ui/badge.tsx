@@ -2,10 +2,10 @@ import { cn } from "@/lib/cn";
 import type { ReactNode } from "react";
 
 const tones = {
-  neutral: "bg-slate-100 text-slate-700",
-  accent: "bg-accent-soft text-emerald-700",
-  warning: "bg-warning-soft text-amber-700",
-  danger: "bg-danger-soft text-red-700",
+  neutral: "bg-white/[0.06] text-white/80",
+  accent: "bg-accent-soft text-emerald-400",
+  warning: "bg-warning-soft text-amber-300",
+  danger: "bg-danger-soft text-red-300",
 };
 
 export const Badge = ({

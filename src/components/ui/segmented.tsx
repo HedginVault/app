@@ -16,7 +16,7 @@ export function Segmented<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="radiogroup" className={cn("inline-flex gap-0.5 rounded-[10px] bg-slate-100 p-0.5", className)}>
+    <div role="radiogroup" className={cn("inline-flex gap-0.5 rounded-[10px] bg-white/[0.06] p-0.5", className)}>
       {options.map((o) => (
         <button
           key={o.id}
@@ -26,9 +26,9 @@ export function Segmented<T extends string>({
           disabled={o.disabled}
           onClick={() => onChange(o.id)}
           className={cn(
-            "rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:text-slate-400",
+            "rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:text-white/40",
             size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3 py-1.5 text-[13px]",
-            value === o.id ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground",
+            value === o.id ? "bg-white/10 text-white" : "text-muted hover:text-foreground",
           )}
         >
           {o.label}

@@ -12,7 +12,7 @@ export function Tabs<T extends string>({
   onChange: (id: T) => void;
 }) {
   return (
-    <div role="tablist" className="flex gap-1 rounded-[10px] bg-slate-100 p-1">
+    <div role="tablist" className="flex gap-1 rounded-full border border-border bg-white/[0.03] p-1">
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -20,9 +20,9 @@ export function Tabs<T extends string>({
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
           className={cn(
-            "flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+            "flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors",
             value === t.id
-              ? "bg-surface text-foreground shadow-sm"
+              ? "bg-white/10 text-white"
               : "text-muted hover:text-foreground",
           )}
         >

@@ -50,7 +50,7 @@ export function ActionPanel({
         />
         <PoweredBy protocol={state.panel === "swap" ? "jupiter" : "meteora"} />
         {!isOperational(v) && (
-          <p className="rounded-[10px] border border-amber-200 bg-warning-soft px-3 py-2 text-[12px] text-amber-800">
+          <p className="rounded-[10px] border border-amber-400/30 bg-warning-soft px-3 py-2 text-[12px] text-amber-200">
             {v.protocol.status !== "normal" ? `Protocol is ${v.protocol.status}` : `Vault is ${v.status}`}: strategy actions are disabled.
           </p>
         )}

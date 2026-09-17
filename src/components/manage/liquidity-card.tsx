@@ -15,7 +15,7 @@ import {
   binIdToPrice,
   distribution,
   rangeForPlacement,
-  rangeFromPrices,
+  priceToBinId,
   type BinRange,
   type Placement,
 } from "@/lib/dlmm-range";
@@ -172,7 +172,7 @@ function ConfigurePosition({
 
   /**
    * Sets inclusive bins. Keeps the range on the side the amounts fund, lower <= last, and the width
-   * within the program max by dragging the other edge.
+   * within the program max by stopping the edge being moved.
    */
   const setBins = (lower: number, lastBin: number, moved: "lower" | "last") => {
     if (placement === null) return;
@@ -181,8 +181,9 @@ function ConfigurePosition({
     if (placement === "both") [lower, lastBin] = [Math.min(lower, active), Math.max(lastBin, active)];
     if (lastBin < lower) [lower, lastBin] = moved === "lower" ? [lastBin, lastBin] : [lower, lower];
     if (lastBin - lower + 1 > DLMM_MAX_POSITION_WIDTH) {
-      if (moved === "lower") lastBin = lower + DLMM_MAX_POSITION_WIDTH - 1;
-      else lower = lastBin - DLMM_MAX_POSITION_WIDTH + 1;
+      // Stop the handle being moved at the max width; never drag the other edge along.
+      if (moved === "lower") lower = lastBin - DLMM_MAX_POSITION_WIDTH + 1;
+      else lastBin = lower + DLMM_MAX_POSITION_WIDTH - 1;
     }
     setRangeState({ placement, range: { lowerBinId: lower, upperBinId: lastBin + 1 } });
   };
@@ -193,21 +194,13 @@ function ConfigurePosition({
     else setBins(range.lowerBinId, last + d, "last");
   };
 
+  /** A typed price moves only its own edge: displayed min/max map to lower/last bin (swapped when inverted). */
   const applyPrice = (edge: "min" | "max", v: number) => {
-    let rawMin = minPrice;
-    let rawMax = maxPrice;
     if (v > 0 && Number.isFinite(v)) {
-      if (!inverted) {
-        if (edge === "min") rawMin = v;
-        else rawMax = v;
-      } else {
-        // displayed min = 1/rawMax, displayed max = 1/rawMin
-        if (edge === "min") rawMax = 1 / v;
-        else rawMin = 1 / v;
-      }
-      const next = rangeFromPrices(Math.min(rawMin, rawMax), Math.max(rawMin, rawMax), binStep, x.decimals, y.decimals);
-      // Through setBins so a typed price can't push the range off the funded side.
-      if (next) setBins(next.lowerBinId, next.upperBinId - 1, (edge === "min") !== inverted ? "lower" : "last");
+      const own = (edge === "min") !== inverted ? "lower" : "last";
+      const bin = priceToBinId(inverted ? 1 / v : v, binStep, x.decimals, y.decimals, own === "lower" ? "floor" : "ceil");
+      // Through setBins so a typed price can't push the range off the funded side or past the max width.
+      if (bin !== null) setBins(own === "lower" ? bin : range.lowerBinId, own === "last" ? bin : last, own);
     }
     setEditing(null);
   };

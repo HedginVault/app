@@ -43,7 +43,7 @@ interface Widget {
   remove(): void;
 }
 
-const RANGE = "#f5541d";
+const RANGE = "#f97316";
 
 /** Locked Min/Max Bin lines plus a shaded band extended across the whole chart, like Meteora. Returns the entity ids. */
 function drawRange(chart: ActiveChart, range: PriceRange): Promise<EntityId[]> {
@@ -66,7 +66,7 @@ function drawRange(chart: ActiveChart, range: PriceRange): Promise<EntityId[]> {
     {
       shape: "rectangle",
       ...locked,
-      overrides: { color: "rgba(0,0,0,0)", backgroundColor: "rgba(245,84,29,0.08)", fillBackground: true, extendLeft: true, extendRight: true, linewidth: 0 },
+      overrides: { color: "rgba(0,0,0,0)", backgroundColor: "rgba(249,115,22,0.16)", fillBackground: true, extendLeft: true, extendRight: true, linewidth: 0 },
     },
   );
   // Older library builds return ids synchronously, newer ones return promises.

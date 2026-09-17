@@ -8,6 +8,10 @@ import {
   type AutoscaleInfo,
   type IChartApi,
   type IPriceLine,
+  type IPrimitivePaneView,
+  type ISeriesPrimitive,
+  type SeriesAttachedParameter,
+  type Time,
   type ISeriesApi,
   type UTCTimestamp,
 } from "lightweight-charts";
@@ -16,7 +20,42 @@ import type { Candle, PriceRange } from "@/lib/types";
 
 const UP = "#34d399";
 const DOWN = "#f87171";
-const RANGE = "#f5541d";
+const RANGE = "#f97316";
+const RANGE_FILL = "rgba(249,115,22,0.16)";
+
+/** Orange band between the range's min and max price, drawn under the candles and redrawn with every scale change. */
+class RangeBand implements ISeriesPrimitive<Time> {
+  private range: PriceRange | null = null;
+  private attachment: SeriesAttachedParameter<Time> | null = null;
+  private readonly view: IPrimitivePaneView = {
+    zOrder: () => "bottom",
+    renderer: () => ({
+      draw: (target) =>
+        target.useBitmapCoordinateSpace(({ context, bitmapSize, verticalPixelRatio }) => {
+          const series = this.attachment?.series;
+          if (!series || !this.range) return;
+          const top = series.priceToCoordinate(this.range.max);
+          const bottom = series.priceToCoordinate(this.range.min);
+          if (top === null || bottom === null) return;
+          context.fillStyle = RANGE_FILL;
+          context.fillRect(0, Math.min(top, bottom) * verticalPixelRatio, bitmapSize.width, Math.abs(bottom - top) * verticalPixelRatio);
+        }),
+    }),
+  };
+  attached(param: SeriesAttachedParameter<Time>) {
+    this.attachment = param;
+  }
+  detached() {
+    this.attachment = null;
+  }
+  paneViews() {
+    return [this.view];
+  }
+  setRange(range: PriceRange | null) {
+    this.range = range;
+    this.attachment?.requestUpdate();
+  }
+}
 
 /** Enough decimals to show movement on micro-priced tokens without drowning $100 prices in zeros. */
 function precisionFor(price: number) {
@@ -39,9 +78,8 @@ export function PriceChart({
   const chart = useRef<IChartApi | null>(null);
   const price = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volume = useRef<ISeriesApi<"Histogram"> | null>(null);
-  const band = useRef<HTMLDivElement>(null);
+  const band = useRef(new RangeBand());
   const lines = useRef<IPriceLine[]>([]);
-  const rangeRef = useRef(range);
 
   useEffect(() => {
     const c = createChart(el.current!, {
@@ -67,26 +105,8 @@ export function PriceChart({
     volume.current = c.addSeries(HistogramSeries, { priceScaleId: "", priceFormat: { type: "volume" } });
     c.priceScale("").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     chart.current = c;
-    // ponytail: lightweight-charts has no price-scale change event, so the band tracks the lines per frame
-    // (two coordinate lookups); a series primitive plugin is the upgrade if this ever shows up in a profile.
-    let frame = requestAnimationFrame(function track() {
-      const r = rangeRef.current;
-      const el = band.current;
-      const top = r && price.current?.priceToCoordinate(r.max);
-      const bottom = r && price.current?.priceToCoordinate(r.min);
-      if (el) {
-        const visible = top != null && bottom != null;
-        el.style.display = visible ? "block" : "none";
-        if (visible) {
-          el.style.right = `${c.priceScale("right").width()}px`;
-          el.style.top = `${Math.min(top, bottom)}px`;
-          el.style.height = `${Math.abs(bottom - top)}px`;
-        }
-      }
-      frame = requestAnimationFrame(track);
-    });
+    price.current.attachPrimitive(band.current);
     return () => {
-      cancelAnimationFrame(frame);
       c.remove();
       chart.current = null;
     };
@@ -113,7 +133,7 @@ export function PriceChart({
   useEffect(() => {
     const series = price.current;
     if (!series) return;
-    rangeRef.current = range;
+    band.current.setRange(range);
     for (const line of lines.current) series.removePriceLine(line);
     lines.current = range
       ? [
@@ -138,10 +158,6 @@ export function PriceChart({
   }, [range?.min, range?.max]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="relative w-full" style={{ height }}>
-      <div ref={el} className="absolute inset-0" />
-      {/* shaded band between the range lines; spans the plot, stops at the price axis */}
-      <div ref={band} className="pointer-events-none absolute left-0 hidden" style={{ background: "rgba(245,84,29,0.08)" }} />
-    </div>
+    <div ref={el} className="w-full" style={{ height }} />
   );
 }

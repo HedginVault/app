@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AmountInput } from "@/components/token/amount-input";
 import { PairLogo } from "@/components/token/token-logo";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import { formatPrice, formatTokenAmount, formatUsd, parseTokenAmount, toUiNumber
 import { depositTokenOf } from "@/lib/holdings";
 import { isOperational } from "@/lib/swap-logic";
 import type { StepProgress } from "@/lib/tx-steps";
-import type { BuiltStep, DlmmShape, HoldingsView, TokenInfo, VaultDetail } from "@/lib/types";
+import type { BuiltStep, DlmmShape, HoldingsView, PriceRange, TokenInfo, VaultDetail } from "@/lib/types";
 import { PoolSelect } from "./pool-select";
 import { RangePicker, ShapeIcon } from "./range-picker";
 import { ReviewDialog } from "./review-dialog";
@@ -60,6 +60,7 @@ export function LiquidityCard({
   onPoolChange,
   onSwapFor,
   onOpenedPartially,
+  onRangeChange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -69,6 +70,8 @@ export function LiquidityCard({
   onSwapFor: (p: { to: string; amount?: string }) => void;
   /** The position was created but funding it failed; the caller can send the manager to add liquidity. */
   onOpenedPartially?: (position: string) => void;
+  /** Draft range in raw pool prices (token Y per token X), null while there is none; drives the chart overlay. */
+  onRangeChange?: (range: PriceRange | null) => void;
 }) {
   const deposit = depositTokenOf(v);
   const pool = usePool(poolAddress);
@@ -94,6 +97,7 @@ export function LiquidityCard({
       onChangePool={() => onPoolChange(undefined)}
       onSwapFor={onSwapFor}
       onOpenedPartially={onOpenedPartially}
+      onRangeChange={onRangeChange}
     />
   );
 }
@@ -113,6 +117,7 @@ function ConfigurePosition({
   onChangePool,
   onSwapFor,
   onOpenedPartially,
+  onRangeChange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -121,6 +126,7 @@ function ConfigurePosition({
   onChangePool: () => void;
   onSwapFor: (p: { to: string; amount?: string }) => void;
   onOpenedPartially?: (position: string) => void;
+  onRangeChange?: (range: PriceRange | null) => void;
 }) {
   const { tokenX: x, tokenY: y, binStep, activeBinId: active } = pool;
   const deposit = depositTokenOf(v);
@@ -164,6 +170,10 @@ function ConfigurePosition({
   const maxPrice = price(range.upperBinId - 1);
   const chart = locked ? [] : distribution(range, active, shape, uiX, uiY).map((b) => ({ ...b, x: b.x * activePrice }));
   const last = range.upperBinId - 1;
+  useEffect(() => {
+    onRangeChange?.(locked ? null : { min: minPrice, max: maxPrice });
+  }, [locked, minPrice, maxPrice, onRangeChange]);
+  useEffect(() => () => onRangeChange?.(null), [onRangeChange]);
   // One-sided ranges anchor the pool price to an edge: X (above) starts at the left, Y (below) ends at the right.
   const domain = {
     lo: placement === "above" ? active : Math.min(active - DLMM_MAX_POSITION_WIDTH, range.lowerBinId),

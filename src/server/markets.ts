@@ -1,5 +1,5 @@
 import { cached } from "./cache";
-import type { MarketTimeframe, OhlcvView } from "@/lib/types";
+import type { ChartTarget, MarketTimeframe, OhlcvView } from "@/lib/types";
 import { ApiError } from "./errors";
 
 const GT = "https://api.geckoterminal.com/api/v2/networks/solana";
@@ -36,7 +36,7 @@ const topPool = (mint: string) =>
 
 interface OhlcvBody {
   data: { attributes: { ohlcv_list: [number, number, number, number, number, number][] } };
-  meta?: { base?: { symbol: string }; quote?: { symbol: string } };
+  meta?: { base?: { symbol: string; address: string }; quote?: { symbol: string; address: string } };
 }
 
 /**
@@ -44,7 +44,7 @@ interface OhlcvBody {
  * which matches how DLMM quotes a pair).
  */
 export async function getOhlcv(
-  target: { mint: string } | { pool: string },
+  target: ChartTarget,
   tf: MarketTimeframe,
   /** Unix seconds: only candles before this, for scrolling back in history. */
   before?: number,
@@ -52,15 +52,17 @@ export async function getOhlcv(
   const { unit, aggregate } = TIMEFRAMES[tf];
   const byMint = "mint" in target;
   const pool = byMint ? await topPool(target.mint) : { address: target.pool, name: "" };
-  const query = byMint ? `currency=usd&token=${target.mint}` : "currency=token&token=base";
+  // For a pool, `base` pins the priced token so candles share units with DLMM bin prices (token Y per token X).
+  const query = byMint ? `currency=usd&token=${target.mint}` : `currency=token&token=${target.base ?? "base"}`;
   const page = before ? `&before_timestamp=${before}` : "";
   return cached(`gt:ohlcv:${pool.address}:${query}:${tf}:${before ?? ""}`, CANDLES_TTL_MS, async () => {
     const body = await gt<OhlcvBody>(`/pools/${pool.address}/ohlcv/${unit}?aggregate=${aggregate}&limit=300&${query}${page}`);
-    const base = body.meta?.base?.symbol;
-    const quote = body.meta?.quote?.symbol;
+    const flipped = !byMint && !!target.base && body.meta?.quote?.address === target.base;
+    const base = (flipped ? body.meta?.quote : body.meta?.base)?.symbol;
+    const quote = (flipped ? body.meta?.base : body.meta?.quote)?.symbol;
     return {
       pool: pool.address,
-      name: pool.name || (base && quote ? `${base} / ${quote}` : ""),
+      name: (!byMint && base && quote ? `${base} / ${quote}` : pool.name) || (base && quote ? `${base} / ${quote}` : ""),
       quote: byMint ? "usd" : (quote ?? ""),
       // Newest-first upstream; the chart wants ascending, de-duplicated times.
       candles: body.data.attributes.ohlcv_list

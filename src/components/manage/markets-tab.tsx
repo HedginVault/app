@@ -5,12 +5,12 @@ import { Card, CardBody } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHoldings, useOhlcv } from "@/hooks/queries";
+import { useHoldings, useOhlcv, usePool } from "@/hooks/queries";
 import { usePanel } from "@/hooks/use-panel";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
-import type { HoldingsView, MarketTimeframe, VaultDetail } from "@/lib/types";
+import type { ChartTarget, HoldingsView, MarketTimeframe, PriceRange, VaultDetail } from "@/lib/types";
 import { ActionPanel } from "./action-panel";
 import { PriceChart } from "./price-chart";
 import { TradingViewChart, useChartingLibrary } from "./tradingview-chart";
@@ -25,16 +25,22 @@ const TIMEFRAMES: { id: MarketTimeframe; label: string }[] = [
 
 /**
  * What the chart shows follows the trade panel: a swap charts the non-deposit side in USD
- * (USDC → SOL shows SOL), liquidity charts the chosen pool in its quote token.
+ * (USDC → SOL shows SOL); liquidity charts the pool priced as token X in token Y, the same units
+ * as DLMM bin prices, so the position range can be drawn on it.
  */
-function chartTarget(state: PanelState, depositMint: string, holdings: HoldingsView | undefined) {
+function chartTarget(
+  state: PanelState,
+  depositMint: string,
+  holdings: HoldingsView | undefined,
+  draftPoolTokenX: string | undefined,
+): ChartTarget | undefined {
   if (state.panel === "swap") return { mint: [state.to, state.from].find((m) => m && m !== depositMint) ?? WSOL };
-  const pool =
-    "position" in state
-      ? holdings?.positions.find((p) => p.kind === "lp" && p.position === state.position)
-      : undefined;
-  const lbPair = pool?.kind === "lp" ? pool.lbPair : "pool" in state ? state.pool : undefined;
-  return lbPair ? { pool: lbPair } : undefined;
+  if ("position" in state) {
+    const p = holdings?.positions.find((q) => q.kind === "lp" && q.position === state.position);
+    return p?.kind === "lp" ? { pool: p.lbPair, base: p.tokenX.mint } : undefined;
+  }
+  // Wait for the pool's token X so the chart is fetched once, in the right units.
+  return "pool" in state && state.pool && draftPoolTokenX ? { pool: state.pool, base: draftPoolTokenX } : undefined;
 }
 
 export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
@@ -42,7 +48,20 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const { state, replace } = usePanel();
   const [nonce, setNonce] = useState(0);
   const [tf, setTf] = useState<MarketTimeframe>("1h");
-  const target = chartTarget(state, v.depositMint, holdings.data);
+  const draftPool = usePool(state.panel === "lp" && "pool" in state ? state.pool : undefined);
+  const target = chartTarget(state, v.depositMint, holdings.data, draftPool.data?.tokenX.mint);
+  // Range lines: the draft from the liquidity form, or the open position being managed.
+  const [draftRange, setDraftRange] = useState<PriceRange | null>(null);
+  const managed =
+    state.panel === "lp" && "position" in state
+      ? holdings.data?.positions.find((p) => p.kind === "lp" && p.position === state.position)
+      : undefined;
+  const range: PriceRange | null =
+    state.panel !== "lp"
+      ? null
+      : managed?.kind === "lp"
+        ? { min: Number(managed.range.lowerPrice), max: Number(managed.range.upperPrice) }
+        : draftRange;
   const library = useChartingLibrary();
   const tv = library === "ready";
   const ohlcv = useOhlcv(target, tf);
@@ -93,7 +112,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
           ) : library === "loading" ? (
             <Skeleton className="h-[360px]" />
           ) : tv ? (
-            <TradingViewChart target={target} />
+            <TradingViewChart target={target} range={range} />
           ) : ohlcv.error ? (
             <div className="grid h-[360px] place-items-center">
               <ErrorState message={ohlcv.error.message} onRetry={() => void ohlcv.refetch()} />
@@ -101,7 +120,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
           ) : !ohlcv.data ? (
             <Skeleton className="h-[360px]" />
           ) : (
-            <PriceChart candles={candles} />
+            <PriceChart candles={candles} range={range} />
           )}
           <p className="text-right text-[11px] text-white/40">Market data: GeckoTerminal</p>
         </CardBody>
@@ -109,7 +128,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
 
       <div className="lg:sticky lg:top-24 lg:self-start">
         {holdings.data ? (
-          <ActionPanel v={v} owner={owner} holdings={holdings.data} state={state} replace={replace} nonce={nonce} onPrefill={prefill} />
+          <ActionPanel v={v} owner={owner} holdings={holdings.data} state={state} replace={replace} nonce={nonce} onPrefill={prefill} onRangeChange={setDraftRange} />
         ) : holdings.error ? (
           <ErrorState message={`Holdings unavailable: ${holdings.error.message}`} onRetry={() => void holdings.refetch()} />
         ) : (

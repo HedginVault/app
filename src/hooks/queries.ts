@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type QuoteParams } from "@/lib/api";
-import type { MarketTimeframe } from "@/lib/types";
+import type { ChartTarget, MarketTimeframe } from "@/lib/types";
 
 export const queryKeys = {
   config: ["config"] as const,
@@ -86,9 +86,9 @@ export const useManager = (wallet: string | undefined) =>
   });
 
 /** Candles for a token (USD) or a pool (quote token). `target` undefined disables the query. */
-export const useOhlcv = (target: { mint: string } | { pool: string } | undefined, tf: MarketTimeframe) =>
+export const useOhlcv = (target: ChartTarget | undefined, tf: MarketTimeframe) =>
   useQuery({
-    queryKey: queryKeys.ohlcv(target ? ("mint" in target ? target.mint : target.pool) : "", tf),
+    queryKey: queryKeys.ohlcv(target ? ("mint" in target ? target.mint : `${target.pool}:${target.base ?? ""}`) : "", tf),
     queryFn: () => api.ohlcv(target!, tf),
     enabled: !!target,
     refetchInterval: 60_000,

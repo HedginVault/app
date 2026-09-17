@@ -5,15 +5,18 @@ import {
   ColorType,
   createChart,
   HistogramSeries,
+  type AutoscaleInfo,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
-import type { Candle } from "@/lib/types";
+import type { Candle, PriceRange } from "@/lib/types";
 
 const UP = "#34d399";
 const DOWN = "#f87171";
+const RANGE = "#f5541d";
 
 /** Enough decimals to show movement on micro-priced tokens without drowning $100 prices in zeros. */
 function precisionFor(price: number) {
@@ -22,11 +25,23 @@ function precisionFor(price: number) {
 }
 
 /** TradingView lightweight-charts candles + volume. The chart is created once; data swaps in place. */
-export function PriceChart({ candles, height = 360 }: { candles: Candle[]; height?: number }) {
+export function PriceChart({
+  candles,
+  range = null,
+  height = 360,
+}: {
+  candles: Candle[];
+  /** LP range drawn as Min/Max Bin lines with a shaded band, like Meteora. */
+  range?: PriceRange | null;
+  height?: number;
+}) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const price = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volume = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const band = useRef<HTMLDivElement>(null);
+  const lines = useRef<IPriceLine[]>([]);
+  const rangeRef = useRef(range);
 
   useEffect(() => {
     const c = createChart(el.current!, {
@@ -52,7 +67,26 @@ export function PriceChart({ candles, height = 360 }: { candles: Candle[]; heigh
     volume.current = c.addSeries(HistogramSeries, { priceScaleId: "", priceFormat: { type: "volume" } });
     c.priceScale("").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     chart.current = c;
+    // ponytail: lightweight-charts has no price-scale change event, so the band tracks the lines per frame
+    // (two coordinate lookups); a series primitive plugin is the upgrade if this ever shows up in a profile.
+    let frame = requestAnimationFrame(function track() {
+      const r = rangeRef.current;
+      const el = band.current;
+      const top = r && price.current?.priceToCoordinate(r.max);
+      const bottom = r && price.current?.priceToCoordinate(r.min);
+      if (el) {
+        const visible = top != null && bottom != null;
+        el.style.display = visible ? "block" : "none";
+        if (visible) {
+          el.style.right = `${c.priceScale("right").width()}px`;
+          el.style.top = `${Math.min(top, bottom)}px`;
+          el.style.height = `${Math.abs(bottom - top)}px`;
+        }
+      }
+      frame = requestAnimationFrame(track);
+    });
     return () => {
+      cancelAnimationFrame(frame);
       c.remove();
       chart.current = null;
     };
@@ -76,5 +110,38 @@ export function PriceChart({ candles, height = 360 }: { candles: Candle[]; heigh
     chart.current?.timeScale().fitContent();
   }, [candles]);
 
-  return <div ref={el} style={{ height }} className="w-full" />;
+  useEffect(() => {
+    const series = price.current;
+    if (!series) return;
+    rangeRef.current = range;
+    for (const line of lines.current) series.removePriceLine(line);
+    lines.current = range
+      ? [
+          { price: range.max, title: "Max Bin" },
+          { price: range.min, title: "Min Bin" },
+        ].map((l) => series.createPriceLine({ ...l, color: RANGE, lineWidth: 1, lineStyle: 0, axisLabelVisible: true }))
+      : [];
+    // Keep the range in view even when price trades far outside it.
+    series.applyOptions({
+      autoscaleInfoProvider: (base: () => AutoscaleInfo | null) => {
+        const info = base();
+        if (!info?.priceRange || !range) return info;
+        return {
+          ...info,
+          priceRange: {
+            minValue: Math.min(info.priceRange.minValue, range.min),
+            maxValue: Math.max(info.priceRange.maxValue, range.max),
+          },
+        };
+      },
+    });
+  }, [range?.min, range?.max]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <div ref={el} className="absolute inset-0" />
+      {/* shaded band between the range lines; spans the plot, stops at the price axis */}
+      <div ref={band} className="pointer-events-none absolute left-0 hidden" style={{ background: "rgba(245,84,29,0.08)" }} />
+    </div>
+  );
 }

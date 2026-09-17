@@ -163,6 +163,15 @@ export interface ManagerView {
 
 export type MarketTimeframe = "15m" | "1h" | "4h" | "1d";
 
+/** A token in USD, or a pool priced as `base` (default: the pool's own base) in the other token. */
+/** Inclusive price bounds of a DLMM range, token Y per token X. */
+export interface PriceRange {
+  min: number;
+  max: number;
+}
+
+export type ChartTarget = { mint: string } | { pool: string; base?: string };
+
 export interface Candle {
   time: number;
   open: number;

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import type { MarketTimeframe } from "@/lib/types";
+import type { ChartTarget, MarketTimeframe, PriceRange } from "@/lib/types";
 
 /**
  * TradingView Charting Library (Advanced Charts) with our GeckoTerminal-backed OHLCV route as the datafeed.
@@ -15,7 +15,6 @@ import type { MarketTimeframe } from "@/lib/types";
 const LIBRARY_PATH = "/charting_library/";
 const SCRIPT = `${LIBRARY_PATH}charting_library.standalone.js`;
 
-export type ChartTarget = { mint: string } | { pool: string };
 
 // ponytail: hand-written slice of the library's typings; swap for `charting_library.d.ts` once the files are in.
 interface Bar {
@@ -31,10 +30,47 @@ interface SymbolInfo {
   name: string;
   [key: string]: unknown;
 }
+type EntityId = string;
+interface ActiveChart {
+  setSymbol(symbol: string, cb?: () => void): void;
+  createShape(point: { price: number; time?: number }, options: Record<string, unknown>): EntityId | Promise<EntityId>;
+  createMultipointShape(points: { price: number; time: number }[], options: Record<string, unknown>): EntityId | Promise<EntityId>;
+  removeEntity(id: EntityId): void;
+}
 interface Widget {
   onChartReady(cb: () => void): void;
-  activeChart(): { setSymbol(symbol: string, cb?: () => void): void };
+  activeChart(): ActiveChart;
   remove(): void;
+}
+
+const RANGE = "#f5541d";
+
+/** Locked Min/Max Bin lines plus a shaded band extended across the whole chart, like Meteora. Returns the entity ids. */
+function drawRange(chart: ActiveChart, range: PriceRange): Promise<EntityId[]> {
+  const locked = { lock: true, disableSelection: true, disableSave: true, disableUndo: true };
+  const line = (price: number, text: string) =>
+    chart.createShape(
+      { price },
+      {
+        shape: "horizontal_line",
+        ...locked,
+        overrides: { linecolor: RANGE, linewidth: 1, linestyle: 0, showLabel: true, text, textcolor: RANGE, horzLabelsAlign: "left", vertLabelsAlign: "top" },
+      },
+    );
+  const now = Math.floor(Date.now() / 1000);
+  const band = chart.createMultipointShape(
+    [
+      { time: now - 86_400, price: range.max },
+      { time: now, price: range.min },
+    ],
+    {
+      shape: "rectangle",
+      ...locked,
+      overrides: { color: "rgba(0,0,0,0)", backgroundColor: "rgba(245,84,29,0.08)", fillBackground: true, extendLeft: true, extendRight: true, linewidth: 0 },
+    },
+  );
+  // Older library builds return ids synchronously, newer ones return promises.
+  return Promise.all([band, line(range.max, "Max Bin"), line(range.min, "Min Bin")].map((id) => Promise.resolve(id)));
 }
 declare global {
   interface Window {
@@ -45,11 +81,11 @@ declare global {
 const RESOLUTIONS: Record<string, MarketTimeframe> = { "15": "15m", "60": "1h", "240": "4h", "1D": "1d" };
 const POLL_MS = 60_000;
 
-/** Tickers carry the target so resolveSymbol/getBars stay stateless: "mint:<address>" or "pool:<address>". */
-const toTicker = (t: ChartTarget) => ("mint" in t ? `mint:${t.mint}` : `pool:${t.pool}`);
+/** Tickers carry the target so resolveSymbol/getBars stay stateless: "mint:<address>" or "pool:<address>[:<base>]". */
+const toTicker = (t: ChartTarget) => ("mint" in t ? `mint:${t.mint}` : `pool:${t.pool}${t.base ? `:${t.base}` : ""}`);
 const fromTicker = (ticker: string): ChartTarget => {
-  const [kind, address] = ticker.split(":");
-  return kind === "pool" ? { pool: address } : { mint: address };
+  const [kind, address, base] = ticker.split(":");
+  return kind === "pool" ? { pool: address, base } : { mint: address };
 };
 
 const pricescaleFor = (price: number) =>
@@ -173,7 +209,15 @@ export function useChartingLibrary(): "loading" | "ready" | "missing" {
 }
 
 /** Full TradingView UI: drawing toolbar, indicators, chart types, intervals, screenshots. */
-export function TradingViewChart({ target, height = 520 }: { target: ChartTarget; height?: number }) {
+export function TradingViewChart({
+  target,
+  range = null,
+  height = 520,
+}: {
+  target: ChartTarget;
+  range?: PriceRange | null;
+  height?: number;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const widget = useRef<Widget | null>(null);
   const ready = useRef(false);
@@ -225,6 +269,27 @@ export function TradingViewChart({ target, height = 520 }: { target: ChartTarget
     if (ready.current) w.activeChart().setSymbol(ticker);
     else w.onChartReady(() => w.activeChart().setSymbol(ticker));
   }, [ticker]);
+
+  // Redraw the range overlay whenever the draft range or position changes.
+  const min = range?.min;
+  const max = range?.max;
+  useEffect(() => {
+    const w = widget.current;
+    if (!w || min == null || max == null) return;
+    let ids: EntityId[] = [];
+    let cancelled = false;
+    const draw = () =>
+      void drawRange(w.activeChart(), { min, max }).then((created) => {
+        if (cancelled) created.forEach((id) => w.activeChart().removeEntity(id));
+        else ids = created;
+      });
+    if (ready.current) draw();
+    else w.onChartReady(draw);
+    return () => {
+      cancelled = true;
+      if (widget.current === w) ids.forEach((id) => w.activeChart().removeEntity(id));
+    };
+  }, [min, max, ticker]);
 
   return <div ref={container} style={{ height }} className="w-full overflow-hidden rounded-[10px]" />;
 }

@@ -3,6 +3,7 @@ import type {
   BuiltTransaction,
   ConfigView,
   HoldingsView,
+  ChartTarget,
   ManagerView,
   MarketTimeframe,
   OhlcvView,
@@ -81,9 +82,9 @@ export const api = {
   holdings: (address: string, o?: GetOptions) => get<HoldingsView>(`/api/vaults/${address}/holdings`, o),
   manager: (wallet: string, o?: GetOptions) => get<ManagerView>(`/api/manager/${wallet}`, o),
   pool: (lbPair: string) => get<PoolInfo>(`/api/dlmm/pool/${lbPair}`),
-  ohlcv: (target: { mint: string } | { pool: string }, tf: MarketTimeframe, before?: number) =>
+  ohlcv: (target: ChartTarget, tf: MarketTimeframe, before?: number) =>
     get<OhlcvView>(
-      `/api/markets/ohlcv?${"mint" in target ? `mint=${target.mint}` : `pool=${target.pool}`}&tf=${tf}${before ? `&before=${before}` : ""}`,
+      `/api/markets/ohlcv?${"mint" in target ? `mint=${target.mint}` : `pool=${target.pool}${target.base ? `&base=${target.base}` : ""}`}&tf=${tf}${before ? `&before=${before}` : ""}`,
     ),
   quote: (q: QuoteParams) =>
     get<QuoteView & { slippageBps: number }>(

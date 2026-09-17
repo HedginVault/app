@@ -62,6 +62,9 @@ describe("distribution", () => {
     const at = (d: typeof curve, id: number) => d.find((b) => b.binId === id)!;
     expect(at(curve, 101).x).toBeGreaterThan(at(curve, 104).x);
     expect(at(bidAsk, 104).x).toBeGreaterThan(at(bidAsk, 101).x);
+    // curve mirrors bid-ask: the same per-bin weights, reversed across the side
+    const xs = (d: typeof curve) => d.filter((b) => b.binId >= 100).map((b) => b.x);
+    expect(xs(curve).map((x) => x.toFixed(9))).toEqual(xs(bidAsk).reverse().map((x) => x.toFixed(9)));
   });
 });
 

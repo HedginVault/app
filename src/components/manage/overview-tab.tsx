@@ -7,16 +7,16 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import type { MenuItem } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stat } from "@/components/ui/stat";
 import { useHoldings } from "@/hooks/queries";
 import { usePanel } from "@/hooks/use-panel";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { formatBps, formatTokenAmount, rawToInput } from "@/lib/format";
+import { formatTokenAmount, rawToInput } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
 import { isOperational } from "@/lib/swap-logic";
 import type { PositionView, VaultDetail } from "@/lib/types";
-import { outflowCap } from "@/lib/vault-logic";
 import { ActionPanel } from "./action-panel";
 
 export function OverviewTab({ v, owner }: { v: VaultDetail; owner: string }) {
@@ -26,7 +26,6 @@ export function OverviewTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const [sheet, setSheet] = useState(false);
   const { send, pending } = useSendTransaction();
 
-  const t = (raw: string) => `${formatTokenAmount(raw, v.depositDecimals, { maxFraction: 2 })} ${v.depositSymbol}`;
   const sh = (raw: string) => `${formatTokenAmount(raw, v.depositDecimals, { maxFraction: 4 })} shares`;
   const unclaimed = BigInt(v.unclaimedManagerFeeShares);
 
@@ -82,43 +81,29 @@ export function OverviewTab({ v, owner }: { v: VaultDetail; owner: string }) {
 
   return (
     <div className="space-y-6">
-      <SummaryStrip v={v} holdings={holdings.data} />
-      {/* secondary numbers: one quiet line instead of another row of cards */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-card border border-border bg-white/[0.02] px-6 py-4 text-sm">
-        <span>
-          <span className="text-muted">Pending deposits </span>
-          <span className={cn("tabular-nums", BigInt(v.pendingDeposits) > 0n && "text-amber-300")}>{t(v.pendingDeposits)}</span>
-        </span>
-        <span>
-          <span className="text-muted">Pending withdrawals </span>
-          <span className={cn("tabular-nums", BigInt(v.pendingWithdrawalShares) > 0n && "text-amber-300")}>{sh(v.pendingWithdrawalShares)}</span>
-        </span>
-        <span title={`Cap ${t(outflowCap(v).toString())} (${formatBps(v.protocol.maxEpochOutflowBps)})`}>
-          <span className="text-muted">Outflow this epoch </span>
-          <span className="tabular-nums">{t(v.epochOutflow)}</span>
-        </span>
-        <span className="ml-auto flex items-center gap-3">
-          <span>
-            <span className="text-muted">Your fees </span>
-            <span className="tabular-nums">{sh(v.unclaimedManagerFeeShares)}</span>
-          </span>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={unclaimed === 0n}
-            loading={pending}
-            onClick={() =>
-              void send({
-                label: "Claim manager fee",
-                vault: v.address,
-                build: () => api.build("vault/claim-fee", { payer: owner, vault: v.address }),
-              })
-            }
-          >
-            Claim
-          </Button>
-        </span>
-      </div>
+      <SummaryStrip v={v} holdings={holdings.data}>
+        <Stat
+          label="Your fees"
+          value={sh(v.unclaimedManagerFeeShares)}
+          tone={unclaimed > 0n ? "accent" : undefined}
+          sub={
+            <button
+              type="button"
+              className="font-medium text-emerald-400 hover:underline disabled:text-muted disabled:no-underline"
+              disabled={unclaimed === 0n || pending}
+              onClick={() =>
+                void send({
+                  label: "Claim manager fee",
+                  vault: v.address,
+                  build: () => api.build("vault/claim-fee", { payer: owner, vault: v.address }),
+                })
+              }
+            >
+              {unclaimed === 0n ? "Nothing to claim yet" : "Claim fees →"}
+            </button>
+          }
+        />
+      </SummaryStrip>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
         <HoldingsSection address={v.address} actionsFor={actionsFor} />
@@ -145,7 +130,7 @@ export function OverviewTab({ v, owner }: { v: VaultDetail; owner: string }) {
 
       {!sheet && (
         <div className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 lg:hidden">
-          <Button className="w-full shadow-lg" onClick={() => setSheet(true)}>Swap & liquidity</Button>
+          <Button className="w-full shadow-lg" onClick={() => setSheet(true)}>Trade</Button>
         </div>
       )}
     </div>

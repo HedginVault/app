@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
@@ -11,6 +11,7 @@ import { FEE_INCREASE_DELAY } from "@/lib/constants";
 import { formatBps, formatDate, formatTokenAmount, parseTokenAmount } from "@/lib/format";
 import type { Status, VaultDetail } from "@/lib/types";
 import { feeSchedule } from "@/lib/vault-logic";
+import { DangerZone } from "./danger-zone";
 
 /** Read outside the render scope: the fee schedule is a snapshot of the wall clock at paint. */
 const nowSeconds = () => Date.now() / 1000;
@@ -27,7 +28,17 @@ const toBps = (s: string) => {
 const amountInput = (raw: string, decimals: number) =>
   formatTokenAmount(raw, decimals).replace(/,/g, "");
 
-export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
+export function SettingsDialog({
+  v,
+  owner,
+  open,
+  onClose,
+}: {
+  v: VaultDetail;
+  owner: string;
+  open: boolean;
+  onClose: () => void;
+}) {
   const { send, pending } = useSendTransaction();
   const initial = {
     perf: pctOf(v.performanceFeeBps),
@@ -92,14 +103,14 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const scheduled = feeSchedule(v, now);
 
   return (
-    <Card>
-      <CardHeader
-        title="Vault settings"
-        description="Fee decreases apply immediately. Fee increases take effect after a 7-day delay so depositors can exit first."
-      />
-      <CardBody>
+    <Dialog open={open} onClose={onClose} title="Vault settings" className="max-w-2xl">
+      <div className="space-y-5">
+        <p className="text-[13px] text-muted">
+          Fee decreases apply immediately. Fee increases take effect after a 7-day delay so
+          depositors can exit first.
+        </p>
         {scheduled && !scheduled.applied && (
-          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
+          <p className="rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
             A fee change to {formatBps(scheduled.performanceFeeBps)} performance /{" "}
             {formatBps(scheduled.managementFeeBps)} management is scheduled for{" "}
             {formatDate(scheduled.effectiveTs)}. Submitting new fees replaces it.
@@ -179,7 +190,8 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
             )}
           </div>
         </form>
-      </CardBody>
-    </Card>
+        <DangerZone v={v} owner={owner} />
+      </div>
+    </Dialog>
   );
 }

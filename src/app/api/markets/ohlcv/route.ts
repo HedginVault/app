@@ -12,5 +12,9 @@ export const GET = handleGet(async (_p, search, req) => {
   const pool = search.get("pool");
   const address = pubkey.safeParse(mint ?? pool ?? "");
   if (!address.success) throw new ApiError(400, "Validation", "mint or pool must be a public key");
-  return getOhlcv(mint ? { mint: address.data } : { pool: address.data }, tf);
+  const before = search.get("before");
+  const beforeTs = before === null ? undefined : Number(before);
+  if (beforeTs !== undefined && !(Number.isInteger(beforeTs) && beforeTs > 0))
+    throw new ApiError(400, "Validation", "before must be a unix timestamp in seconds");
+  return getOhlcv(mint ? { mint: address.data } : { pool: address.data }, tf, beforeTs);
 });

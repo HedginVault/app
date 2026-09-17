@@ -13,6 +13,7 @@ import type { PanelState } from "@/lib/panel-params";
 import type { HoldingsView, MarketTimeframe, VaultDetail } from "@/lib/types";
 import { ActionPanel } from "./action-panel";
 import { PriceChart } from "./price-chart";
+import { TradingViewChart, useChartingLibrary } from "./tradingview-chart";
 
 const WSOL = "So11111111111111111111111111111111111111112";
 const TIMEFRAMES: { id: MarketTimeframe; label: string }[] = [
@@ -42,6 +43,8 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const [nonce, setNonce] = useState(0);
   const [tf, setTf] = useState<MarketTimeframe>("1h");
   const target = chartTarget(state, v.depositMint, holdings.data);
+  const library = useChartingLibrary();
+  const tv = library === "ready";
   const ohlcv = useOhlcv(target, tf);
 
   const prefill = (s: PanelState) => {
@@ -79,13 +82,18 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
                 )}
               </div>
             </div>
-            <Segmented size="sm" value={tf} onChange={setTf} options={TIMEFRAMES} />
+            {/* TradingView brings its own interval picker */}
+            {!tv && <Segmented size="sm" value={tf} onChange={setTf} options={TIMEFRAMES} />}
           </div>
 
           {!target ? (
             <div className="grid h-[360px] place-items-center text-center text-sm text-muted">
               Choose a pool in the Liquidity panel to see its chart.
             </div>
+          ) : library === "loading" ? (
+            <Skeleton className="h-[360px]" />
+          ) : tv ? (
+            <TradingViewChart target={target} />
           ) : ohlcv.error ? (
             <div className="grid h-[360px] place-items-center">
               <ErrorState message={ohlcv.error.message} onRetry={() => void ohlcv.refetch()} />

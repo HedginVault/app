@@ -43,13 +43,19 @@ interface OhlcvBody {
  * Candles for a token (USD, via its most liquid pool) or for a specific pool (priced in its quote token,
  * which matches how DLMM quotes a pair).
  */
-export async function getOhlcv(target: { mint: string } | { pool: string }, tf: MarketTimeframe): Promise<OhlcvView> {
+export async function getOhlcv(
+  target: { mint: string } | { pool: string },
+  tf: MarketTimeframe,
+  /** Unix seconds: only candles before this, for scrolling back in history. */
+  before?: number,
+): Promise<OhlcvView> {
   const { unit, aggregate } = TIMEFRAMES[tf];
   const byMint = "mint" in target;
   const pool = byMint ? await topPool(target.mint) : { address: target.pool, name: "" };
   const query = byMint ? `currency=usd&token=${target.mint}` : "currency=token&token=base";
-  return cached(`gt:ohlcv:${pool.address}:${query}:${tf}`, CANDLES_TTL_MS, async () => {
-    const body = await gt<OhlcvBody>(`/pools/${pool.address}/ohlcv/${unit}?aggregate=${aggregate}&limit=300&${query}`);
+  const page = before ? `&before_timestamp=${before}` : "";
+  return cached(`gt:ohlcv:${pool.address}:${query}:${tf}:${before ?? ""}`, CANDLES_TTL_MS, async () => {
+    const body = await gt<OhlcvBody>(`/pools/${pool.address}/ohlcv/${unit}?aggregate=${aggregate}&limit=300&${query}${page}`);
     const base = body.meta?.base?.symbol;
     const quote = body.meta?.quote?.symbol;
     return {

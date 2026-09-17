@@ -1,26 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { BinChart } from "@/components/holdings/bin-chart";
 import { AmountInput } from "@/components/token/amount-input";
 import { PairLogo } from "@/components/token/token-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
 import { usePool } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
 import {
   binIdToPrice,
-  clampWidth,
   distribution,
   rangeForPlacement,
   rangeFromPrices,
-  sidesForRange,
-  suggestOtherSide,
   type BinRange,
   type Placement,
 } from "@/lib/dlmm-range";
@@ -30,10 +25,11 @@ import { isOperational } from "@/lib/swap-logic";
 import type { StepProgress } from "@/lib/tx-steps";
 import type { BuiltStep, DlmmShape, HoldingsView, TokenInfo, VaultDetail } from "@/lib/types";
 import { PoolSelect } from "./pool-select";
+import { RangePicker, ShapeIcon } from "./range-picker";
 import { ReviewDialog } from "./review-dialog";
 
 export const ACTIVE_BIN_SLIPPAGE = 10;
-const WIDTH_PRESETS = [10, 35, DLMM_MAX_POSITION_WIDTH];
+const DEFAULT_WIDTH = 35;
 export const SHAPES: { id: DlmmShape; label: string }[] = [
   { id: "spot", label: "Spot" },
   { id: "curve", label: "Curve" },
@@ -129,14 +125,11 @@ function ConfigurePosition({
   const { tokenX: x, tokenY: y, binStep, activeBinId: active } = pool;
   const deposit = depositTokenOf(v);
   const [inverted, setInverted] = useState(false);
-  const [placement, setPlacement] = useState<Placement>(x.mint === deposit.mint ? "above" : y.mint === deposit.mint ? "below" : "both");
-  const [width, setWidth] = useState(35);
-  const [custom, setCustom] = useState<BinRange | null>(null);
   const [shape, setShape] = useState<DlmmShape>("spot");
   const [inputX, setInputX] = useState("");
   const [inputY, setInputY] = useState("");
-  const [minText, setMinText] = useState<string | null>(null);
-  const [maxText, setMaxText] = useState<string | null>(null);
+  // The field being typed into; committed on blur so half-typed numbers don't move the range.
+  const [editing, setEditing] = useState<{ field: string; text: string } | null>(null);
   // Non-null while the review dialog is open; frozen so a moving active bin cannot change what was reviewed.
   const [reviewed, setReviewed] = useState<ReviewedRange | null>(null);
   const [progress, setProgress] = useState<StepProgress | null>(null);
@@ -144,39 +137,63 @@ function ConfigurePosition({
 
   const price = (bin: number) => binIdToPrice(bin, binStep, x.decimals, y.decimals);
   const activePrice = Number(pool.activePrice);
-  const range = custom ?? rangeForPlacement(active, width, placement);
-  const sides = sidesForRange(range, active);
-  const minPrice = price(range.lowerBinId);
-  const maxPrice = price(range.upperBinId - 1);
   const show = (p: number) => formatPrice(inverted ? 1 / p : p);
 
   const balX = vaultBalance(holdings, x.mint);
   const balY = vaultBalance(holdings, y.mint);
-  const amountX = sides.x ? parseTokenAmount(inputX || "0", x.decimals) : 0n;
-  const amountY = sides.y ? parseTokenAmount(inputY || "0", y.decimals) : 0n;
+  const amountX = parseTokenAmount(inputX || "0", x.decimals);
+  const amountY = parseTokenAmount(inputY || "0", y.decimals);
   const uiX = amountX ? toUiNumber(amountX, x.decimals) : 0;
   const uiY = amountY ? toUiNumber(amountY, y.decimals) : 0;
   const shortX = amountX !== null && amountX > balX;
   const shortY = amountY !== null && amountY > balY;
 
-  const chart = distribution(range, active, shape, uiX, uiY).map((b) => ({ ...b, x: b.x * activePrice }));
+  // The amounts pick the side: X alone sits above the pool price, Y alone below, both straddle it.
+  const placement: Placement | null = uiX > 0 && uiY > 0 ? "both" : uiX > 0 ? "above" : uiY > 0 ? "below" : null;
+  const [rangeState, setRangeState] = useState<{ placement: Placement | null; range: BinRange }>(() => ({
+    placement,
+    range: rangeForPlacement(active, DEFAULT_WIDTH, placement ?? "both"),
+  }));
+  // Switching side resets the range to a default width on that side ("adjust state when props change").
+  if (placement !== null && placement !== rangeState.placement)
+    setRangeState({ placement, range: rangeForPlacement(active, DEFAULT_WIDTH, placement) });
+  const range = placement !== null && placement !== rangeState.placement ? rangeForPlacement(active, DEFAULT_WIDTH, placement) : rangeState.range;
+  const locked = placement === null;
 
-  const setX = (text: string) => {
-    setInputX(text);
-    if (sides.x && sides.y) {
-      const ui = Number(text);
-      setInputY(Number.isFinite(ui) ? toInput(suggestOtherSide("x", ui, activePrice, range, active), y.decimals) : "");
-    }
+  const minPrice = price(range.lowerBinId);
+  const maxPrice = price(range.upperBinId - 1);
+  const chart = locked ? [] : distribution(range, active, shape, uiX, uiY).map((b) => ({ ...b, x: b.x * activePrice }));
+  const last = range.upperBinId - 1;
+  // One-sided ranges anchor the pool price to an edge: X (above) starts at the left, Y (below) ends at the right.
+  const domain = {
+    lo: placement === "above" ? active : Math.min(active - DLMM_MAX_POSITION_WIDTH, range.lowerBinId),
+    hi: placement === "below" ? active : Math.max(active + DLMM_MAX_POSITION_WIDTH, last),
   };
-  const setY = (text: string) => {
-    setInputY(text);
-    if (sides.x && sides.y) {
-      const ui = Number(text);
-      setInputX(Number.isFinite(ui) ? toInput(suggestOtherSide("y", ui, activePrice, range, active), x.decimals) : "");
+
+  /**
+   * Sets inclusive bins. Keeps the range on the side the amounts fund, lower <= last, and the width
+   * within the program max by dragging the other edge.
+   */
+  const setBins = (lower: number, lastBin: number, moved: "lower" | "last") => {
+    if (placement === null) return;
+    if (placement === "above") lower = Math.max(lower, active + 1);
+    if (placement === "below") lastBin = Math.min(lastBin, active);
+    if (placement === "both") [lower, lastBin] = [Math.min(lower, active), Math.max(lastBin, active)];
+    if (lastBin < lower) [lower, lastBin] = moved === "lower" ? [lastBin, lastBin] : [lower, lower];
+    if (lastBin - lower + 1 > DLMM_MAX_POSITION_WIDTH) {
+      if (moved === "lower") lastBin = lower + DLMM_MAX_POSITION_WIDTH - 1;
+      else lower = lastBin - DLMM_MAX_POSITION_WIDTH + 1;
     }
+    setRangeState({ placement, range: { lowerBinId: lower, upperBinId: lastBin + 1 } });
   };
-  const applyPrice = (edge: "min" | "max", text: string) => {
-    const v = Number(text);
+  /** Displayed edge -> raw bin edge. Inverted display flips which bin is the min, and the direction of "+". */
+  const nudge = (edge: "min" | "max", dir: 1 | -1) => {
+    const d = inverted ? -dir : dir;
+    if ((edge === "min") !== inverted) setBins(range.lowerBinId + d, last, "lower");
+    else setBins(range.lowerBinId, last + d, "last");
+  };
+
+  const applyPrice = (edge: "min" | "max", v: number) => {
     let rawMin = minPrice;
     let rawMax = maxPrice;
     if (v > 0 && Number.isFinite(v)) {
@@ -189,14 +206,14 @@ function ConfigurePosition({
         else rawMin = 1 / v;
       }
       const next = rangeFromPrices(Math.min(rawMin, rawMax), Math.max(rawMin, rawMax), binStep, x.decimals, y.decimals);
-      if (next) setCustom(next);
+      // Through setBins so a typed price can't push the range off the funded side.
+      if (next) setBins(next.lowerBinId, next.upperBinId - 1, (edge === "min") !== inverted ? "lower" : "last");
     }
-    setMinText(null);
-    setMaxText(null);
+    setEditing(null);
   };
 
   const invalid = amountX === null || amountY === null;
-  const empty = !invalid && amountX === 0n && amountY === 0n;
+  const empty = !invalid && locked;
   const button = !isOperational(v)
     ? { label: "Vault not operational", disabled: true }
     : invalid
@@ -280,89 +297,144 @@ function ConfigurePosition({
       </div>
 
       <div className="space-y-2">
-        <div className="text-[12px] font-medium text-muted">Range</div>
-        <Segmented
-          size="sm"
-          value={custom ? ("custom" as Placement) : placement}
-          onChange={(p) => {
-            setCustom(null);
-            setPlacement(p);
-          }}
-          options={[
-            { id: "below", label: `Below price (${y.symbol})` },
-            { id: "both", label: "Both sides" },
-            { id: "above", label: `Above price (${x.symbol})` },
-          ]}
-        />
-        <div className="flex items-center gap-2">
-          {WIDTH_PRESETS.map((w) => (
-            <Button key={w} size="sm" variant={!custom && width === w ? "primary" : "secondary"} onClick={() => { setCustom(null); setWidth(w); }}>
-              {w} bins
-            </Button>
-          ))}
-        </div>
-        <Slider min={1} max={DLMM_MAX_POSITION_WIDTH} value={custom ? range.upperBinId - range.lowerBinId : width} onChange={(w) => { setCustom(null); setWidth(clampWidth(w)); }} aria-label="Range width in bins" />
-        <div className="grid grid-cols-2 gap-2">
-          {(["min", "max"] as const).map((edge) => {
-            const p = edge === "min" ? (inverted ? maxPrice : minPrice) : inverted ? minPrice : maxPrice;
-            const text = edge === "min" ? minText : maxText;
-            const setText = edge === "min" ? setMinText : setMaxText;
-            const shown = inverted ? 1 / p : p;
-            const current = inverted ? 1 / activePrice : activePrice;
-            const pct = ((shown - current) / current) * 100;
-            return (
-              <label key={edge} className="block rounded-[10px] border border-border px-3 py-2">
-                <span className="text-[12px] text-muted">{edge === "min" ? "Min" : "Max"} price ({quote}/{base})</span>
-                <Input
-                  className="mt-1 h-8 border-0 px-0 focus:ring-0"
-                  inputMode="decimal"
-                  value={text ?? show(p)}
-                  onChange={(e) => setText(e.target.value)}
-                  onBlur={() => text !== null && applyPrice(edge, text)}
-                />
-                <span className="text-[11px] tabular-nums text-muted">{pct >= 0 ? "+" : ""}{pct.toFixed(2)}% from current</span>
-              </label>
-            );
-          })}
-        </div>
-        <p className="text-[12px] text-muted">{range.upperBinId - range.lowerBinId} bins · max {DLMM_MAX_POSITION_WIDTH}</p>
-      </div>
-
-      <div className="space-y-2">
-        <div className="text-[12px] font-medium text-muted">Shape</div>
-        <Segmented size="sm" value={shape} onChange={setShape} options={SHAPES} />
-      </div>
-
-      <div className="space-y-2">
         <AmountInput
           label={`Deposit ${x.symbol}`}
           token={x}
-          value={sides.x ? inputX : ""}
-          onChange={setX}
+          value={inputX}
+          onChange={setInputX}
           balance={balX.toString()}
           usd={amountX ? usdValue(amountX, x.decimals, x.priceUsd) : undefined}
           presets={[50, 100]}
-          disabled={!sides.x}
-          error={!sides.x ? `Range is below the price: ${x.symbol} not used` : amountX === null ? "Invalid amount" : null}
+          error={amountX === null ? "Invalid amount" : null}
         />
-        {sides.x && shortfall(x, amountX, balX)}
+        {shortfall(x, amountX, balX)}
         <AmountInput
           label={`Deposit ${y.symbol}`}
           token={y}
-          value={sides.y ? inputY : ""}
-          onChange={setY}
+          value={inputY}
+          onChange={setInputY}
           balance={balY.toString()}
           usd={amountY ? usdValue(amountY, y.decimals, y.priceUsd) : undefined}
           presets={[50, 100]}
-          disabled={!sides.y}
-          error={!sides.y ? `Range is above the price: ${y.symbol} not used` : amountY === null ? "Invalid amount" : null}
+          error={amountY === null ? "Invalid amount" : null}
         />
-        {sides.y && shortfall(y, amountY, balY)}
+        {shortfall(y, amountY, balY)}
+        <p className="text-[12px] text-muted">
+          {placement === "above"
+            ? `Only ${x.symbol}: range sits above the pool price.`
+            : placement === "below"
+              ? `Only ${y.symbol}: range sits below the pool price.`
+              : placement === "both"
+                ? "Both tokens: range spans the pool price."
+                : `${x.symbol} alone goes above the pool price, ${y.symbol} alone below, both span it.`}
+        </p>
       </div>
 
-      {(uiX > 0 || uiY > 0) && (
-        <BinChart bins={chart} activeBinId={active} xLabel={x.symbol} yLabel={y.symbol} height={80} />
-      )}
+      <div className="space-y-2">
+        <div className="text-[12px] font-medium text-muted">Strategy</div>
+        <div role="radiogroup" className="grid grid-cols-3 gap-1 rounded-xl bg-white/[0.04] p-1">
+          {SHAPES.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={shape === o.id}
+              onClick={() => setShape(o.id)}
+              className={cn(
+                "flex items-center justify-center gap-2 rounded-lg py-2 text-[13px] font-medium transition-colors",
+                shape === o.id ? "bg-white/10 text-white" : "text-muted hover:text-foreground",
+              )}
+            >
+              <span className={shape === o.id ? "text-emerald-400" : undefined}>
+                <ShapeIcon shape={o.id} />
+              </span>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[12px] font-medium text-muted">
+            Price range
+            <button type="button" aria-label="Reset range" title="Reset range" disabled={locked} onClick={() => setRangeState({ placement, range: rangeForPlacement(active, DEFAULT_WIDTH, placement ?? "both") })} className="hover:text-foreground">
+              ↺
+            </button>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-muted">
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" />{x.symbol}</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-400" />{y.symbol}</span>
+          </div>
+        </div>
+        <RangePicker
+          domain={domain}
+          lower={range.lowerBinId}
+          last={last}
+          activeBinId={active}
+          bins={chart}
+          priceLabel={`${show(activePrice)} ${quote}`}
+          tickLabel={(bin) => show(price(bin))}
+          onChange={setBins}
+          disabled={locked}
+        />
+
+        {(["min", "max"] as const).map((edge) => {
+          const p = edge === "min" ? (inverted ? maxPrice : minPrice) : inverted ? minPrice : maxPrice;
+          const shown = inverted ? 1 / p : p;
+          const current = inverted ? 1 / activePrice : activePrice;
+          const pct = ((shown - current) / current) * 100;
+          const label = edge === "min" ? "Min" : "Max";
+          const field = (kind: "price" | "pct") => `${edge}-${kind}`;
+          const text = (kind: "price" | "pct", fallback: string) => (editing?.field === field(kind) ? editing.text : fallback);
+          const commit = (kind: "price" | "pct") => {
+            if (editing?.field !== field(kind)) return;
+            const n = Number(editing.text);
+            if (editing.text.trim() === "" || !Number.isFinite(n)) return setEditing(null);
+            const target = kind === "price" ? n : current * (1 + n / 100);
+            applyPrice(edge, inverted ? 1 / target : target);
+          };
+          return (
+            <div key={edge}>
+              <div className="mb-1 text-[12px] text-muted">
+                {label} price <span className="text-white/40">({quote}/{base})</span>
+              </div>
+              <div className={cn("grid grid-cols-[minmax(0,1fr)_6rem_2rem] overflow-hidden rounded-xl border border-border bg-white/[0.03]", locked && "opacity-50")}>
+                <Input
+                  aria-label={`${label} price`}
+                  className="rounded-none border-0 bg-transparent focus:ring-0"
+                  inputMode="decimal"
+                  disabled={locked}
+                  value={text("price", show(p))}
+                  onChange={(e) => setEditing({ field: field("price"), text: e.target.value })}
+                  onBlur={() => commit("price")}
+                  onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                />
+                <label className="flex items-center border-l border-border pr-2">
+                  <Input
+                    aria-label={`${label} price change from current, percent`}
+                    className={cn("rounded-none border-0 bg-transparent pr-0.5 text-right focus:ring-0", pct < 0 ? "text-red-300" : "text-emerald-400")}
+                    inputMode="decimal"
+                    disabled={locked}
+                    value={text("pct", `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}`)}
+                    onChange={(e) => setEditing({ field: field("pct"), text: e.target.value })}
+                    onBlur={() => commit("pct")}
+                    onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                  />
+                  <span className="text-[12px] text-muted">%</span>
+                </label>
+                <div className="grid grid-rows-2 border-l border-border text-muted">
+                  <button type="button" aria-label={`Raise ${edge} price by one bin`} disabled={locked} onClick={() => nudge(edge, 1)} className="hover:bg-white/[0.06] hover:text-foreground">+</button>
+                  <button type="button" aria-label={`Lower ${edge} price by one bin`} disabled={locked} onClick={() => nudge(edge, -1)} className="border-t border-border hover:bg-white/[0.06] hover:text-foreground">−</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <p className="text-[12px] text-muted">
+          Total bins: <span className="tabular-nums text-foreground">{range.upperBinId - range.lowerBinId}</span> / {DLMM_MAX_POSITION_WIDTH}
+        </p>
+      </div>
 
       <Button className="w-full" disabled={button.disabled} onClick={() => setReviewed({ range, activeBinId: active, activePrice })}>
         {button.label}

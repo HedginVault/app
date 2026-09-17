@@ -35,7 +35,8 @@ export const clampWidth = (width: number) =>
 
 export function rangeForPlacement(activeBinId: number, width: number, placement: Placement): BinRange {
   const w = clampWidth(width);
-  if (placement === "below") return { lowerBinId: activeBinId - w, upperBinId: activeBinId };
+  // Below ends on the active bin itself, so the max price is the pool price (0%).
+  if (placement === "below") return { lowerBinId: activeBinId - w + 1, upperBinId: activeBinId + 1 };
   if (placement === "above") return { lowerBinId: activeBinId + 1, upperBinId: activeBinId + 1 + w };
   const lowerBinId = activeBinId - Math.floor(w / 2);
   return { lowerBinId, upperBinId: lowerBinId + w };

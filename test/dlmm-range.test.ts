@@ -28,7 +28,7 @@ describe("ranges", () => {
   });
   it("places ranges around, below and above the active bin (upper exclusive)", () => {
     expect(rangeForPlacement(100, 10, "both")).toEqual({ lowerBinId: 95, upperBinId: 105 });
-    expect(rangeForPlacement(100, 10, "below")).toEqual({ lowerBinId: 90, upperBinId: 100 });
+    expect(rangeForPlacement(100, 10, "below")).toEqual({ lowerBinId: 91, upperBinId: 101 });
     expect(rangeForPlacement(100, 10, "above")).toEqual({ lowerBinId: 101, upperBinId: 111 });
     expect(rangeForPlacement(100, 999, "both").upperBinId - rangeForPlacement(100, 999, "both").lowerBinId).toBe(70);
   });

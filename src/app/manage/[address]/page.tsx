@@ -1,31 +1,30 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
 import Link from "next/link";
-import { Suspense, use, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, use } from "react";
+import { BalanceTab } from "@/components/manage/balance-tab";
 import { ManagerGuard } from "@/components/manage/guard";
-import { OverviewTab } from "@/components/manage/overview-tab";
-import { RequestsBar, RequestsBell } from "@/components/manage/requests-inbox";
-import { SettingsDialog } from "@/components/manage/settings-dialog";
+import { MarketsTab } from "@/components/manage/markets-tab";
+import { RequestsBar } from "@/components/manage/requests-bar";
+import { RequestsTab } from "@/components/manage/requests-tab";
+import { SettingsTab } from "@/components/manage/settings-tab";
 import { Page } from "@/components/shell/page";
 import { Address } from "@/components/ui/address";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useVault } from "@/hooks/queries";
+import { Tabs } from "@/components/ui/tabs";
+import { useRequests, useVault } from "@/hooks/queries";
+import { serializePanel, type PanelState } from "@/lib/panel-params";
+import type { VaultDetail } from "@/lib/types";
 
-const GearIcon = () => (
-  <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
+const TABS = ["balance", "markets", "requests", "settings"] as const;
+type Tab = (typeof TABS)[number];
 
 export default function ManageVaultPage({ params }: { params: Promise<{ address: string }> }) {
   const { address } = use(params);
   const vault = useVault(address);
-  const { publicKey } = useWallet();
-  const [settings, setSettings] = useState(false);
 
   if (vault.error) {
     return (
@@ -43,9 +42,6 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
     );
   }
 
-  // Header controls mirror ManagerGuard: only the authority sees them.
-  const isManager = publicKey?.toBase58() === v.authority;
-
   return (
     <Page
       title={v.name}
@@ -58,32 +54,61 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
           </Link>
         </span>
       }
-      action={
-        isManager && (
-          <div className="flex items-center gap-2">
-            <RequestsBell v={v} owner={v.authority} />
-            <button
-              type="button"
-              onClick={() => setSettings(true)}
-              className="flex h-10 items-center gap-2 rounded-full border border-border bg-white/[0.03] px-4 text-sm text-white/70 hover:text-white"
-            >
-              <GearIcon /> Settings
-            </button>
-          </div>
-        )
-      }
     >
       <ManagerGuard vault={v}>
         {(owner) => (
-          <div className="space-y-6">
-            <RequestsBar v={v} owner={owner} />
-            <Suspense fallback={<Skeleton className="h-96" />}>
-              <OverviewTab v={v} owner={owner} />
-            </Suspense>
-            <SettingsDialog v={v} owner={owner} open={settings} onClose={() => setSettings(false)} />
-          </div>
+          // useSearchParams below needs a Suspense boundary.
+          <Suspense fallback={<Skeleton className="h-96" />}>
+            <ManageTabs v={v} owner={owner} />
+          </Suspense>
         )}
       </ManagerGuard>
     </Page>
+  );
+}
+
+function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
+  const search = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const requests = useRequests(v.address);
+  const raw = search.get("tab");
+  // The tab lives in the URL next to the trade panel params, so reloads and shared links keep both.
+  const tab: Tab = TABS.includes(raw as Tab) ? (raw as Tab) : "balance";
+  const go = (next: Tab, panel?: PanelState) => {
+    const p = new URLSearchParams(search.toString());
+    p.set("tab", next);
+    router.replace(`${pathname}?${panel ? serializePanel(panel, p) : p.toString()}`, { scroll: false });
+  };
+  const open = requests.data ? requests.data.deposits.length + requests.data.withdrawals.length : 0;
+
+  return (
+    <div className="space-y-6">
+      {tab !== "requests" && <RequestsBar v={v} owner={owner} onReview={() => go("requests")} />}
+      <div className="max-w-xl">
+        <Tabs
+          tabs={[
+            { id: "balance", label: "Balance" },
+            { id: "markets", label: "Markets" },
+            {
+              id: "requests",
+              label: (
+                <span className="inline-flex items-center gap-2">
+                  Requests
+                  {open > 0 && <span className="rounded-full bg-white/10 px-1.5 text-[11px] tabular-nums">{open}</span>}
+                </span>
+              ),
+            },
+            { id: "settings", label: "Settings" },
+          ]}
+          value={tab}
+          onChange={(t) => go(t)}
+        />
+      </div>
+      {tab === "balance" && <BalanceTab v={v} owner={owner} onTrade={(panel) => go("markets", panel)} />}
+      {tab === "markets" && <MarketsTab v={v} owner={owner} />}
+      {tab === "requests" && <RequestsTab v={v} owner={owner} />}
+      {tab === "settings" && <SettingsTab v={v} owner={owner} />}
+    </div>
   );
 }

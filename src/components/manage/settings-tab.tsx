@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
@@ -28,17 +28,7 @@ const toBps = (s: string) => {
 const amountInput = (raw: string, decimals: number) =>
   formatTokenAmount(raw, decimals).replace(/,/g, "");
 
-export function SettingsDialog({
-  v,
-  owner,
-  open,
-  onClose,
-}: {
-  v: VaultDetail;
-  owner: string;
-  open: boolean;
-  onClose: () => void;
-}) {
+export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const { send, pending } = useSendTransaction();
   const initial = {
     perf: pctOf(v.performanceFeeBps),
@@ -103,14 +93,14 @@ export function SettingsDialog({
   const scheduled = feeSchedule(v, now);
 
   return (
-    <Dialog open={open} onClose={onClose} title="Vault settings" className="max-w-2xl">
-      <div className="space-y-5">
-        <p className="text-[13px] text-muted">
-          Fee decreases apply immediately. Fee increases take effect after a 7-day delay so
-          depositors can exit first.
-        </p>
+    <Card>
+      <CardHeader
+        title="Vault settings"
+        description="Fee decreases apply immediately. Fee increases take effect after a 7-day delay so depositors can exit first."
+      />
+      <CardBody>
         {scheduled && !scheduled.applied && (
-          <p className="rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
+          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
             A fee change to {formatBps(scheduled.performanceFeeBps)} performance /{" "}
             {formatBps(scheduled.managementFeeBps)} management is scheduled for{" "}
             {formatDate(scheduled.effectiveTs)}. Submitting new fees replaces it.
@@ -190,8 +180,10 @@ export function SettingsDialog({
             )}
           </div>
         </form>
-        <DangerZone v={v} owner={owner} />
-      </div>
-    </Dialog>
+        <div className="mt-6">
+          <DangerZone v={v} owner={owner} />
+        </div>
+      </CardBody>
+    </Card>
   );
 }

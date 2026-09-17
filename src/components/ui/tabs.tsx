@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export function Tabs<T extends string>({
@@ -7,7 +8,7 @@ export function Tabs<T extends string>({
   value,
   onChange,
 }: {
-  tabs: { id: T; label: string }[];
+  tabs: { id: T; label: ReactNode }[];
   value: T;
   onChange: (id: T) => void;
 }) {

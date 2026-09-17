@@ -1,6 +1,6 @@
 const steps = [
   { n: 1, title: "Request", body: "Deposit tokens or withdrawal shares move into the vault's escrow and wait for the next epoch." },
-  { n: 2, title: "NAV update", body: "Once per 24h epoch the manager posts total assets. The program derives NAV per share and settles fees." },
+  { n: 2, title: "NAV update", body: "Once per 4h epoch the manager posts total assets. The program derives NAV per share and settles fees." },
   { n: 3, title: "Claim", body: "After a NAV newer than your request, claim to mint shares or receive tokens at that NAV. Anyone can trigger it." },
 ];
 

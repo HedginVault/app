@@ -6,7 +6,7 @@ export const PROGRAM_ID = process.env.NEXT_PUBLIC_PROGRAM_ID || idl.address;
 
 export const MAX_BPS = 10_000;
 export const NAV_PRECISION = 1_000_000_000n;
-export const EPOCH_DURATION = 86_400;
+export const EPOCH_DURATION = 14_400;
 export const FEE_INCREASE_DELAY = 604_800;
 export const DEFAULT_MAX_SLIPPAGE_BPS = 300;
 /**

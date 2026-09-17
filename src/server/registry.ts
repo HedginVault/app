@@ -4,7 +4,7 @@ import type { VaultMetadata } from "@/lib/types";
 const REGISTRY: Record<string, VaultMetadata> = {
   DHjJJ4viFqUjzFHupehqxyEUrKb5Pdu95A29HFm8gdQD: {
     description:
-      "USDC-denominated managed vault. Deposits are pooled and deployed by the manager into Solana DeFi positions; NAV is posted once per 24h epoch.",
+      "USDC-denominated managed vault. Deposits are pooled and deployed by the manager into Solana DeFi positions; NAV is posted once per 4h epoch.",
     strategy: "Delta-neutral liquidity provision on Meteora DLMM with Jupiter for rebalancing.",
     managerName: "SolHedge",
     tags: ["USDC", "Market neutral", "Epoch settled"],

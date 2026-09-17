@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EPOCH_DURATION } from "@/lib/constants";
 import type { UserPosition, VaultDetail } from "@/lib/types";
 import {
   capHeadroom,
@@ -34,12 +35,12 @@ const emptyPosition: UserPosition = {
 };
 
 // 10 seconds into epoch 19675, matching the fixture's `navEpoch`.
-const now = 19675 * 86400 + 10;
+const now = 19675 * EPOCH_DURATION + 10;
 
 describe("epochs", () => {
   it("derives epoch and next epoch start", () => {
-    expect(epochOf(1_700_000_000)).toBe(19675n);
-    expect(nextEpochStart(19675n)).toBe(19676 * 86400);
+    expect(epochOf(1_700_000_000)).toBe(118055n);
+    expect(nextEpochStart(19675n)).toBe(19676 * EPOCH_DURATION);
   });
   it("classifies request state", () => {
     expect(requestState(19675n, 19675n)).toBe("pending");

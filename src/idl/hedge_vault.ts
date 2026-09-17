@@ -6429,7 +6429,7 @@ export type HedgeVault = {
         "Duration of a NAV epoch in seconds. NAV is updated at most once per epoch."
       ],
       "type": "i64",
-      "value": "86400"
+      "value": "14400"
     },
     {
       "name": "feeIncreaseDelay",

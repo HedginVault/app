@@ -24,7 +24,7 @@ export function Menu({ items, label = "Actions" }: { items: MenuItem[]; label?: 
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
-          className="rounded-md px-2 py-1 text-lg leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+          className="rounded-md px-2 py-1 text-lg leading-none text-white/50 hover:bg-white/[0.06] hover:text-white/90"
         >
           ⋯
         </button>
@@ -41,7 +41,7 @@ export function Menu({ items, label = "Actions" }: { items: MenuItem[]; label?: 
                 setOpen(false);
                 item.onSelect();
               }}
-              className="w-full rounded-md px-2.5 py-2 text-left text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
+              className="w-full rounded-md px-2.5 py-2 text-left text-sm hover:bg-white/[0.03] disabled:cursor-not-allowed disabled:text-white/40 disabled:hover:bg-transparent"
             >
               {item.label}
               {item.disabled && item.reason && (

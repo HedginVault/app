@@ -11,11 +11,11 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants = {
   primary:
-    "bg-accent text-accent-foreground hover:bg-emerald-700 disabled:bg-emerald-300",
+    "bg-accent text-accent-foreground hover:bg-emerald-300 disabled:bg-emerald-400/30 disabled:text-white/40",
   secondary:
-    "bg-surface text-foreground border border-border hover:bg-slate-50 disabled:text-slate-400",
-  ghost: "text-foreground hover:bg-slate-100 disabled:text-slate-400",
-  danger: "bg-danger text-white hover:bg-red-700 disabled:bg-red-300",
+    "bg-white/[0.04] text-foreground border border-border hover:bg-white/[0.08] disabled:text-white/40",
+  ghost: "text-foreground hover:bg-white/[0.06] disabled:text-white/40",
+  danger: "bg-danger text-white hover:bg-red-300 disabled:bg-red-400/30",
 };
 
 export function Button({
@@ -30,8 +30,8 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-[10px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed",
-        size === "sm" ? "h-8 px-3 text-[13px]" : "h-10 px-4 text-sm",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed",
+        size === "sm" ? "h-8 px-3 text-[13px]" : "h-11 px-5 text-sm",
         variants[variant],
         className,
       )}

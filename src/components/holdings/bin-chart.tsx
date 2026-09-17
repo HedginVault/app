@@ -37,7 +37,7 @@ export function BinChart({
                 title={`Bin ${b.binId}`}
                 className={cn(
                   "flex h-full min-w-1 flex-1 flex-col justify-end",
-                  b.binId === activeBinId && "rounded-sm outline outline-1 outline-slate-400",
+                  b.binId === activeBinId && "rounded-sm outline outline-1 outline-white/40",
                 )}
               >
                 <div className="flex flex-col overflow-hidden rounded-t-sm" style={{ height: `${Math.max(pct, total > 0 ? 2 : 0)}%` }}>
@@ -52,7 +52,7 @@ export function BinChart({
       <div className="mt-1.5 flex gap-4 text-[11px] text-muted">
         <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-emerald-500" />{xLabel}</span>
         <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-sky-400" />{yLabel}</span>
-        <span className="flex items-center gap-1"><span className="size-2 rounded-sm outline outline-1 outline-slate-400" />Active bin</span>
+        <span className="flex items-center gap-1"><span className="size-2 rounded-sm outline outline-1 outline-white/40" />Active bin</span>
       </div>
     </div>
   );

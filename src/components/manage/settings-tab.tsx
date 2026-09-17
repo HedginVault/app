@@ -11,6 +11,7 @@ import { FEE_INCREASE_DELAY } from "@/lib/constants";
 import { formatBps, formatDate, formatTokenAmount, parseTokenAmount } from "@/lib/format";
 import type { Status, VaultDetail } from "@/lib/types";
 import { feeSchedule } from "@/lib/vault-logic";
+import { DangerZone } from "./danger-zone";
 
 /** Read outside the render scope: the fee schedule is a snapshot of the wall clock at paint. */
 const nowSeconds = () => Date.now() / 1000;
@@ -107,7 +108,7 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
       />
       <CardBody>
         {scheduled && !scheduled.applied && (
-          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-800">
+          <p className="mb-4 rounded-[10px] bg-warning-soft px-4 py-3 text-[13px] text-amber-200">
             A fee change to {formatBps(scheduled.performanceFeeBps)} performance /{" "}
             {formatBps(scheduled.managementFeeBps)} management is scheduled for{" "}
             {formatDate(scheduled.effectiveTs)}. Submitting new fees replaces it.
@@ -206,13 +207,16 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
               Reset
             </Button>
             {feeIncrease && (
-              <span className="text-[13px] text-amber-700">
+              <span className="text-[13px] text-amber-300">
                 Fee increase: effective{" "}
                 {formatDate(Math.floor(now) + FEE_INCREASE_DELAY)}
               </span>
             )}
           </div>
         </form>
+        <div className="mt-6">
+          <DangerZone v={v} owner={owner} />
+        </div>
       </CardBody>
     </Card>
   );

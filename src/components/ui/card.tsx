@@ -9,7 +9,7 @@ export const Card = ({
   children: ReactNode;
 }) => (
   <section
-    className={cn("rounded-card border border-border bg-surface", className)}
+    className={cn("rounded-card border border-border bg-gradient-to-b from-white/[0.05] to-white/[0.02]", className)}
   >
     {children}
   </section>
@@ -24,11 +24,11 @@ export const CardHeader = ({
   description?: string;
   action?: ReactNode;
 }) => (
-  <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+  <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-2">
     <div>
-      <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+      <h2 className="font-serif text-2xl leading-tight">{title}</h2>
       {description && (
-        <p className="mt-0.5 text-[13px] text-muted">{description}</p>
+        <p className="mt-1 text-[13px] text-muted">{description}</p>
       )}
     </div>
     {action}
@@ -41,4 +41,4 @@ export const CardBody = ({
 }: {
   className?: string;
   children: ReactNode;
-}) => <div className={cn("px-5 py-4", className)}>{children}</div>;
+}) => <div className={cn("px-6 py-5", className)}>{children}</div>;

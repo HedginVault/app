@@ -29,10 +29,10 @@ export function TokenLogo({
     return (
       // Remote logos come from arbitrary hosts; next/image would need every host allow-listed.
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={token.symbol} className={cn(box, "bg-slate-100 object-cover")} onError={() => setFailed(src)} />
+      <img src={src} alt={token.symbol} className={cn(box, "bg-white/[0.06] object-cover")} onError={() => setFailed(src)} />
     );
   return (
-    <span aria-label={token.symbol} className={cn(box, "bg-slate-200 font-semibold uppercase text-slate-600")}>
+    <span aria-label={token.symbol} className={cn(box, "bg-white/10 font-semibold uppercase text-white/60")}>
       {token.symbol.replace(/[^a-z0-9]/gi, "").slice(0, 2) || "?"}
     </span>
   );

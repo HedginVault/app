@@ -34,7 +34,7 @@ export function PositionCard({
 
   if (p.kind === "error") {
     return (
-      <div className="flex items-center gap-3 px-5 py-4">
+      <div className="flex items-center gap-3 px-6 py-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
             DLMM position
@@ -51,7 +51,7 @@ export function PositionCard({
 
   if (p.kind !== "lp") {
     return (
-      <div className="flex items-center gap-3 px-5 py-4">
+      <div className="flex items-center gap-3 px-6 py-4">
         <TokenLogo token={p.token} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -82,7 +82,7 @@ export function PositionCard({
       : usdValue(p.feeX, x.decimals, x.priceUsd)! + usdValue(p.feeY, y.decimals, y.priceUsd)!;
 
   return (
-    <div className="space-y-4 px-5 py-4">
+    <div className="space-y-4 px-6 py-4">
       <div className="flex items-center gap-3">
         <PairLogo x={x} y={y} size="lg" />
         <div className="min-w-0 flex-1">
@@ -91,7 +91,7 @@ export function PositionCard({
             <Badge>DLMM</Badge>
             <Badge tone={range.inRange ? "accent" : "warning"}>{range.inRange ? "In range" : "Out of range"}</Badge>
           </div>
-          <a href={meteoraUrl(p.lbPair)} target="_blank" rel="noreferrer" className="text-[12px] text-emerald-700 hover:underline">
+          <a href={meteoraUrl(p.lbPair)} target="_blank" rel="noreferrer" className="text-[12px] text-emerald-400 hover:underline">
             View pool on Meteora ↗
           </a>
         </div>

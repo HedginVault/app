@@ -35,7 +35,8 @@ export const clampWidth = (width: number) =>
 
 export function rangeForPlacement(activeBinId: number, width: number, placement: Placement): BinRange {
   const w = clampWidth(width);
-  if (placement === "below") return { lowerBinId: activeBinId - w, upperBinId: activeBinId };
+  // Below ends on the active bin itself, so the max price is the pool price (0%).
+  if (placement === "below") return { lowerBinId: activeBinId - w + 1, upperBinId: activeBinId + 1 };
   if (placement === "above") return { lowerBinId: activeBinId + 1, upperBinId: activeBinId + 1 + w };
   const lowerBinId = activeBinId - Math.floor(w / 2);
   return { lowerBinId, upperBinId: lowerBinId + w };
@@ -64,21 +65,26 @@ export function sidesForRange(range: BinRange, activeBinId: number) {
 const binsOf = (range: BinRange) =>
   Array.from({ length: Math.max(0, range.upperBinId - range.lowerBinId) }, (_, i) => range.lowerBinId + i);
 
-function weight(shape: DlmmShape, distance: number, width: number): number {
+/**
+ * Per-side weight by distance from the active bin. Bid-ask grows linearly toward the range edge;
+ * curve is its mirror image, largest at the price and shrinking linearly to the edge.
+ */
+function weight(shape: DlmmShape, distance: number, span: { min: number; max: number }): number {
   if (shape === "spot") return 1;
   if (shape === "bidAsk") return distance + 1;
-  const sigma = Math.max(1, width / 4);
-  return Math.exp(-(distance * distance) / (2 * sigma * sigma));
+  return span.min + span.max - distance + 1;
 }
 
 /** Preview of how amounts spread over bins. An approximation of the SDK strategies, for display only. */
 export function distribution(range: BinRange, activeBinId: number, shape: DlmmShape, amountX: number, amountY: number) {
   const bins = binsOf(range);
-  const width = bins.length;
   const xBins = bins.filter((b) => b >= activeBinId);
   const yBins = bins.filter((b) => b <= activeBinId);
-  const wx = (b: number) => weight(shape, b - activeBinId, width);
-  const wy = (b: number) => weight(shape, activeBinId - b, width);
+  // Measured from the active bin, or from the nearest range edge when the range sits on one side of it.
+  const spanX = { min: xBins.length ? xBins[0] - activeBinId : 0, max: xBins.length ? xBins[xBins.length - 1] - activeBinId : 0 };
+  const spanY = { min: yBins.length ? activeBinId - yBins[yBins.length - 1] : 0, max: yBins.length ? activeBinId - yBins[0] : 0 };
+  const wx = (b: number) => weight(shape, b - activeBinId, spanX);
+  const wy = (b: number) => weight(shape, activeBinId - b, spanY);
   const sumX = xBins.reduce((a, b) => a + wx(b), 0);
   const sumY = yBins.reduce((a, b) => a + wy(b), 0);
   return bins.map((binId) => ({

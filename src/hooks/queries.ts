@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type QuoteParams } from "@/lib/api";
+import type { ChartTarget, MarketTimeframe } from "@/lib/types";
 
 export const queryKeys = {
   config: ["config"] as const,
@@ -12,6 +13,7 @@ export const queryKeys = {
   holdings: (address: string) => ["holdings", address] as const,
   manager: (wallet: string) => ["manager", wallet] as const,
   pool: (lbPair: string) => ["pool", lbPair] as const,
+  ohlcv: (target: string, tf: string) => ["ohlcv", target, tf] as const,
   quote: (q: QuoteParams) => ["quote", q] as const,
   tokenSearch: (q: string) => ["tokenSearch", q] as const,
   poolSearch: (q: string, page: number) => ["poolSearch", q, page] as const,
@@ -81,6 +83,16 @@ export const useManager = (wallet: string | undefined) =>
     queryKey: queryKeys.manager(wallet ?? ""),
     queryFn: () => api.manager(wallet!, takeFresh(queryKeys.manager(wallet ?? ""))),
     enabled: !!wallet,
+  });
+
+/** Candles for a token (USD) or a pool (quote token). `target` undefined disables the query. */
+export const useOhlcv = (target: ChartTarget | undefined, tf: MarketTimeframe) =>
+  useQuery({
+    queryKey: queryKeys.ohlcv(target ? ("mint" in target ? target.mint : `${target.pool}:${target.base ?? ""}`) : "", tf),
+    queryFn: () => api.ohlcv(target!, tf),
+    enabled: !!target,
+    refetchInterval: 60_000,
+    retry: false,
   });
 
 export const usePool = (lbPair: string | undefined) =>

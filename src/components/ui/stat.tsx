@@ -12,14 +12,14 @@ export const Stat = ({
   sub?: ReactNode;
   tone?: "accent" | "warning" | "danger";
 }) => (
-  <div className="rounded-[10px] border border-border bg-surface px-4 py-3">
-    <div className="text-[12px] font-medium text-muted">{label}</div>
+  <div className="rounded-card border border-border bg-white/[0.03] px-5 py-4">
+    <div className="text-[13px] text-muted">{label}</div>
     <div
       className={cn(
-        "mt-1 text-lg font-semibold tabular-nums tracking-tight",
-        tone === "accent" && "text-emerald-700",
-        tone === "warning" && "text-amber-700",
-        tone === "danger" && "text-red-700",
+        "mt-1.5 truncate text-xl font-medium tabular-nums tracking-tight",
+        tone === "accent" && "text-emerald-400",
+        tone === "warning" && "text-amber-300",
+        tone === "danger" && "text-red-300",
       )}
     >
       {value}

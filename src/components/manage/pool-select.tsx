@@ -2,7 +2,6 @@
 
 import { PublicKey } from "@solana/web3.js";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,7 +43,7 @@ export function PoolSelect({
   return (
     <div className="space-y-3">
       <Input
-        placeholder="Search token, pair (SOL-USDC) or pool address"
+        placeholder="Search pool, e.g. SOL-USDC or address"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -55,57 +54,64 @@ export function PoolSelect({
         <button
           type="button"
           onClick={() => onSelect({ address: pasted } as PoolSearchResult)}
-          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-emerald-300 hover:bg-slate-50"
+          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-emerald-400/40 hover:bg-white/[0.03]"
         >
           Open pool {shortAddress(pasted)}
         </button>
       )}
       {search.isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
+        <div className="space-y-1.5">
+          <Skeleton className="h-11" />
+          <Skeleton className="h-11" />
+          <Skeleton className="h-11" />
         </div>
       ) : search.error ? (
         <p className="text-[13px] text-muted">Pool search unavailable. Paste a pool address to open it directly.</p>
       ) : pools.length === 0 ? (
         <p className="text-[13px] text-muted">No DLMM pools found.</p>
       ) : (
-        <ul className="space-y-2">
-          {pools.map((p) => {
-            const held = [p.tokenX, p.tokenY].filter((t) => heldMints.has(t.mint));
-            return (
-              <li key={p.address}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(p)}
-                  className="w-full rounded-card border border-border px-3 py-2.5 text-left hover:border-emerald-300 hover:bg-slate-50"
-                >
-                  <div className="flex items-center gap-2">
-                    <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
-                    <span className="flex items-center gap-1 text-sm font-medium">
-                      {p.tokenX.symbol}
-                      {p.tokenX.verified && <VerifiedMark />}
-                      <span className="text-muted">-</span>
-                      {p.tokenY.symbol}
-                      {p.tokenY.verified && <VerifiedMark />}
+        <div className="overflow-hidden rounded-card border border-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4rem] gap-2 border-b border-border px-3 py-2 text-[11px] text-muted">
+            <span>Pool</span>
+            <span className="text-right">TVL</span>
+            <span className="text-right" title="24h fees earned relative to TVL">24h yield</span>
+          </div>
+          {/* ponytail: fixed-height scroll keeps the panel short; the page size already caps rows */}
+          <ul className="max-h-80 divide-y divide-border overflow-y-auto">
+            {pools.map((p) => {
+              const held = [p.tokenX, p.tokenY].filter((t) => heldMints.has(t.mint));
+              return (
+                <li key={p.address}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(p)}
+                    title={`24h volume ${formatUsd(p.volume24h, { compact: true })}`}
+                    className="grid w-full grid-cols-[minmax(0,1fr)_4.5rem_4rem] items-center gap-2 px-3 py-2 text-left hover:bg-white/[0.04]"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-1 truncate text-[13px] font-medium">
+                          {p.tokenX.symbol}
+                          {p.tokenX.verified && <VerifiedMark />}
+                          <span className="text-muted">/</span>
+                          {p.tokenY.symbol}
+                          {p.tokenY.verified && <VerifiedMark />}
+                        </span>
+                        <span className="block truncate text-[11px] text-muted">
+                          Bin {p.binStep} · {p.baseFeePct}% fee
+                          {held.length > 0 && <span className="text-emerald-400"> · Vault holds {held.map((t) => t.symbol).join("/")}</span>}
+                        </span>
+                      </span>
                     </span>
-                    <Badge>bin {p.binStep}</Badge>
-                  </div>
-                  <div className="mt-1.5 grid grid-cols-4 gap-2 text-[12px] tabular-nums">
-                    <span><span className="block text-muted">TVL</span>{formatUsd(p.tvl, { compact: true })}</span>
-                    <span><span className="block text-muted">24h vol</span>{formatUsd(p.volume24h, { compact: true })}</span>
-                    <span><span className="block text-muted">Fee</span>{p.baseFeePct}%</span>
-                    <span><span className="block text-muted">24h fee/TVL</span>{p.feeTvl24h.toFixed(2)}%</span>
-                  </div>
-                  {held.length > 0 && (
-                    <div className="mt-1.5 text-[12px] text-emerald-700">Vault holds {held.map((t) => t.symbol).join(" / ")}</div>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    <span className="text-right text-[13px] tabular-nums">{formatUsd(p.tvl, { compact: true })}</span>
+                    <span className="text-right text-[13px] tabular-nums text-emerald-400">{p.feeTvl24h.toFixed(2)}%</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
       {search.data && search.data.pages > 1 && (
         <div className="flex items-center justify-between text-[12px] text-muted">

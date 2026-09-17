@@ -67,12 +67,12 @@ export function ReviewDialog({
         {rows.map((r) => (
           <div key={r.label} className="flex justify-between gap-4">
             <dt className="text-muted">{r.label}</dt>
-            <dd className={cn("text-right tabular-nums", r.tone === "warn" && "text-amber-700", r.tone === "danger" && "text-red-700")}>{r.value}</dd>
+            <dd className={cn("text-right tabular-nums", r.tone === "warn" && "text-amber-300", r.tone === "danger" && "text-red-300")}>{r.value}</dd>
           </div>
         ))}
       </dl>
       {notes.length > 0 && (
-        <ul className="mt-4 space-y-1 rounded-[10px] bg-slate-50 px-3 py-2 text-[12px] text-slate-600">
+        <ul className="mt-4 space-y-1 rounded-[10px] bg-white/[0.03] px-3 py-2 text-[12px] text-white/60">
           {notes.map((n) => (
             <li key={n}>{n}</li>
           ))}
@@ -87,7 +87,7 @@ export function ReviewDialog({
                 <span>
                   {i + 1}. {s.label}
                 </span>
-                <span className={cn("text-[12px]", state === "failed" ? "text-danger" : state === "done" ? "text-emerald-700" : "text-muted")}>
+                <span className={cn("text-[12px]", state === "failed" ? "text-danger" : state === "done" ? "text-emerald-400" : "text-muted")}>
                   {state ? STATE_LABEL[state] : "Waiting"}
                 </span>
               </li>

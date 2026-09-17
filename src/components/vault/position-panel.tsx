@@ -37,7 +37,7 @@ export function PositionPanel({ v }: { v: VaultDetail }) {
                 <div className="text-lg font-semibold tabular-nums">{formatTokenAmount(position.data.shares, v.depositDecimals, { maxFraction: 4 })}</div>
               </div>
               <div>
-                <div className="text-[12px] text-muted">Value at NAV</div>
+                <div className="text-[12px] text-muted">Value</div>
                 <div className="text-lg font-semibold tabular-nums">{formatTokenAmount(position.data.valueAtNav, v.depositDecimals, { maxFraction: 2 })} {v.depositSymbol}</div>
               </div>
             </div>

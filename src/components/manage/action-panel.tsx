@@ -6,7 +6,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import type { PanelState } from "@/lib/panel-params";
 import { isOperational } from "@/lib/swap-logic";
-import type { HoldingsView, LpPositionView, VaultDetail } from "@/lib/types";
+import type { HoldingsView, LpPositionView, PriceRange, VaultDetail } from "@/lib/types";
 import { LiquidityCard } from "./liquidity-card";
 import { ManagePosition } from "./manage-position";
 import { PoweredBy } from "./powered-by";
@@ -20,6 +20,7 @@ export function ActionPanel({
   replace,
   nonce,
   onPrefill,
+  onRangeChange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -29,6 +30,8 @@ export function ActionPanel({
   nonce: number;
   /** Replace the state and remount the card (used by shortcuts inside the panel). */
   onPrefill: (s: PanelState) => void;
+  /** Draft LP range for the chart overlay. */
+  onRangeChange?: (range: PriceRange | null) => void;
 }) {
   const swapFor = ({ to, amount }: { to: string; amount?: string }) =>
     onPrefill({ panel: "swap", from: v.depositMint, to, amount });
@@ -50,7 +53,7 @@ export function ActionPanel({
         />
         <PoweredBy protocol={state.panel === "swap" ? "jupiter" : "meteora"} />
         {!isOperational(v) && (
-          <p className="rounded-[10px] border border-amber-200 bg-warning-soft px-3 py-2 text-[12px] text-amber-800">
+          <p className="rounded-[10px] border border-amber-400/30 bg-warning-soft px-3 py-2 text-[12px] text-amber-200">
             {v.protocol.status !== "normal" ? `Protocol is ${v.protocol.status}` : `Vault is ${v.status}`}: strategy actions are disabled.
           </p>
         )}
@@ -91,6 +94,7 @@ export function ActionPanel({
             pool={state.pool}
             onPoolChange={(pool) => replace(pool ? { panel: "lp", pool } : { panel: "lp" })}
             onSwapFor={swapFor}
+            onRangeChange={onRangeChange}
             onOpenedPartially={(position) => {
               toast("Position created; add liquidity to finish");
               onPrefill({ panel: "lp", position, mode: "add" });

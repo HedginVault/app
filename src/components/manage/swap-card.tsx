@@ -134,9 +134,9 @@ export function SwapCard({
       <button
         type="button"
         onClick={() => setPicking(true)}
-        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-2.5 text-sm font-medium hover:bg-slate-50"
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-2.5 text-sm font-medium hover:bg-white/[0.03]"
       >
-        {token ? <TokenLogo token={token} size="sm" /> : <span className="size-5 rounded-full bg-slate-200" />}
+        {token ? <TokenLogo token={token} size="sm" /> : <span className="size-5 rounded-full bg-white/10" />}
         {token?.symbol ?? "Select"} <span className="text-muted">▾</span>
       </button>
     ) : (
@@ -179,7 +179,7 @@ export function SwapCard({
           open={slipOpen}
           onOpenChange={setSlipOpen}
           trigger={
-            <button type="button" onClick={() => setSlipOpen((o) => !o)} className="rounded-md px-2 py-1 text-[12px] text-muted hover:bg-slate-100">
+            <button type="button" onClick={() => setSlipOpen((o) => !o)} className="rounded-md px-2 py-1 text-[12px] text-muted hover:bg-white/[0.06]">
               Slippage {formatBps(slippageBps)} ⚙
             </button>
           }
@@ -238,7 +238,7 @@ export function SwapCard({
             setInput("");
             update({ buy: !buy, input: "" });
           }}
-          className="rounded-full border border-border bg-surface p-1.5 text-muted shadow-sm hover:text-foreground"
+          className="rounded-full border border-border bg-surface p-1.5 text-muted shadow-none hover:text-foreground"
         >
           ⇅
         </button>
@@ -268,7 +268,7 @@ export function SwapCard({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Price impact</dt>
-            <dd className={severity === "high" ? "text-red-700" : severity === "warn" ? "text-amber-700" : "tabular-nums"}>{impact.toFixed(2)}%</dd>
+            <dd className={severity === "high" ? "text-red-300" : severity === "warn" ? "text-amber-300" : "tabular-nums"}>{impact.toFixed(2)}%</dd>
           </div>
           <div className="flex justify-between"><dt className="text-muted">Minimum received</dt><dd className="tabular-nums">{formatTokenAmount(minReceived(out!, slippageBps), to.decimals, { maxFraction: 6 })} {to.symbol}</dd></div>
           <div className="flex justify-between"><dt className="text-muted">Route</dt><dd className="truncate pl-4 text-right">{quote.data.routeLabels.join(" → ")}</dd></div>

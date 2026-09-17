@@ -12,7 +12,7 @@ export const Field = ({
   children: ReactNode;
 }) => (
   <label className="block">
-    <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
+    <span className="mb-1.5 block text-[13px] font-medium text-white/80">
       {label}
     </span>
     {children}

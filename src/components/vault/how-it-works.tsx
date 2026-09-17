@@ -5,10 +5,10 @@ const steps = [
 ];
 
 export const HowItWorks = () => (
-  <ol className="grid gap-4 px-5 py-4 sm:grid-cols-3">
+  <ol className="grid gap-6 sm:grid-cols-3">
     {steps.map((s) => (
       <li key={s.n} className="flex gap-3">
-        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-emerald-700">{s.n}</span>
+        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-emerald-400">{s.n}</span>
         <div>
           <div className="text-sm font-medium">{s.title}</div>
           <p className="mt-0.5 text-[13px] text-muted">{s.body}</p>

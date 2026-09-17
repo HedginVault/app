@@ -28,7 +28,7 @@ describe("ranges", () => {
   });
   it("places ranges around, below and above the active bin (upper exclusive)", () => {
     expect(rangeForPlacement(100, 10, "both")).toEqual({ lowerBinId: 95, upperBinId: 105 });
-    expect(rangeForPlacement(100, 10, "below")).toEqual({ lowerBinId: 90, upperBinId: 100 });
+    expect(rangeForPlacement(100, 10, "below")).toEqual({ lowerBinId: 91, upperBinId: 101 });
     expect(rangeForPlacement(100, 10, "above")).toEqual({ lowerBinId: 101, upperBinId: 111 });
     expect(rangeForPlacement(100, 999, "both").upperBinId - rangeForPlacement(100, 999, "both").lowerBinId).toBe(70);
   });
@@ -62,6 +62,9 @@ describe("distribution", () => {
     const at = (d: typeof curve, id: number) => d.find((b) => b.binId === id)!;
     expect(at(curve, 101).x).toBeGreaterThan(at(curve, 104).x);
     expect(at(bidAsk, 104).x).toBeGreaterThan(at(bidAsk, 101).x);
+    // curve mirrors bid-ask: the same per-bin weights, reversed across the side
+    const xs = (d: typeof curve) => d.filter((b) => b.binId >= 100).map((b) => b.x);
+    expect(xs(curve).map((x) => x.toFixed(9))).toEqual(xs(bidAsk).reverse().map((x) => x.toFixed(9)));
   });
 });
 

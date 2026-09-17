@@ -64,6 +64,8 @@ export interface VaultDetail extends VaultSummary {
   navEpoch: string;
   minDeposit: string;
   minWithdrawalShares: string;
+  depositPaused: boolean;
+  withdrawalPaused: boolean;
   pendingPerformanceFeeBps: number;
   pendingManagementFeeBps: number;
   feeEffectiveTs: number;

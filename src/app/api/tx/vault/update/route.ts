@@ -19,6 +19,8 @@ export const POST = handlePost(
     minDeposit: amountString.optional(),
     minWithdrawalShares: amountString.optional(),
     status: z.enum(["normal", "paused", "reduceOnly"]).optional(),
+    depositPaused: z.boolean().optional(),
+    withdrawalPaused: z.boolean().optional(),
   })
     // An all-undefined body would assemble a signable instruction that changes nothing.
     .refine(
@@ -30,6 +32,8 @@ export const POST = handlePost(
           b.minDeposit,
           b.minWithdrawalShares,
           b.status,
+          b.depositPaused,
+          b.withdrawalPaused,
         ].some((v) => v !== undefined),
       "no fields to update",
     ),
@@ -44,6 +48,8 @@ export const POST = handlePost(
       minDeposit: b.minDeposit === undefined ? undefined : new BN(b.minDeposit),
       minWithdrawalShares: b.minWithdrawalShares === undefined ? undefined : new BN(b.minWithdrawalShares),
       status: b.status,
+      depositPaused: b.depositPaused,
+      withdrawalPaused: b.withdrawalPaused,
     });
     return assemble(payer, [ix]);
   },

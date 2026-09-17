@@ -36,6 +36,8 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
     minDeposit: amountInput(v.minDeposit, v.depositDecimals),
     minWithdraw: amountInput(v.minWithdrawalShares, v.depositDecimals),
     status: v.status as Status,
+    depositPaused: v.depositPaused,
+    withdrawalPaused: v.withdrawalPaused,
   };
   const signature = [
     v.performanceFeeBps,
@@ -44,6 +46,8 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
     v.minDeposit,
     v.minWithdrawalShares,
     v.status,
+    v.depositPaused,
+    v.withdrawalPaused,
   ].join(":");
   // The vault refetches every 20s and after every send. An untouched form follows those chain values
   // (React's "adjust state when props change" pattern) — otherwise `changes` would diff mount-time
@@ -56,6 +60,8 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
 
   const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setState({ signature, form: { ...form, [k]: e.target.value }, touched: true });
+  const toggle = (k: "depositPaused" | "withdrawalPaused") => (e: ChangeEvent<HTMLInputElement>) =>
+    setState({ signature, form: { ...form, [k]: e.target.checked }, touched: true });
   const reset = () => setState({ signature, form: initial, touched: false });
 
   const perf = toBps(form.perf);
@@ -85,6 +91,8 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   if (minWithdraw !== null && minWithdraw.toString() !== v.minWithdrawalShares)
     changes.minWithdrawalShares = minWithdraw.toString();
   if (form.status !== v.status) changes.status = form.status;
+  if (form.depositPaused !== v.depositPaused) changes.depositPaused = form.depositPaused;
+  if (form.withdrawalPaused !== v.withdrawalPaused) changes.withdrawalPaused = form.withdrawalPaused;
   const dirty = Object.keys(changes).length > 0;
   const feeIncrease =
     (perf !== null && perf > v.performanceFeeBps) || (mgmt !== null && mgmt > v.managementFeeBps);
@@ -159,6 +167,32 @@ export function SettingsTab({ v, owner }: { v: VaultDetail; owner: string }) {
               <option value="paused">Paused</option>
             </select>
           </Field>
+          <div>
+            <span className="mb-1.5 block text-[13px] font-medium text-slate-700">Pause</span>
+            <div className="flex h-10 items-center gap-5 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="size-4 cursor-pointer accent-[var(--accent)]"
+                  checked={form.depositPaused}
+                  onChange={toggle("depositPaused")}
+                />
+                Deposits
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="size-4 cursor-pointer accent-[var(--accent)]"
+                  checked={form.withdrawalPaused}
+                  onChange={toggle("withdrawalPaused")}
+                />
+                Withdrawals
+              </label>
+            </div>
+            <span className="mt-1 block text-[12px] text-muted">
+              Blocks new requests and their settlement. Pending requests can still be cancelled or rejected.
+            </span>
+          </div>
           <div className="flex items-center gap-3 sm:col-span-2">
             <Button type="submit" disabled={invalid || !dirty} loading={pending}>
               Save changes

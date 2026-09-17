@@ -4392,6 +4392,16 @@ export type HedgeVault = {
       "code": 6062,
       "name": "invalidPosition",
       "msg": "Position address does not match"
+    },
+    {
+      "code": 6063,
+      "name": "vaultDepositPaused",
+      "msg": "Vault deposits are paused by the manager"
+    },
+    {
+      "code": 6064,
+      "name": "vaultWithdrawalPaused",
+      "msg": "Vault withdrawals are paused by the manager"
     }
   ],
   "types": [
@@ -5872,11 +5882,25 @@ export type HedgeVault = {
             "type": "u8"
           },
           {
+            "name": "depositPaused",
+            "docs": [
+              "Nonzero when the manager has paused deposit requests and their resolution."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "withdrawalPaused",
+            "docs": [
+              "Nonzero when the manager has paused withdrawal requests and their resolution."
+            ],
+            "type": "u8"
+          },
+          {
             "name": "padding0",
             "type": {
               "array": [
                 "u8",
-                5
+                3
               ]
             }
           },
@@ -6130,6 +6154,18 @@ export type HedgeVault = {
                 }
               }
             }
+          },
+          {
+            "name": "depositPaused",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "withdrawalPaused",
+            "type": {
+              "option": "bool"
+            }
           }
         ]
       }
@@ -6182,6 +6218,14 @@ export type HedgeVault = {
                 "name": "vaultStatus"
               }
             }
+          },
+          {
+            "name": "depositPaused",
+            "type": "bool"
+          },
+          {
+            "name": "withdrawalPaused",
+            "type": "bool"
           }
         ]
       }

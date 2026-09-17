@@ -57,6 +57,8 @@ export interface VaultUpdateArgs {
   minDeposit?: BN;
   minWithdrawalShares?: BN;
   status?: Status;
+  depositPaused?: boolean;
+  withdrawalPaused?: boolean;
 }
 
 export const vaultUpdateIx = (program: P, ctx: VaultCtx, authority: PublicKey, a: VaultUpdateArgs) =>
@@ -68,6 +70,8 @@ export const vaultUpdateIx = (program: P, ctx: VaultCtx, authority: PublicKey, a
       minDeposit: a.minDeposit ?? null,
       minWithdrawalShares: a.minWithdrawalShares ?? null,
       status: toStatusArg(a.status),
+      depositPaused: a.depositPaused ?? null,
+      withdrawalPaused: a.withdrawalPaused ?? null,
     })
     .accounts({ authority, vault: ctx.key })
     .instruction();

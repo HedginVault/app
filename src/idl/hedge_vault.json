@@ -4386,6 +4386,16 @@
       "code": 6062,
       "name": "InvalidPosition",
       "msg": "Position address does not match"
+    },
+    {
+      "code": 6063,
+      "name": "VaultDepositPaused",
+      "msg": "Vault deposits are paused by the manager"
+    },
+    {
+      "code": 6064,
+      "name": "VaultWithdrawalPaused",
+      "msg": "Vault withdrawals are paused by the manager"
     }
   ],
   "types": [
@@ -5866,11 +5876,25 @@
             "type": "u8"
           },
           {
+            "name": "deposit_paused",
+            "docs": [
+              "Nonzero when the manager has paused deposit requests and their resolution."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "withdrawal_paused",
+            "docs": [
+              "Nonzero when the manager has paused withdrawal requests and their resolution."
+            ],
+            "type": "u8"
+          },
+          {
             "name": "padding0",
             "type": {
               "array": [
                 "u8",
-                5
+                3
               ]
             }
           },
@@ -6124,6 +6148,18 @@
                 }
               }
             }
+          },
+          {
+            "name": "deposit_paused",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "withdrawal_paused",
+            "type": {
+              "option": "bool"
+            }
           }
         ]
       }
@@ -6176,6 +6212,14 @@
                 "name": "VaultStatus"
               }
             }
+          },
+          {
+            "name": "deposit_paused",
+            "type": "bool"
+          },
+          {
+            "name": "withdrawal_paused",
+            "type": "bool"
           }
         ]
       }

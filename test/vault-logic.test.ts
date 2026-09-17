@@ -25,6 +25,7 @@ const detail: VaultDetail = {
   pendingDeposits: "100000000", pendingWithdrawalShares: "0",
   unclaimedManagerFeeShares: "0", unclaimedPlatformFeeShares: "0", epochOutflow: "0",
   highWaterMark: "1100000000", navEpoch: "19675", minDeposit: "10000000", minWithdrawalShares: "1000000",
+  depositPaused: false, withdrawalPaused: false,
   pendingPerformanceFeeBps: 0, pendingManagementFeeBps: 0, feeEffectiveTs: 0, openStrategyCount: 0,
   protocol: { status: "normal", maxEpochOutflowBps: 2000, maxSlippageBps: 300 },
 };
@@ -81,6 +82,10 @@ describe("validateDeposit", () => {
     expect(validateDeposit({ ...detail, protocol: { ...detail.protocol, status: "reduceOnly" } }, 20000000n, emptyPosition)).toMatch(/protocol/i);
     expect(validateDeposit({ ...detail, navPerShare: "0" }, 20000000n, emptyPosition)).toMatch(/nav/i);
   });
+  it("rejects when the manager paused deposits, but not when only withdrawals are paused", () => {
+    expect(validateDeposit({ ...detail, depositPaused: true }, 20000000n, emptyPosition)).toMatch(/deposits are paused/i);
+    expect(validateDeposit({ ...detail, withdrawalPaused: true }, 20000000n, emptyPosition)).toBeNull();
+  });
   it("rejects when an older-epoch request is unresolved", () => {
     const pos: UserPosition = {
       ...emptyPosition,
@@ -114,6 +119,10 @@ describe("validateWithdrawal", () => {
     expect(validateWithdrawal(detail, 500000n, holder)).toMatch(/minimum/i);
     expect(validateWithdrawal(detail, 6000000n, holder)).toMatch(/balance/i);
     expect(validateWithdrawal({ ...detail, status: "paused" }, 2000000n, holder)).toMatch(/paused/i);
+  });
+  it("rejects when the manager paused withdrawals, but not when only deposits are paused", () => {
+    expect(validateWithdrawal({ ...detail, withdrawalPaused: true }, 2000000n, holder)).toMatch(/withdrawals are paused/i);
+    expect(validateWithdrawal({ ...detail, depositPaused: true }, 2000000n, holder)).toBeNull();
   });
   it("allows reduce-only", () => {
     expect(validateWithdrawal({ ...detail, status: "reduceOnly" }, 2000000n, holder)).toBeNull();

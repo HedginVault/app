@@ -61,6 +61,7 @@ export function validateDeposit(
 ): string | null {
   if (d.protocol.status !== "normal") return `Protocol is ${statusLabel[d.protocol.status]}, deposits are closed`;
   if (d.status !== "normal") return `Vault is ${statusLabel[d.status]}, deposits are closed`;
+  if (d.depositPaused) return "Deposits are paused by the vault manager";
   if (big(d.navPerShare) === 0n) return "Vault NAV is zero, deposits are closed";
   const stale = staleRequest(p.depositRequest, "deposit", now);
   if (stale) return stale;
@@ -79,6 +80,7 @@ export function validateWithdrawal(
 ): string | null {
   if (d.protocol.status === "paused") return "Protocol is paused, withdrawals are closed";
   if (d.status === "paused") return "Vault is paused, withdrawals are closed";
+  if (d.withdrawalPaused) return "Withdrawals are paused by the vault manager";
   const stale = staleRequest(p.withdrawalRequest, "withdrawal", now);
   if (stale) return stale;
   if (shares <= 0n) return "Enter an amount";

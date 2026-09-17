@@ -99,6 +99,8 @@ export const readVaultDetail = (address: string) =>
       navEpoch: bn(account.navEpoch),
       minDeposit: bn(account.minDeposit),
       minWithdrawalShares: bn(account.minWithdrawalShares),
+      depositPaused: account.depositPaused !== 0,
+      withdrawalPaused: account.withdrawalPaused !== 0,
       pendingPerformanceFeeBps: account.pendingPerformanceFeeBps,
       pendingManagementFeeBps: account.pendingManagementFeeBps,
       feeEffectiveTs: account.feeEffectiveTs.toNumber(),

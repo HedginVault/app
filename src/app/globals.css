@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  /* dark emerald palette, matches the landing page */
+  --background: #0a0f0d;
+  --surface: #111815;
+  --border: rgba(255, 255, 255, 0.1);
+  --foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --accent: #34d399;
+  --accent-foreground: #022c22;
+  --accent-soft: rgba(52, 211, 153, 0.1);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.1);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+  --radius: 16px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-crimson);
+  --animate-bin-rise: bin-rise 450ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+
+  /* liquidity bins grow up from the baseline */
+  @keyframes bin-rise {
+    from {
+      transform: scaleY(0);
+    }
+  }
+}
+
+html {
+  color-scheme: dark;
+}
+
+/* no rubber-band bounce past the top/bottom of the page */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background: radial-gradient(60rem 30rem at 50% -10rem, rgba(52, 211, 153, 0.08), transparent) no-repeat,
+    var(--background);
+  color: var(--foreground);
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* wallet-adapter button, restyled to the dark emerald theme */
+.wallet-adapter-button-trigger {
+  background: linear-gradient(to right, #6ee7b7, #10b981) !important;
+  color: var(--accent-foreground) !important;
+  border-radius: 10px !important;
+  height: 40px !important;
+  font-family: var(--font-geist-sans) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+.top-bar .wallet-adapter-button-trigger {
+  height: 48px !important;
+  padding: 0 24px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+}
+.wallet-adapter-dropdown-list {
+  font-family: var(--font-geist-sans) !important;
+}

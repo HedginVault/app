@@ -183,6 +183,32 @@ src/
 test/             vitest suites
 ```
 
+## Deploy
+
+`.github/workflows/build-deploy.yml` runs on pushes to `main` (except documentation-only
+changes) and manual dispatches. It builds and pushes immutable and `main` tags to
+`ghcr.io/hedgevaults/app`, runs lint, tests, and the production build, then deploys the
+immutable image to the `hedgevault-prod` namespace. The Kubernetes manifests provide a
+Deployment, ClusterIP Service, nginx Ingress with cert-manager TLS, and health probes at
+`/api/health`.
+
+One-time GitHub setup:
+
+- Add the base64-encoded cluster configuration as the `KUBECONFIG` secret.
+- Add `APP_HOST` as a variable on the `production` Environment and point that hostname's DNS
+  to the server running nginx Ingress.
+- Optionally add required reviewers to the `production` Environment.
+
+One-time cluster setup (not managed by the workflow):
+
+- `ghcr-pull` in `hedgevault-prod` — image pull credentials for GHCR.
+- `app-secrets` in `hedgevault-prod` — `RPC_URL` and, when used, `JUPITER_API_KEY`. Never put
+  these values in the ConfigMap, image, or a `NEXT_PUBLIC_*` variable.
+
+`NEXT_PUBLIC_CLUSTER` is intentionally set to `mainnet-beta` in both the image build and
+`k8s/configmap.yaml`. Because Next.js embeds public variables during `yarn build`, change both
+together if the deployment target changes.
+
 ## Further reading
 
 - [`docs/app-fullstack-architecture.md`](docs/app-fullstack-architecture.md) — where this goes

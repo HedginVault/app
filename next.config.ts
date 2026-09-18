@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Emit the traced production server consumed by the container image.
+  output: "standalone",
   // Keep Next rooted at this standalone repository.
   turbopack: { root: __dirname },
   // Node-only SDKs stay out of the server bundle.

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # Keep this synchronized with the Docker build argument in the workflow.
+  NEXT_PUBLIC_CLUSTER: "mainnet-beta"
+

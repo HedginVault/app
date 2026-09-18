@@ -184,7 +184,6 @@ export interface Candle {
 }
 
 export interface OhlcvView {
-  pool: string;
   /** e.g. "SOL / USDC" */
   name: string;
   /** "usd" for a token chart, the pool's quote symbol for a pair chart. */

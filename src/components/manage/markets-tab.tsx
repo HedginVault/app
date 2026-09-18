@@ -122,7 +122,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
           ) : (
             <PriceChart candles={candles} range={range} />
           )}
-          <p className="text-right text-[11px] text-white/40">Market data: GeckoTerminal</p>
+          <p className="text-right text-[11px] text-white/40">Market data: Jupiter</p>
         </CardBody>
       </Card>
 

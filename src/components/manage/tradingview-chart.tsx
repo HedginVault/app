@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import type { ChartTarget, MarketTimeframe, PriceRange } from "@/lib/types";
 
 /**
- * TradingView Charting Library (Advanced Charts) with our GeckoTerminal-backed OHLCV route as the datafeed.
+ * TradingView Charting Library (Advanced Charts) with our Jupiter-backed OHLCV route as the datafeed.
  *
  * The library is licensed and not on npm: copy the `charting_library/` folder from TradingView's private repo
  * into `app/public/charting_library/`. Until those files exist, `useChartingLibrary()` reports "missing" and
@@ -112,8 +112,8 @@ function createDatafeed() {
               type: "crypto",
               session: "24x7",
               timezone: "Etc/UTC",
-              exchange: "GeckoTerminal",
-              listed_exchange: "GeckoTerminal",
+              exchange: "Jupiter",
+              listed_exchange: "Jupiter",
               format: "price",
               minmov: 1,
               pricescale: pricescaleFor(last),

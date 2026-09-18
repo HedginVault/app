@@ -130,7 +130,7 @@ export function dlmmContextFor(
 }
 
 /**
- * Context for an existing position (mirrors the program repo's DLMM handler): the lbPair and range come off
+ * Context for an existing position (port of `tests/handler/dlmm.ts`): the lbPair and range come off
  * the position account. Costs 1 RPC for the position plus the pool hydration (cached 5 minutes).
  */
 export async function getDlmmContext(vault: PublicKey, position: PublicKey, payer: PublicKey) {

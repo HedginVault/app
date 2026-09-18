@@ -101,7 +101,7 @@ type StrategyType = { jupiterSwap: { targetMint: PublicKey } } | { meteoraDlmm: 
 
 /**
  * Closes a strategy; the remaining accounts depend on the strategy type
- * (mirrors the program repo's vault-close-strategy handler).
+ * (mirrors tests/handler/vault_close_strategy.ts).
  */
 export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: PublicKey, strategy: PublicKey) {
   const account = await program.account.strategy.fetchNullable(strategy);

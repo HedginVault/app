@@ -8,6 +8,7 @@ import { getDepositRequestPda, getShareMintPda, getWithdrawalRequestPda } from "
 import { getConnection, getProgram } from "../program";
 import { decodeTokenAmount, getMultipleAccounts } from "../rpc";
 import { getTokenProgram } from "../tokens";
+import { isNativeMint, spendableSol } from "../wsol";
 import { toDepositRequestView, toWithdrawalRequestView } from "./decode";
 import { fetchVaultAccount } from "./vaults";
 
@@ -15,12 +16,15 @@ const TTL = 10_000;
 
 /**
  * 2 RPC: the vault, then one batched read of share ATA, deposit ATA, deposit request and withdrawal
- * request.
+ * request (plus the wallet itself for a SOL vault).
  *
  * `shares` is the balance of the owner's share ATA only. Shares moved into the vault's share escrow
  * by a pending withdrawal are NOT counted here — those live in `withdrawalRequest.shares`. A holder's
  * full economic exposure is `shares + (withdrawalRequest?.shares ?? 0)`, and `valueAtNav` likewise
  * values the wallet balance alone.
+ *
+ * For a SOL vault `depositTokenBalance` is wSOL plus native SOL above a fee/rent reserve, since the
+ * deposit transaction wraps the difference.
  */
 export const readPosition = (vault: string, owner: string) =>
   cached(`position:${vault}:${owner}`, TTL, async (): Promise<UserPosition> => {
@@ -31,11 +35,13 @@ export const readPosition = (vault: string, owner: string) =>
     const navEpoch = BigInt(account.navEpoch.toString());
     const nav = BigInt(account.navPerShare.toString());
 
-    const [shareInfo, depositInfo, depInfo, wdInfo] = await getMultipleAccounts(getConnection(), [
+    const native = isNativeMint(account.depositMint);
+    const [shareInfo, depositInfo, depInfo, wdInfo, walletInfo] = await getMultipleAccounts(getConnection(), [
       getAssociatedTokenAddressSync(getShareMintPda(key), user, false),
       getAssociatedTokenAddressSync(account.depositMint, user, false, tokenProgram),
       getDepositRequestPda(key, user),
       getWithdrawalRequestPda(key, user),
+      ...(native ? [user] : []),
     ]);
     const shares = decodeTokenAmount(shareInfo);
     const dep = depInfo ? program.coder.accounts.decode<DepositRequestAccount>("depositRequest", depInfo.data) : null;
@@ -46,7 +52,7 @@ export const readPosition = (vault: string, owner: string) =>
     return {
       shares: shares.toString(),
       valueAtNav: estimatePayout(shares, nav).toString(),
-      depositTokenBalance: decodeTokenAmount(depositInfo).toString(),
+      depositTokenBalance: (native ? spendableSol(walletInfo, depositInfo) : decodeTokenAmount(depositInfo)).toString(),
       depositRequest: dep ? toDepositRequestView(dep, navEpoch, nav) : null,
       withdrawalRequest: wd ? toWithdrawalRequestView(wd, navEpoch) : null,
     };

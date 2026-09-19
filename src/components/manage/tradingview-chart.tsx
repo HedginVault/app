@@ -78,7 +78,7 @@ declare global {
   }
 }
 
-const RESOLUTIONS: Record<string, MarketTimeframe> = { "15": "15m", "60": "1h", "240": "4h", "1D": "1d" };
+const RESOLUTIONS: Record<string, MarketTimeframe> = { "5": "5m", "15": "15m", "60": "1h", "240": "4h", "1D": "1d", "1W": "1w" };
 const POLL_MS = 60_000;
 
 /** Tickers carry the target so resolveSymbol/getBars stay stateless: "mint:<address>" or "pool:<address>[:<base>]". */
@@ -119,8 +119,10 @@ function createDatafeed() {
               pricescale: pricescaleFor(last),
               has_intraday: true,
               has_daily: true,
+              has_weekly_and_monthly: true,
+              weekly_multipliers: ["1"],
               supported_resolutions: Object.keys(RESOLUTIONS),
-              intraday_multipliers: ["15", "60", "240"],
+              intraday_multipliers: ["5", "15", "60", "240"],
               volume_precision: 2,
               data_status: "streaming",
               currency_code: view.quote === "usd" ? "USD" : view.quote,
@@ -230,7 +232,7 @@ export function TradingViewChart({
       library_path: LIBRARY_PATH,
       datafeed: createDatafeed(),
       symbol: initialTicker.current,
-      interval: "60",
+      interval: "240",
       theme: "dark",
       locale: "en",
       autosize: true,

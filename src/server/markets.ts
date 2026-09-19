@@ -9,15 +9,18 @@ import { readPoolInfo } from "./tx/dlmm";
 // Jupiter's public price history (the same source as core-engine's `jupiter-prices/charts`). A different host
 // from the lite/pro API: no key, but Cloudflare 403s requests without a browser-like User-Agent.
 const DATAPI = "https://datapi.jup.ag";
-const CANDLES = 300;
+/** Candles per request, newest first page or one page further back per scroll; Jupiter serves up to 5000. */
+const CANDLES = 500;
 const META_TTL_MS = 60 * 60_000;
 const CANDLES_TTL_MS = 60_000;
 
 export const TIMEFRAMES: Record<MarketTimeframe, string> = {
+  "5m": "5_MINUTE",
   "15m": "15_MINUTE",
   "1h": "1_HOUR",
   "4h": "4_HOUR",
   "1d": "1_DAY",
+  "1w": "1_WEEK",
 };
 
 type Num = number | string;

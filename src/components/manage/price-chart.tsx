@@ -13,6 +13,7 @@ import {
   type SeriesAttachedParameter,
   type Time,
   type ISeriesApi,
+  type LogicalRange,
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
@@ -63,16 +64,44 @@ function precisionFor(price: number) {
   return Math.min(12, Math.max(2, Math.ceil(-Math.log10(price)) + 3));
 }
 
-/** TradingView lightweight-charts candles + volume. The chart is created once; data swaps in place. */
+/** Bars shown when no lookback preset is active: enough for trend, few enough to read each candle. */
+const DEFAULT_BARS = 120;
+/** Empty bars kept right of the newest candle so it is not pinned against the price scale. */
+const RIGHT_OFFSET = 4;
+/** Older history is requested once the view scrolls within this many bars of the oldest loaded candle. */
+const LOAD_MORE_BARS = 30;
+
+/** What the chart frames when `key` changes: the window from `from` (unix seconds) to now, or the latest bars. */
+export interface ChartView {
+  key: string;
+  from?: number;
+}
+
+/**
+ * TradingView lightweight-charts candles + volume. The chart is created once; data swaps in place.
+ * The user's zoom and pan survive live refreshes and history prepends; `view` reframes it only when
+ * its key changes (new market, interval or lookback).
+ */
 export function PriceChart({
   candles,
   range = null,
   height = 360,
+  view,
+  ready = true,
+  intraday = true,
+  onLoadMore,
 }: {
   candles: Candle[];
   /** LP range drawn as Min/Max Bin lines with a shaded band, like Meteora. */
   range?: PriceRange | null;
   height?: number;
+  view?: ChartView;
+  /** False while history for `view.from` is still loading, so the frame waits for the data. */
+  ready?: boolean;
+  /** Time labels on the axis; off for daily and weekly candles. */
+  intraday?: boolean;
+  /** Called when the user scrolls near the oldest loaded candle. */
+  onLoadMore?: () => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
@@ -80,6 +109,13 @@ export function PriceChart({
   const volume = useRef<ISeriesApi<"Histogram"> | null>(null);
   const band = useRef(new RangeBand());
   const lines = useRef<IPriceLine[]>([]);
+  const loadMore = useRef(onLoadMore);
+  const shown = useRef<{ first: number; last: number; count: number } | null>(null);
+  const framed = useRef<string | null>(null);
+
+  useEffect(() => {
+    loadMore.current = onLoadMore;
+  }, [onLoadMore]);
 
   useEffect(() => {
     const c = createChart(el.current!, {
@@ -92,7 +128,8 @@ export function PriceChart({
       },
       grid: { vertLines: { color: "rgba(255,255,255,0.04)" }, horzLines: { color: "rgba(255,255,255,0.04)" } },
       rightPriceScale: { borderColor: "rgba(255,255,255,0.1)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true, secondsVisible: false },
+      // Resizes (autoSize settling, the window changing) keep the framed time window, not the bar spacing.
+      timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true, secondsVisible: false, lockVisibleTimeRangeOnResize: true },
       crosshair: { horzLine: { labelBackgroundColor: "#111815" }, vertLine: { labelBackgroundColor: "#111815" } },
     });
     price.current = c.addSeries(CandlestickSeries, {
@@ -105,15 +142,34 @@ export function PriceChart({
     volume.current = c.addSeries(HistogramSeries, { priceScaleId: "", priceFormat: { type: "volume" } });
     c.priceScale("").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     chart.current = c;
+    // A new chart instance (remount, StrictMode's double effect run) starts unframed and empty.
+    framed.current = null;
+    shown.current = null;
     price.current.attachPrimitive(band.current);
+    const nearOldest = (r: LogicalRange | null) => {
+      if (r && r.from < LOAD_MORE_BARS) loadMore.current?.();
+    };
+    c.timeScale().subscribeVisibleLogicalRangeChange(nearOldest);
     return () => {
+      c.timeScale().unsubscribeVisibleLogicalRangeChange(nearOldest);
       c.remove();
       chart.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (!price.current || !volume.current) return;
+    chart.current?.applyOptions({ timeScale: { timeVisible: intraday } });
+  }, [intraday]);
+
+  const viewKey = view?.key;
+  const viewFrom = view?.from;
+  useEffect(() => {
+    const c = chart.current;
+    if (!c || !price.current || !volume.current) return;
+    const scale = c.timeScale();
+    const before = scale.getVisibleLogicalRange();
+    const prev = shown.current;
+
     const last = candles.at(-1)?.close ?? 0;
     const precision = precisionFor(last);
     price.current.applyOptions({ priceFormat: { type: "price", precision, minMove: 10 ** -precision } });
@@ -127,8 +183,40 @@ export function PriceChart({
         color: k.close >= k.open ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)",
       })),
     );
-    chart.current?.timeScale().fitContent();
-  }, [candles]);
+    const first = candles[0];
+    const newest = candles.at(-1);
+    shown.current = first && newest ? { first: first.time, last: newest.time, count: candles.length } : null;
+    if (!first || !newest) return;
+
+    if (framed.current !== (viewKey ?? "")) {
+      // Wait for the preset's history so the frame is drawn once, not re-snapped as pages arrive.
+      if (!ready) return;
+      framed.current = viewKey ?? "";
+      // One logical-range call: the time scale applies ranges lazily, so a second call reading the
+      // first back would see the stale range and overwrite it.
+      const start = viewFrom === undefined ? candles.length - DEFAULT_BARS : Math.max(0, candles.findIndex((k) => k.time >= viewFrom));
+      const frame = () => scale.setVisibleLogicalRange({ from: start, to: candles.length - 1 + RIGHT_OFFSET });
+      // Right after mount `autoSize` has not measured the container yet; a frame set at width 0 is lost.
+      if (scale.width() > 0) frame();
+      else {
+        const sized = () => {
+          scale.unsubscribeSizeChange(sized);
+          frame();
+        };
+        scale.subscribeSizeChange(sized);
+      }
+      return;
+    }
+
+    // Logical indexes are positions in the data, so older bars pushed in at the front would shift the
+    // view back in time. Re-anchor it, and follow new live bars only if the newest one was on screen.
+    if (!before || !prev) return;
+    const prepended = candles.findIndex((k) => k.time >= prev.first);
+    const appended = candles.length - 1 - candles.findLastIndex((k) => k.time <= prev.last);
+    const following = before.to >= prev.count - 1;
+    const shift = Math.max(0, prepended) + (following ? appended : 0);
+    if (shift) scale.setVisibleLogicalRange({ from: before.from + shift, to: before.to + shift });
+  }, [candles, viewKey, viewFrom, ready]);
 
   useEffect(() => {
     const series = price.current;
@@ -158,6 +246,6 @@ export function PriceChart({
   }, [range?.min, range?.max]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div ref={el} className="w-full" style={{ height }} />
+    <div ref={el} className="w-full min-w-0 overflow-hidden" style={{ height }} />
   );
 }

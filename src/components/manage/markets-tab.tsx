@@ -5,8 +5,18 @@ import { Card, CardBody } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHoldings, useOhlcv, usePool } from "@/hooks/queries";
+import { useHoldings, usePool } from "@/hooks/queries";
+import { useCandles } from "@/hooks/use-candles";
 import { usePanel } from "@/hooks/use-panel";
+import {
+  CHART_RANGES,
+  chartRange,
+  changeSince,
+  DEFAULT_RANGE,
+  isIntraday,
+  TIMEFRAME_OPTIONS,
+  type ChartRangeId,
+} from "@/lib/chart-ranges";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
@@ -16,12 +26,7 @@ import { PriceChart } from "./price-chart";
 import { TradingViewChart, useChartingLibrary } from "./tradingview-chart";
 
 const WSOL = "So11111111111111111111111111111111111111112";
-const TIMEFRAMES: { id: MarketTimeframe; label: string }[] = [
-  { id: "15m", label: "15m" },
-  { id: "1h", label: "1H" },
-  { id: "4h", label: "4H" },
-  { id: "1d", label: "1D" },
-];
+const DAY = 86_400;
 
 /**
  * What the chart shows follows the trade panel: a swap charts the non-deposit side in USD
@@ -47,7 +52,9 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const holdings = useHoldings(v.address);
   const { state, replace } = usePanel();
   const [nonce, setNonce] = useState(0);
-  const [tf, setTf] = useState<MarketTimeframe>("1h");
+  // A lookback preset picks its own candle size; picking an interval directly clears the preset.
+  const [lookback, setLookback] = useState<ChartRangeId | null>(DEFAULT_RANGE);
+  const [tf, setTf] = useState<MarketTimeframe>(chartRange(DEFAULT_RANGE).tf);
   const draftPool = usePool(state.panel === "lp" && "pool" in state ? state.pool : undefined);
   const target = chartTarget(state, v.depositMint, holdings.data, draftPool.data?.tokenX.mint);
   // Range lines: the draft from the liquidity form, or the open position being managed.
@@ -64,23 +71,29 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
         : draftRange;
   const library = useChartingLibrary();
   const tv = library === "ready";
-  const ohlcv = useOhlcv(target, tf);
+  const { latest: ohlcv, candles, newest, from, loadMore, covered } = useCandles(target, tf, lookback);
 
   const prefill = (s: PanelState) => {
     replace(s);
     setNonce((n) => n + 1);
   };
 
-  const candles = ohlcv.data?.candles ?? [];
   const last = candles.at(-1)?.close;
-  // Change over the last 24h of loaded candles (or the whole window when it is shorter).
-  const dayAgo = candles.find((c) => c.time >= (candles.at(-1)?.time ?? 0) - 86_400)?.open;
-  const change = last != null && dayAgo ? ((last - dayAgo) / dayAgo) * 100 : null;
+  // Change over the selected lookback, or the last 24h when only an interval is picked. Daily and
+  // weekly candles cannot resolve a 24h move, so that case shows none.
+  const change =
+    from !== undefined
+      ? changeSince(candles, from)
+      : isIntraday(tf) && newest !== undefined
+        ? changeSince(candles, newest - DAY)
+        : null;
+  const changeLabel = lookback ? (lookback === "ALL" ? "all time" : chartRange(lookback).label) : "24H";
+  const targetId = target ? ("mint" in target ? target.mint : `${target.pool}:${target.base ?? ""}`) : "";
   const quote = ohlcv.data?.quote === "usd" ? "$" : "";
   const quoteSuffix = ohlcv.data && ohlcv.data.quote !== "usd" ? ` ${ohlcv.data.quote}` : "";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
       <Card className="min-w-0 self-start">
         <CardBody className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -96,13 +109,23 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
                 {change != null && (
                   <span className={cn("text-sm tabular-nums", change >= 0 ? "text-emerald-400" : "text-red-300")}>
                     {change >= 0 ? "+" : ""}
-                    {change.toFixed(2)}% 24h
+                    {change.toFixed(2)}% {changeLabel}
                   </span>
                 )}
               </div>
             </div>
             {/* TradingView brings its own interval picker */}
-            {!tv && <Segmented size="sm" value={tf} onChange={setTf} options={TIMEFRAMES} />}
+            {!tv && (
+              <Segmented
+                size="sm"
+                value={tf}
+                onChange={(id) => {
+                  setTf(id);
+                  setLookback(null);
+                }}
+                options={TIMEFRAME_OPTIONS}
+              />
+            )}
           </div>
 
           {!target ? (
@@ -120,9 +143,42 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
           ) : !ohlcv.data ? (
             <Skeleton className="h-[360px]" />
           ) : (
-            <PriceChart candles={candles} range={range} />
+            <PriceChart
+              candles={candles}
+              range={range}
+              view={{ key: `${targetId}:${tf}:${lookback ?? ""}`, from }}
+              ready={covered}
+              intraday={isIntraday(tf)}
+              onLoadMore={loadMore}
+            />
           )}
-          <p className="text-right text-[11px] text-white/40">Market data: Jupiter</p>
+          <div className="flex items-center justify-between gap-3">
+            {!tv && target ? (
+              <div role="radiogroup" aria-label="Lookback" className="flex gap-0.5">
+                {CHART_RANGES.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={lookback === r.id}
+                    onClick={() => {
+                      setLookback(r.id);
+                      setTf(r.tf);
+                    }}
+                    className={cn(
+                      "rounded-md px-2 py-0.5 text-[12px] font-medium tabular-nums transition-colors",
+                      lookback === r.id ? "bg-white/10 text-white" : "text-muted hover:text-foreground",
+                    )}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span />
+            )}
+            <p className="text-[11px] text-white/40">Market data: Jupiter</p>
+          </div>
         </CardBody>
       </Card>
 

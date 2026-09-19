@@ -166,7 +166,7 @@ export interface ManagerView {
   vaults: VaultSummary[];
 }
 
-export type MarketTimeframe = "15m" | "1h" | "4h" | "1d";
+export type MarketTimeframe = "5m" | "15m" | "1h" | "4h" | "1d" | "1w";
 
 /** A token in USD, or a pool priced as `base` (default: the pool's own base) in the other token. */
 /** Inclusive price bounds of a DLMM range, token Y per token X. */

@@ -98,15 +98,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate deployment configuration
-        env:
-          APP_HOST: ${{ vars.APP_HOST }}
-        run: |
-          if ! printf '%s' "$APP_HOST" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
-            echo "Set production environment variable APP_HOST to a valid DNS hostname." >&2
-            exit 1
-          fi
-
       - name: Write kubeconfig
         run: |
           mkdir -p "$HOME/.kube"
@@ -122,13 +113,11 @@ jobs:
       # provisioned out-of-band. The workflow never creates or replaces them.
       - name: Apply manifests
         env:
-          APP_HOST: ${{ vars.APP_HOST }}
           IMAGE_TAG: ${{ needs.build.outputs.immutable-tag }}
         run: |
           kubectl -n "$NAMESPACE" apply -f "$MANIFESTS/configmap.yaml"
           kubectl -n "$NAMESPACE" apply -f "$MANIFESTS/service.yaml"
-          sed "s|__APP_HOST__|${APP_HOST}|g" "$MANIFESTS/ingress.yaml" \
-            | kubectl -n "$NAMESPACE" apply -f -
+          kubectl -n "$NAMESPACE" apply -f "$MANIFESTS/ingress.yaml"
           sed "s|__IMAGE_TAG__|${IMAGE_TAG}|g" "$MANIFESTS/deployment.yaml" \
             | kubectl -n "$NAMESPACE" apply -f -
 

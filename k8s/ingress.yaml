@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - __APP_HOST__
+        - hedgin.xyz
       secretName: app-tls
   rules:
-    - host: __APP_HOST__
+    - host: hedgin.xyz
       http:
         paths:
           - path: /
@@ -22,4 +22,3 @@ spec:
                 name: app
                 port:
                   name: http
-

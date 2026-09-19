@@ -195,8 +195,7 @@ Deployment, ClusterIP Service, nginx Ingress with cert-manager TLS, and health p
 One-time GitHub setup:
 
 - Add the base64-encoded cluster configuration as the `KUBECONFIG` secret.
-- Add `APP_HOST` as a variable on the `production` Environment and point that hostname's DNS
-  to the server running nginx Ingress.
+- Point `hedgin.xyz` DNS to the server running nginx Ingress.
 - Optionally add required reviewers to the `production` Environment.
 
 One-time cluster setup (not managed by the workflow):

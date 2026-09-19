@@ -115,6 +115,8 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
       },
       bins: s.bins,
       closable: [s.amountX, s.amountY, s.pendingFeeX, s.pendingFeeY].every((a) => BigInt(a) === 0n),
+      pnlUsd: s.pnlUsd,
+      pnlPct: s.pnlPct,
       ...money(value),
     };
   });

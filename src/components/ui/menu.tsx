@@ -9,6 +9,8 @@ export interface MenuItem {
   disabled?: boolean;
   /** Why the item is disabled; shown under the label. */
   reason?: string;
+  /** Rendered as an inline button next to the card instead of tucked in the "⋯" menu. */
+  primary?: boolean;
 }
 
 export function Menu({ items, label = "Actions" }: { items: MenuItem[]; label?: string }) {

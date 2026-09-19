@@ -147,6 +147,9 @@ export interface DlmmStrategyView extends StrategyBase {
   pendingFeeY: string;
   /** Per-bin amounts held by this position, base units. */
   bins: { binId: number; amountX: string; amountY: string }[];
+  /** All-time PnL from Meteora's indexer; `null` if unavailable. */
+  pnlUsd: number | null;
+  pnlPct: number | null;
 }
 
 /** A DLMM strategy whose position could not be read; reported instead of dropped. */
@@ -280,6 +283,8 @@ export interface LpPositionView extends Money {
   range: LpRange;
   bins: { binId: number; amountX: string; amountY: string }[];
   closable: boolean;
+  pnlUsd: number | null;
+  pnlPct: number | null;
 }
 
 /** A strategy whose position could not be read; it has no value. */

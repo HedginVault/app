@@ -54,11 +54,22 @@ export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: strin
     const pair = `${p.tokenX.symbol}-${p.tokenY.symbol}`;
     const hasFees = BigInt(p.feeX) > 0n || BigInt(p.feeY) > 0n;
     return [
-      { label: "Add liquidity", onSelect: () => prefill({ panel: "lp", position: p.position, mode: "add" }) },
-      { label: "Remove liquidity", onSelect: () => prefill({ panel: "lp", position: p.position, mode: "remove" }) },
-      { label: "Claim fees", disabled: !hasFees, reason: "No fees yet", onSelect: () => prefill({ panel: "lp", position: p.position, mode: "claim" }) },
+      { label: "Add liquidity", primary: true, onSelect: () => prefill({ panel: "lp", position: p.position, mode: "add" }) },
+      {
+        label: "Remove liquidity",
+        primary: true,
+        onSelect: () => prefill({ panel: "lp", position: p.position, mode: "remove" }),
+      },
+      {
+        label: "Claim fees",
+        primary: true,
+        disabled: !hasFees,
+        reason: "No fees yet",
+        onSelect: () => prefill({ panel: "lp", position: p.position, mode: "claim" }),
+      },
       {
         label: "Close position",
+        primary: true,
         disabled: !operational || !p.closable || pending,
         reason: !operational ? "Vault not operational" : "Remove 100% and claim fees first",
         onSelect: () => closeStrategy(p.strategy, pair),

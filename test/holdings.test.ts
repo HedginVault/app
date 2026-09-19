@@ -35,6 +35,7 @@ const dlmm = (priceUsd: number | null): DlmmStrategyView => ({
   amountX: "1000000000", amountY: "50000000", // 1 SOL, 50 USDC
   pendingFeeX: "100000000", pendingFeeY: "1000000", // 0.1 SOL, 1 USDC
   bins: [{ binId: 100, amountX: "1000000000", amountY: "50000000" }],
+  pnlUsd: null, pnlPct: null,
 });
 
 describe("buildHoldingsView", () => {

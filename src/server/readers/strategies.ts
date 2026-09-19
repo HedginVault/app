@@ -5,6 +5,7 @@ import type { DlmmStrategyView, JupiterStrategyView, StrategyView, UnreadableStr
 import { cached } from "../cache";
 import { getActiveBinIds, getPools } from "../dlmm-pool";
 import { getConnection, getProgram } from "../program";
+import { getPositionPnl } from "../dlmm-pnl";
 import { decodeTokenAmount, getMultipleAccounts } from "../rpc";
 import { getMintInfos, getTokenInfos } from "../tokens";
 import { binPrice } from "../tx/dlmm";
@@ -57,6 +58,7 @@ export const readStrategies = (vault: string) =>
         })),
       ),
       dlmmViewsFor(
+        key,
         dlmm.map((r) => ({
           base: base(r),
           position: (r.account.strategyType as { meteoraDlmm: { position: PublicKey } }).meteoraDlmm.position,
@@ -96,6 +98,7 @@ async function jupiterViewsFor(
 }
 
 async function dlmmViewsFor(
+  vault: PublicKey,
   items: { base: Base; position: PublicKey }[],
 ): Promise<(DlmmStrategyView | UnreadableStrategyView)[]> {
   if (items.length === 0) return [];
@@ -156,11 +159,14 @@ async function dlmmViewsFor(
         return unreadable(item, "Position read failed");
       }
       const activeBinId = activeIds.get(lbPair) ?? pool.lbPair.activeId;
+      const pnl = await getPositionPnl(lbPair, vault.toBase58(), position.toBase58());
       return {
         ...base,
         type: "dlmm" as const,
         position: position.toBase58(),
         lbPair,
+        pnlUsd: pnl?.usd ?? null,
+        pnlPct: pnl?.pct ?? null,
         tokenX: tokens.get(pool.tokenX.publicKey.toBase58())!,
         tokenY: tokens.get(pool.tokenY.publicKey.toBase58())!,
         lowerBinId: account.lowerBinId,

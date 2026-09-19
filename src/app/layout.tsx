@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Crimson_Text, Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { TopBar } from "@/components/shell/top-bar";
+import { TopBar, BottomNav } from "@/components/shell/top-bar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,10 +31,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${crimson.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans pb-20 sm:pb-0">
         <Providers>
           <TopBar />
           {children}
+          <BottomNav />
         </Providers>
       </body>
     </html>

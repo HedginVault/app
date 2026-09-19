@@ -271,7 +271,7 @@ export function SwapCard({
             <dd className={severity === "high" ? "text-red-300" : severity === "warn" ? "text-amber-300" : "tabular-nums"}>{impact.toFixed(2)}%</dd>
           </div>
           <div className="flex justify-between"><dt className="text-muted">Minimum received</dt><dd className="tabular-nums">{formatTokenAmount(minReceived(out!, slippageBps), to.decimals, { maxFraction: 6 })} {to.symbol}</dd></div>
-          <div className="flex justify-between"><dt className="text-muted">Route</dt><dd className="truncate pl-4 text-right">{quote.data.routeLabels.join(" → ")}</dd></div>
+          <div className="flex min-w-0 justify-between"><dt className="shrink-0 text-muted">Route</dt><dd className="min-w-0 truncate pl-4 text-right">{quote.data.routeLabels.join(" → ")}</dd></div>
         </dl>
       )}
 

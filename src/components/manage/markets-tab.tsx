@@ -126,7 +126,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
         </CardBody>
       </Card>
 
-      <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         {holdings.data ? (
           <ActionPanel v={v} owner={owner} holdings={holdings.data} state={state} replace={replace} nonce={nonce} onPrefill={prefill} onRangeChange={setDraftRange} />
         ) : holdings.error ? (

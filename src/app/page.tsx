@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JupiterIcon, MeteoraIcon } from "@/components/manage/powered-by";
+import { BrandLogo } from "@/components/shell/brand-logo";
 
 export const metadata: Metadata = {
-  title: "Hedge Vault — Managed vaults on Solana",
+  title: "Hedgin — Managed vaults on Solana",
   description:
     "Deposit into a vault run by a vetted manager. Your money trades on-chain through Meteora and Jupiter, and its real value is posted every day — nothing hidden.",
 };
@@ -97,8 +98,8 @@ const comparison = [
 
 const faqs = [
   {
-    q: "What is Hedge Vault?",
-    a: "Hedge Vault lets you deposit into a vault on Solana that a vetted manager trades through Meteora and Jupiter. You hold a share token that represents your slice of the vault.",
+    q: "What is Hedgin?",
+    a: "Hedgin lets you deposit into a vault on Solana that a vetted manager trades through Meteora and Jupiter. You hold a share token that represents your slice of the vault.",
   },
   {
     q: "How is the vault's value calculated?",
@@ -334,7 +335,7 @@ export default function LandingPage() {
                   <span className="sr-only">Feature</span>
                 </th>
                 <th scope="col" className="px-5 py-4 font-semibold text-emerald-400">
-                  Hedge Vault
+                  Hedgin
                 </th>
                 <th scope="col" className="px-5 py-4 font-medium text-white/50">
                   Doing it yourself
@@ -411,12 +412,7 @@ export default function LandingPage() {
         <footer className="mx-auto max-w-6xl px-6 pb-10">
           <div className="flex flex-col gap-8 border-t border-white/10 pt-10 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="flex items-center gap-2 font-semibold tracking-tight">
-                <span className="grid size-7 place-items-center rounded-lg bg-accent text-[13px] font-bold">
-                  H
-                </span>
-                Hedge Vault
-              </div>
+              <BrandLogo size="footer" />
               <p className="mt-3 max-w-xs text-sm text-white/60">
                 Managed vaults on Solana. Your money, on-chain, always checkable.
               </p>
@@ -449,7 +445,7 @@ export default function LandingPage() {
             </nav>
           </div>
           <p className="mt-8 text-xs text-white/40">
-            &copy; {new Date().getFullYear()} Hedge Vault. NAV updates are
+            &copy; {new Date().getFullYear()} Hedgin. NAV updates are
             centralized; verify all figures on-chain.
           </p>
         </footer>

@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hedge Vault",
-  description: "Managed hedge vaults on Solana",
+  title: "Hedgin",
+  description: "Managed vaults on Solana",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

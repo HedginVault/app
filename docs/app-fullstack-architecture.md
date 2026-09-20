@@ -1,4 +1,4 @@
-# Hedge Vault — Fullstack Architecture
+# Hedgin — Fullstack Architecture
 
 How the web app in `app/` grows from a stateless chain reader into a fullstack product with an
 event indexer, a Postgres database and per-user features — without changing the program and

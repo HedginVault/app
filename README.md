@@ -1,4 +1,4 @@
-# Hedge Vault — Web App
+# Hedgin — Web App
 
 The web interface for the `hedge_vault` Solana program. Depositors browse vaults, read a vault's
 state, request deposits and withdrawals and claim resolved requests; managers operate the vaults

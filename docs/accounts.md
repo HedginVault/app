@@ -1,4 +1,4 @@
-# Hedge Vault — Account Data Model
+# Hedgin — Account Data Model
 
 Every on-chain account the program owns, read like a database schema. All
 accounts are PDAs of the program (`r2ahBQ6gbPCJ9FxBymYcXuwXi8NmenRry7SE7QR7FAt`)

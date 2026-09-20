@@ -1,4 +1,4 @@
-# Hedge Vault — Architecture Evolution
+# Hedgin — Architecture Evolution
 
 How the program should grow from the mainnet v1
 (`r2ahBQ6gbPCJ9FxBymYcXuwXi8NmenRry7SE7QR7FAt`) into a multi-manager, policy-controlled

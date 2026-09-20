@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { CLUSTER } from "@/lib/constants";
 import { WalletButton } from "@/components/wallet-button";
 import { Badge } from "@/components/ui/badge";
+import { BrandLogo } from "@/components/shell/brand-logo";
 
 const links = [
   // vault: stacked layers; manage: sliders
@@ -58,12 +59,10 @@ export function TopBar() {
     <div className="top-bar sticky top-0 z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:top-4 sm:pt-4">
       <Link
         href="/"
-        className="flex h-12 shrink-0 items-center gap-2.5 text-lg font-semibold tracking-tight sm:h-16 sm:text-xl"
+        aria-label="Hedgin home"
+        className="flex h-12 shrink-0 items-center text-lg font-semibold tracking-tight sm:h-16 sm:text-xl"
       >
-        <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-accent text-base font-bold text-accent-foreground sm:size-9">
-          H
-        </span>
-        <span className="truncate">Hedge Vault</span>
+        <BrandLogo priority />
       </Link>
 
       <nav className="hidden h-16 items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 backdrop-blur sm:flex">

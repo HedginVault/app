@@ -49,7 +49,7 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
         <span className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <StatusBadge status={v.status} />
           <Address value={v.address} />
-          <Link href={`/vault/${v.address}`} className="text-emerald-400 hover:underline">
+          <Link href={`/vault/${v.address}`} className="text-sky-400 hover:underline">
             Public page →
           </Link>
         </span>

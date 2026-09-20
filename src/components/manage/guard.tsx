@@ -36,7 +36,7 @@ export function ManagerGuard({
         action={
           <Link
             href={`/vault/${vault.address}`}
-            className="text-sm font-medium text-emerald-400 hover:underline"
+            className="text-sm font-medium text-sky-400 hover:underline"
           >
             View the public vault page →
           </Link>

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 const tones = {
   neutral: "bg-white/[0.06] text-white/80",
-  accent: "bg-accent-soft text-emerald-400",
+  accent: "bg-accent-soft text-sky-400",
   warning: "bg-warning-soft text-amber-300",
   danger: "bg-danger-soft text-red-300",
 };

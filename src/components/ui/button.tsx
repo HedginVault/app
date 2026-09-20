@@ -11,7 +11,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants = {
   primary:
-    "bg-accent text-accent-foreground hover:bg-emerald-300 disabled:bg-emerald-400/30 disabled:text-white/40",
+    "bg-accent text-accent-foreground hover:bg-sky-300 disabled:bg-sky-400/30 disabled:text-white/40",
   secondary:
     "bg-white/[0.04] text-foreground border border-border hover:bg-white/[0.08] disabled:text-white/40",
   ghost: "text-foreground hover:bg-white/[0.06] disabled:text-white/40",

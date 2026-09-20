@@ -348,7 +348,7 @@ function ConfigurePosition({
                 shape === o.id ? "bg-white/10 text-white" : "text-muted hover:text-foreground",
               )}
             >
-              <span className={shape === o.id ? "text-emerald-400" : undefined}>
+              <span className={shape === o.id ? "text-sky-400" : undefined}>
                 <ShapeIcon shape={o.id} />
               </span>
               {o.label}
@@ -366,7 +366,7 @@ function ConfigurePosition({
             </button>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" />{x.symbol}</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-indigo-400" />{x.symbol}</span>
             <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-400" />{y.symbol}</span>
           </div>
         </div>
@@ -416,7 +416,7 @@ function ConfigurePosition({
                 <label className="flex items-center border-l border-border pr-2">
                   <Input
                     aria-label={`${label} price change from current, percent`}
-                    className={cn("rounded-none border-0 bg-transparent pr-0.5 text-right focus:ring-0", pct < 0 ? "text-red-300" : "text-emerald-400")}
+                    className={cn("rounded-none border-0 bg-transparent pr-0.5 text-right focus:ring-0", pct < 0 ? "text-red-300" : "text-sky-400")}
                     inputMode="decimal"
                     disabled={locked}
                     value={text("pct", `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}`)}

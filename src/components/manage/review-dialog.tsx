@@ -87,7 +87,7 @@ export function ReviewDialog({
                 <span>
                   {i + 1}. {s.label}
                 </span>
-                <span className={cn("text-[12px]", state === "failed" ? "text-danger" : state === "done" ? "text-emerald-400" : "text-muted")}>
+                <span className={cn("text-[12px]", state === "failed" ? "text-danger" : state === "done" ? "text-sky-400" : "text-muted")}>
                   {state ? STATE_LABEL[state] : "Waiting"}
                 </span>
               </li>

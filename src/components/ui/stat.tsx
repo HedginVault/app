@@ -17,7 +17,7 @@ export const Stat = ({
     <div
       className={cn(
         "mt-1.5 truncate text-xl font-medium tabular-nums tracking-tight",
-        tone === "accent" && "text-emerald-400",
+        tone === "accent" && "text-sky-400",
         tone === "warning" && "text-amber-300",
         tone === "danger" && "text-red-300",
       )}

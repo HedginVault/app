@@ -138,7 +138,7 @@ function CheckIcon() {
   return (
     <svg
       viewBox="0 0 20 20"
-      className="mt-0.5 size-4 shrink-0 text-emerald-400"
+      className="mt-0.5 size-4 shrink-0 text-sky-400"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
@@ -161,7 +161,7 @@ function SectionHeading({
   return (
     <div className="mx-auto max-w-2xl text-center">
       <h2 className="font-serif text-4xl tracking-tight text-balance text-white lg:text-6xl">
-        {title} <span className="text-emerald-400">{accent}</span>
+        {title} <span className="text-sky-400">{accent}</span>
       </h2>
       <p className="mt-4 text-white/60 md:text-lg">{sub}</p>
     </div>
@@ -169,14 +169,14 @@ function SectionHeading({
 }
 
 const ctaClass =
-  "group inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-300 to-emerald-500 px-8 text-[15px] font-semibold text-emerald-950 shadow-[0_0_40px_-8px_rgba(52,211,153,0.6)] transition hover:shadow-[0_0_56px_-6px_rgba(52,211,153,0.8)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]";
+  "group inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-300 to-sky-500 px-8 text-[15px] font-semibold text-slate-950 shadow-[0_0_40px_-8px_rgba(56,189,248,0.6)] transition hover:shadow-[0_0_56px_-6px_rgba(56,189,248,0.8)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080c14]";
 
 export default function LandingPage() {
   return (
-    <main className="flex flex-col bg-[#0a0f0d] text-white">
+    <main className="flex flex-col bg-[#080c14] text-white">
       {/* Hero — pulled up under the TopBar's reserved flow space (-mt-20 =
           its 80px box) so the nav floats over the gradient */}
-      <section className="relative -mt-20 overflow-hidden bg-[linear-gradient(180deg,#0a0f0d_0%,#064e3b_45%,#0b1f19_85%,#0a0f0d_100%)]">
+      <section className="relative -mt-20 overflow-hidden bg-[linear-gradient(180deg,#080c14_0%,#0c3a5e_45%,#0d1a2b_85%,#080c14_100%)]">
         {/* decorative watermark + glow */}
         <span
           aria-hidden="true"
@@ -186,14 +186,14 @@ export default function LandingPage() {
         </span>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[40rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-[120px] motion-safe:animate-pulse [animation-duration:6s]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[40rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/20 blur-[120px] motion-safe:animate-pulse [animation-duration:6s]"
         />
 
         <div className="relative mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center px-6 pt-32 pb-16 text-center">
           <h1 className="font-serif text-5xl uppercase tracking-wide text-balance md:text-6xl lg:text-7xl">
             Your money, managed.
             <br />
-            <span className="text-emerald-400">Nothing hidden.</span>
+            <span className="text-sky-400">Nothing hidden.</span>
           </h1>
           <p className="mx-auto mt-8 max-w-xl text-base text-white/70 md:text-lg">
             Deposit into a vault run by a vetted manager. It trades on-chain
@@ -210,7 +210,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-6xl px-6 pb-24">
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur lg:grid-cols-4">
             {stats.map((s) => (
-              <div key={s.label} className="bg-[#0a0f0d]/60 p-6 text-center lg:p-8">
+              <div key={s.label} className="bg-[#080c14]/60 p-6 text-center lg:p-8">
                 <dt className="text-sm text-white/50">{s.label}</dt>
                 <dd className="mt-2 font-serif text-3xl text-white md:text-4xl">
                   {s.value}
@@ -228,10 +228,10 @@ export default function LandingPage() {
           accent="works"
           sub="Three steps. No jargon. Here's exactly what happens to your money."
         />
-        <ol className="relative mx-auto mt-16 max-w-2xl space-y-12 before:absolute before:top-2 before:bottom-2 before:left-5 before:w-px before:bg-gradient-to-b before:from-emerald-400/60 before:via-emerald-400/20 before:to-emerald-400/60">
+        <ol className="relative mx-auto mt-16 max-w-2xl space-y-12 before:absolute before:top-2 before:bottom-2 before:left-5 before:w-px before:bg-gradient-to-b before:from-sky-400/60 before:via-sky-400/20 before:to-sky-400/60">
           {steps.map((s, i) => (
             <li key={s.title} className="relative pl-16">
-              <span className="absolute left-0 top-0 grid size-10 place-items-center rounded-full border-2 border-emerald-400 bg-[#0a0f0d] font-mono text-sm text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+              <span className="absolute left-0 top-0 grid size-10 place-items-center rounded-full border-2 border-sky-400 bg-[#080c14] font-mono text-sm text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.4)]">
                 {i + 1}
               </span>
               <h3 className="font-serif text-2xl tracking-wide">{s.title}</h3>
@@ -252,9 +252,9 @@ export default function LandingPage() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-8 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40"
+              className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-8 transition duration-300 hover:-translate-y-1 hover:border-sky-400/40"
             >
-              <span className="grid size-12 place-items-center rounded-xl bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20">
+              <span className="grid size-12 place-items-center rounded-xl bg-sky-400/10 text-sky-400 ring-1 ring-sky-400/20">
                 <svg
                   viewBox="0 0 20 20"
                   className="size-5"
@@ -274,20 +274,20 @@ export default function LandingPage() {
       </section>
 
       {/* Security & trust */}
-      <section className="bg-[linear-gradient(180deg,#0a0f0d_0%,#0b1f19_50%,#0a0f0d_100%)] px-6 py-24 lg:py-32">
+      <section className="bg-[linear-gradient(180deg,#080c14_0%,#0d1a2b_50%,#080c14_100%)] px-6 py-24 lg:py-32">
         <SectionHeading
           title="Security &"
           accent="trust"
           sub="Your money is guarded by program rules, not promises."
         />
         <div className="mx-auto mt-16 max-w-5xl">
-          <div className="relative overflow-hidden rounded-3xl border border-emerald-400/20 bg-white/[0.03] p-8 lg:p-12">
+          <div className="relative overflow-hidden rounded-3xl border border-sky-400/20 bg-white/[0.03] p-8 lg:p-12">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-emerald-400/20 blur-[100px]"
+              className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-sky-400/20 blur-[100px]"
             />
             <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
-              <span className="grid size-20 shrink-0 place-items-center rounded-2xl bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/30">
+              <span className="grid size-20 shrink-0 place-items-center rounded-2xl bg-sky-400/10 text-sky-400 ring-1 ring-sky-400/30">
                 <svg viewBox="0 0 20 20" className="size-9" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                   <path d="M10 2.5l6 2.5v4.5c0 4-2.8 6.9-6 8-3.2-1.1-6-4-6-8V5l6-2.5z" strokeLinejoin="round" />
                   <path d="M7 10l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
@@ -301,7 +301,7 @@ export default function LandingPage() {
                   the funds.
                 </p>
               </div>
-              <span className="w-fit rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-300">
+              <span className="w-fit rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-300">
                 On-chain program
               </span>
             </div>
@@ -334,7 +334,7 @@ export default function LandingPage() {
                 <th scope="col" className="px-5 py-4 font-medium text-white/50">
                   <span className="sr-only">Feature</span>
                 </th>
-                <th scope="col" className="px-5 py-4 font-semibold text-emerald-400">
+                <th scope="col" className="px-5 py-4 font-semibold text-sky-400">
                   Hedgin
                 </th>
                 <th scope="col" className="px-5 py-4 font-medium text-white/50">
@@ -351,7 +351,7 @@ export default function LandingPage() {
                   <th scope="row" className="px-5 py-4 font-medium">
                     {row.feature}
                   </th>
-                  <td className="bg-emerald-400/[0.04] px-5 py-4">
+                  <td className="bg-sky-400/[0.04] px-5 py-4">
                     <span className="flex items-start gap-2">
                       <CheckIcon />
                       {row.vault}
@@ -378,11 +378,11 @@ export default function LandingPage() {
             <details
               key={f.q}
               open={i === 0}
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] open:border-emerald-400/30"
+              className="group rounded-2xl border border-white/10 bg-white/[0.03] open:border-sky-400/30"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 text-lg font-medium [&::-webkit-details-marker]:hidden">
                 {f.q}
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/[0.06] text-emerald-400 transition group-open:rotate-45">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/[0.06] text-sky-400 transition group-open:rotate-45">
                   <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path d="M10 4v12M4 10h12" strokeLinecap="round" />
                   </svg>
@@ -395,10 +395,10 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA + footer */}
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#0a0f0d_0%,#0b1f19_35%,#065f46_75%,#064e3b_100%)]">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#080c14_0%,#0d1a2b_35%,#0e4a75_75%,#0c3a5e_100%)]">
         <div className="mx-auto flex max-w-3xl flex-col items-center px-6 py-32 text-center">
           <h2 className="font-serif text-5xl tracking-tight text-balance lg:text-7xl">
-            Ready to put your money <span className="text-emerald-300">to work?</span>
+            Ready to put your money <span className="text-sky-300">to work?</span>
           </h2>
           <p className="mt-6 max-w-xl text-white/70 md:text-lg">
             Connect a wallet, pick a vault, and deposit in under a minute.

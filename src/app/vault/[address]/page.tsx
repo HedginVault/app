@@ -57,10 +57,10 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
       <HoldingsSection address={address} />
 
       {/* ponytail: rarely-needed info folds away; native <details>, no JS */}
-      <details className="group rounded-card border border-border bg-white/[0.02] open:border-emerald-400/30">
+      <details className="group rounded-card border border-border bg-white/[0.02] open:border-sky-400/30">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 [&::-webkit-details-marker]:hidden">
           <span className="font-serif text-2xl">More about this vault</span>
-          <span aria-hidden="true" className="grid size-8 place-items-center rounded-full bg-white/[0.06] text-emerald-400 transition group-open:rotate-45">+</span>
+          <span aria-hidden="true" className="grid size-8 place-items-center rounded-full bg-white/[0.06] text-sky-400 transition group-open:rotate-45">+</span>
         </summary>
         <div className="space-y-8 px-6 pb-6">
           {v.metadata?.description && <p className="text-sm text-white/70">{v.metadata.description}</p>}

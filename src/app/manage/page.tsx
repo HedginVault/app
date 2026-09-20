@@ -31,7 +31,7 @@ export default function ManagePage() {
 
   return (
     <Page
-      title={<>Your <span className="text-emerald-400">vaults</span></>}
+      title={<>Your <span className="text-sky-400">vaults</span></>}
       description="Pick a vault to trade, handle requests, or change settings."
       action={canCreate && manager.data!.vaults.length > 0 ? newVault : undefined}
     >
@@ -61,7 +61,7 @@ export default function ManagePage() {
             <li key={v.address}>
               <Link
                 href={`/manage/${v.address}`}
-                className="group flex aspect-square flex-col rounded-card border border-border bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                className="group flex aspect-square flex-col rounded-card border border-border bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 transition duration-300 hover:-translate-y-1 hover:border-sky-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
               >
                 <div className="flex items-start justify-between gap-3">
                   <TokenLogo token={{ symbol: v.depositSymbol, logo: v.depositLogo }} size="lg" />
@@ -83,7 +83,7 @@ export default function ManagePage() {
                   </div>
                 </dl>
 
-                <span className="mt-6 flex items-center justify-between border-t border-border pt-4 text-sm font-medium text-emerald-400">
+                <span className="mt-6 flex items-center justify-between border-t border-border pt-4 text-sm font-medium text-sky-400">
                   Manage vault
                   <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
                 </span>

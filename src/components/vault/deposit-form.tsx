@@ -56,7 +56,7 @@ export function DepositForm({ v, position, owner }: { v: VaultDetail; position: 
       <Field label={`Amount (${v.depositSymbol})`} error={error} hint={`Wallet balance ${formatTokenAmount(position.depositTokenBalance, v.depositDecimals)} ${v.depositSymbol}`}>
         <div className="relative">
           <Input inputMode="decimal" placeholder="0.00" value={input} onChange={(e) => setInput(e.target.value)} disabled={!!closed} className="pr-16" />
-          <button type="button" disabled={!!closed} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[12px] font-medium text-emerald-400 hover:bg-accent-soft disabled:text-white/40 disabled:hover:bg-transparent" onClick={() => setInput(formatTokenAmount(position.depositTokenBalance, v.depositDecimals).replace(/,/g, ""))}>
+          <button type="button" disabled={!!closed} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[12px] font-medium text-sky-400 hover:bg-accent-soft disabled:text-white/40 disabled:hover:bg-transparent" onClick={() => setInput(formatTokenAmount(position.depositTokenBalance, v.depositDecimals).replace(/,/g, ""))}>
             Max
           </button>
         </div>

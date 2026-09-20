@@ -1,5 +1,5 @@
-/** Emerald, sky, violet, amber, pink, teal; slate is reserved for "Other". */
-export const PALETTE = ["#059669", "#0ea5e9", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#94a3b8"] as const;
+/** Blue, cyan, violet, amber, pink, teal; slate is reserved for "Other". */
+export const PALETTE = ["#3b82f6", "#06b6d4", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#94a3b8"] as const;
 
 const MIN_WIDTH_PCT = 2;
 

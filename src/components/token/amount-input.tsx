@@ -86,7 +86,7 @@ export function AmountInput({
                 type="button"
                 disabled={disabled || !token || balance == null}
                 onClick={() => setPct(pct)}
-                className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-emerald-400 hover:bg-accent-soft disabled:text-white/40"
+                className="rounded-md px-1.5 py-0.5 text-[12px] font-medium text-sky-400 hover:bg-accent-soft disabled:text-white/40"
               >
                 {pct === 100 ? "Max" : `${pct}%`}
               </button>

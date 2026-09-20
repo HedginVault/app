@@ -87,7 +87,7 @@ export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: strin
           sub={
             <button
               type="button"
-              className="font-medium text-emerald-400 hover:underline disabled:text-muted disabled:no-underline"
+              className="font-medium text-sky-400 hover:underline disabled:text-muted disabled:no-underline"
               disabled={unclaimed === 0n || pending}
               onClick={() =>
                 void send({

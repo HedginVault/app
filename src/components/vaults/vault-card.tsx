@@ -6,7 +6,7 @@ import { formatBps, formatNav, formatTokenAmount } from "@/lib/format";
 import type { Status, VaultSummary } from "@/lib/types";
 
 const status: Record<Status, { label: string; dot: string }> = {
-  normal: { label: "Active", dot: "bg-emerald-400" },
+  normal: { label: "Active", dot: "bg-sky-400" },
   reduceOnly: { label: "Withdraw only", dot: "bg-amber-400" },
   paused: { label: "Paused", dot: "bg-red-400" },
 };
@@ -19,7 +19,7 @@ export function VaultCard({ v }: { v: VaultSummary }) {
   return (
     <Link
       href={`/vault/${v.address}`}
-      className="group flex flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+      className="group flex flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-6 transition duration-300 hover:-translate-y-1 hover:border-sky-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
     >
       <div className="flex items-center gap-3">
         {v.depositLogo && !logoFailed ? (
@@ -63,7 +63,7 @@ export function VaultCard({ v }: { v: VaultSummary }) {
 
       {cap > 0n && (
         <div className="mt-6 h-1 overflow-hidden rounded-full bg-white/10" title={`${used.toFixed(0)}% of cap filled`}>
-          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${used}%` }} />
+          <div className="h-full rounded-full bg-sky-400" style={{ width: `${used}%` }} />
         </div>
       )}
 
@@ -71,7 +71,7 @@ export function VaultCard({ v }: { v: VaultSummary }) {
         <span className="text-white/50">
           Fees {formatBps(v.performanceFeeBps)} · {formatBps(v.managementFeeBps)}
         </span>
-        <span className="flex items-center gap-1 font-medium text-emerald-400">
+        <span className="flex items-center gap-1 font-medium text-sky-400">
           Open
           <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
         </span>

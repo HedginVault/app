@@ -70,7 +70,7 @@ export function RangePicker({
         <div className="relative h-36">
           <div className="flex h-full items-end gap-[2px] blur-sm" aria-hidden>
             {GHOST.map((h, i) => (
-              <div key={i} className={cn("flex-1 rounded-t-[4px]", i < 20 ? "bg-sky-400/40" : "bg-emerald-400/40")} style={{ height: `${h}%` }} />
+              <div key={i} className={cn("flex-1 rounded-t-[4px]", i < 20 ? "bg-indigo-400/40" : "bg-sky-400/40")} style={{ height: `${h}%` }} />
             ))}
           </div>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -87,7 +87,7 @@ export function RangePicker({
             >
               <div
                 className={cn(
-                  "absolute top-0 rounded-md bg-[#2a2e2c] px-1.5 py-1 text-center text-[10px] leading-[1.4] font-medium whitespace-nowrap",
+                  "absolute top-0 rounded-md bg-[#252b36] px-1.5 py-1 text-center text-[10px] leading-[1.4] font-medium whitespace-nowrap",
                   markerAlign === "left" ? "left-0" : markerAlign === "right" ? "right-0" : "-translate-x-1/2",
                 )}
               >
@@ -108,7 +108,7 @@ export function RangePicker({
                       className="flex origin-bottom animate-bin-rise flex-col overflow-hidden rounded-t-[4px] transition-[height] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:brightness-125 motion-reduce:animate-none motion-reduce:transition-none"
                       style={{ height: `${h}%` }}
                     >
-                      <div className="bg-emerald-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.x / total : 0 }} />
+                      <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.x / total : 0 }} />
                       <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.y / total : 0 }} />
                     </div>
                   </div>

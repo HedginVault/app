@@ -54,7 +54,7 @@ export function PoolSelect({
         <button
           type="button"
           onClick={() => onSelect({ address: pasted } as PoolSearchResult)}
-          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-emerald-400/40 hover:bg-white/[0.03]"
+          className="w-full rounded-card border border-border px-3 py-2.5 text-left text-sm font-medium hover:border-sky-400/40 hover:bg-white/[0.03]"
         >
           Open pool {shortAddress(pasted)}
         </button>
@@ -100,12 +100,12 @@ export function PoolSelect({
                         </span>
                         <span className="block truncate text-[11px] text-muted">
                           Bin {p.binStep} · {p.baseFeePct}% fee
-                          {held.length > 0 && <span className="text-emerald-400"> · Vault holds {held.map((t) => t.symbol).join("/")}</span>}
+                          {held.length > 0 && <span className="text-sky-400"> · Vault holds {held.map((t) => t.symbol).join("/")}</span>}
                         </span>
                       </span>
                     </span>
                     <span className="text-right text-[13px] tabular-nums">{formatUsd(p.tvl, { compact: true })}</span>
-                    <span className="text-right text-[13px] tabular-nums text-emerald-400">{p.feeTvl24h.toFixed(2)}%</span>
+                    <span className="text-right text-[13px] tabular-nums text-sky-400">{p.feeTvl24h.toFixed(2)}%</span>
                   </button>
                 </li>
               );

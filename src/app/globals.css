@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  /* dark emerald palette, matches the landing page */
-  --background: #0a0f0d;
-  --surface: #111815;
+  /* dark blue palette, matches the landing page */
+  --background: #080c14;
+  --surface: #0f151f;
   --border: rgba(255, 255, 255, 0.1);
   --foreground: #ffffff;
   --muted: rgba(255, 255, 255, 0.55);
-  --accent: #34d399;
-  --accent-foreground: #022c22;
-  --accent-soft: rgba(52, 211, 153, 0.1);
+  --accent: #38bdf8;
+  --accent-foreground: #051c2e;
+  --accent-soft: rgba(56, 189, 248, 0.1);
   --warning: #fbbf24;
   --warning-soft: rgba(251, 191, 36, 0.1);
   --danger: #f87171;
@@ -61,15 +61,15 @@ body {
 }
 
 body {
-  background: radial-gradient(60rem 30rem at 50% -10rem, rgba(52, 211, 153, 0.08), transparent) no-repeat,
+  background: radial-gradient(60rem 30rem at 50% -10rem, rgba(56, 189, 248, 0.08), transparent) no-repeat,
     var(--background);
   color: var(--foreground);
   font-feature-settings: "tnum" 1, "cv11" 1;
 }
 
-/* wallet-adapter button, restyled to the dark emerald theme */
+/* wallet-adapter button, restyled to the dark blue theme */
 .wallet-adapter-button-trigger {
-  background: linear-gradient(to right, #6ee7b7, #10b981) !important;
+  background: linear-gradient(to right, #7dd3fc, #0ea5e9) !important;
   color: var(--accent-foreground) !important;
   border-radius: 10px !important;
   height: 40px !important;

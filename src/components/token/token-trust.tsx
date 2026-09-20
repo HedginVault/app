@@ -3,7 +3,7 @@ import type { OrganicScoreLabel } from "@/lib/types";
 
 /** Check mark shown next to a token verified by Jupiter (or Meteora for pool tokens). */
 export const VerifiedMark = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 16 16" role="img" aria-label="Verified" className={cn("size-3.5 shrink-0 text-emerald-400", className)}>
+  <svg viewBox="0 0 16 16" role="img" aria-label="Verified" className={cn("size-3.5 shrink-0 text-sky-400", className)}>
     <title>Verified</title>
     <circle cx="8" cy="8" r="8" fill="currentColor" />
     <path d="M4.75 8.25 7 10.5l4.25-4.75" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -11,7 +11,7 @@ export const VerifiedMark = ({ className }: { className?: string }) => (
 );
 
 const SCORE_TONES: Record<OrganicScoreLabel, string> = {
-  high: "bg-accent-soft text-emerald-400",
+  high: "bg-accent-soft text-sky-400",
   medium: "bg-warning-soft text-amber-300",
   low: "bg-danger-soft text-red-300",
 };

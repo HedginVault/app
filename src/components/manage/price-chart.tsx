@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef } from "react";
 import type { Candle, PriceRange } from "@/lib/types";
 
-const UP = "#34d399";
+const UP = "#38bdf8";
 const DOWN = "#f87171";
 const RANGE = "#f97316";
 const RANGE_FILL = "rgba(249,115,22,0.16)";
@@ -130,7 +130,7 @@ export function PriceChart({
       rightPriceScale: { borderColor: "rgba(255,255,255,0.1)" },
       // Resizes (autoSize settling, the window changing) keep the framed time window, not the bar spacing.
       timeScale: { borderColor: "rgba(255,255,255,0.1)", timeVisible: true, secondsVisible: false, lockVisibleTimeRangeOnResize: true },
-      crosshair: { horzLine: { labelBackgroundColor: "#111815" }, vertLine: { labelBackgroundColor: "#111815" } },
+      crosshair: { horzLine: { labelBackgroundColor: "#0f151f" }, vertLine: { labelBackgroundColor: "#0f151f" } },
     });
     price.current = c.addSeries(CandlestickSeries, {
       upColor: UP,
@@ -180,7 +180,7 @@ export function PriceChart({
       candles.map((k) => ({
         time: k.time as UTCTimestamp,
         value: k.volume,
-        color: k.close >= k.open ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)",
+        color: k.close >= k.open ? "rgba(56,189,248,0.25)" : "rgba(248,113,113,0.25)",
       })),
     );
     const first = candles[0];

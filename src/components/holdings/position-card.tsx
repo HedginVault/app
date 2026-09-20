@@ -6,28 +6,13 @@ import { Menu, type MenuItem } from "@/components/ui/menu";
 import { cn } from "@/lib/cn";
 import { PairLogo, TokenLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
-import {
-  displayFraction,
-  formatPercent,
-  formatPrice,
-  formatRelative,
-  formatShare,
-  formatTokenAmount,
-  formatUsd,
-  usdValue,
-} from "@/lib/format";
+import { formatPercent, formatPrice, formatRelative, formatShare, formatUsd, usdValue } from "@/lib/format";
 import type { PositionView, TokenInfo } from "@/lib/types";
+import { BinChart } from "./bin-chart";
 import { PriceRangeLine } from "./price-range-line";
 
 const meteoraUrl = (lbPair: string) => `https://app.meteora.ag/dlmm/${lbPair}`;
 
-/**
- * Fixed column template so every LP row lines up under the next one — a flex row sized to each
- * row's own content (the previous approach) drifts out of alignment as soon as amounts differ.
- * Mobile falls back to a 2-column stack; `sm:` switches to the real table-like grid.
- */
-const LP_GRID =
-  "grid grid-cols-2 gap-x-4 gap-y-2 px-6 py-3 sm:grid-cols-[8rem_10rem_8rem_8rem_6rem_6rem_auto] sm:items-center sm:gap-x-5 sm:gap-y-0";
 const LP_CELL_LABEL = "text-[11px] text-muted";
 
 /** Glyph shown on the compact icon buttons in the actions column, keyed by `MenuItem.label`. */
@@ -60,7 +45,7 @@ function PnlBlock({ usd, pct, align = "right" }: { usd: number | null; pct: numb
   const alignClass = align === "left" ? "text-left" : "text-right";
   if (usd === null || pct === null) return <div className={`${alignClass} text-[12px] text-muted`}>—</div>;
   const positive = usd >= 0;
-  const tone = positive ? "text-emerald-400" : "text-red-400";
+  const tone = positive ? "text-sky-400" : "text-red-400";
   const sign = positive ? "+" : "-";
   return (
     <div className={`${alignClass} text-[13px] font-medium tabular-nums ${tone}`}>
@@ -129,95 +114,105 @@ export function PositionCard({
   }
 
   const { tokenX: x, tokenY: y, range } = p;
-  const price = Number(range.activePrice);
-  const feesUsd =
-    usdValue(p.feeX, x.decimals, x.priceUsd) === null || usdValue(p.feeY, y.decimals, y.priceUsd) === null
-      ? null
-      : usdValue(p.feeX, x.decimals, x.priceUsd)! + usdValue(p.feeY, y.decimals, y.priceUsd)!;
-  const amount = (raw: string, token: TokenInfo) =>
-    `${formatTokenAmount(raw, token.decimals, { maxFraction: displayFraction(raw, token.decimals) })} ${token.symbol}`;
+  const activePrice = Number(range.activePrice);
+  const usdX = usdValue(p.amountX, x.decimals, x.priceUsd);
+  const usdY = usdValue(p.amountY, y.decimals, y.priceUsd);
+  const feeUsdX = usdValue(p.feeX, x.decimals, x.priceUsd);
+  const feeUsdY = usdValue(p.feeY, y.decimals, y.priceUsd);
+  const feesUsd = feeUsdX === null || feeUsdY === null ? null : feeUsdX + feeUsdY;
+  /** Bin prices step geometrically from the active bin by `binStep` bps. */
+  const binPrice = (binId: number) => activePrice * (1 + range.binStep / 10_000) ** (binId - range.activeBinId);
 
   return (
-    <div className={LP_GRID}>
-      <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
-        <PairLogo x={x} y={y} size="sm" />
-        <span className="text-[13px] font-medium">{x.symbol}-{y.symbol}</span>
-        <a
-          href={meteoraUrl(p.lbPair)}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="View pool on Meteora"
-          title="View pool on Meteora"
-          className="text-muted hover:text-emerald-400"
-        >
-          ↗
-        </a>
-      </div>
-
-      <div className="col-span-2 min-w-0 sm:col-span-1">
-        <div className={LP_CELL_LABEL}>Price range</div>
-        <div className="flex items-center gap-1.5 text-[13px] tabular-nums">
-          {formatPrice(Number(range.lowerPrice))} – {formatPrice(Number(range.upperPrice))}
-          {!range.inRange && (
-            <span title="Out of range" className="text-amber-400">
-              ⚠
+    <div className="space-y-4 px-6 py-5">
+      <div className="flex flex-wrap items-start gap-3">
+        <PairLogo x={x} y={y} size="lg" />
+        <div className="min-w-0 flex-1 basis-48">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">
+              {x.symbol}-{y.symbol}
             </span>
-          )}
-        </div>
-        <PriceRangeLine lower={Number(range.lowerPrice)} upper={Number(range.upperPrice)} active={price} inRange={range.inRange} />
-      </div>
-
-      <div>
-        <div className={LP_CELL_LABEL}>Your liquidity</div>
-        <div className="text-[13px] leading-tight tabular-nums">
-          <div>{amount(p.amountX, x)}</div>
-          <div className="text-muted">{amount(p.amountY, y)}</div>
-        </div>
-      </div>
-
-      <div>
-        <div className={LP_CELL_LABEL}>Claimable fees</div>
-        <div className="text-[13px] leading-tight tabular-nums">
-          <div>{amount(p.feeX, x)}</div>
-          <div className="text-muted">{amount(p.feeY, y)}</div>
-          <div className="text-[11px] text-muted">{formatUsd(feesUsd)}</div>
-        </div>
-      </div>
-
-      <div>
-        <div className={LP_CELL_LABEL}>PNL</div>
-        <PnlBlock usd={p.pnlUsd} pct={p.pnlPct} align="left" />
-      </div>
-
-      <div>
-        <div className={LP_CELL_LABEL}>Value</div>
-        <ValueBlock usd={p.usd} shareBps={p.shareBps} align="left" />
-      </div>
-
-      <div className="col-span-2 flex items-center justify-end gap-1.5 sm:col-span-1">
-        {primaryActions.map((a) => (
-          <button
-            key={a.label}
-            type="button"
-            aria-label={a.label}
-            title={a.disabled ? a.reason : a.label}
-            disabled={a.disabled}
-            onClick={a.onSelect}
-            className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-lg text-[15px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-              a.label === "Close position"
-                ? "bg-danger-soft text-red-300 hover:bg-red-400/30"
-                : "bg-white/[0.06] text-foreground hover:bg-white/[0.12]",
-            )}
+            <Badge>DLMM</Badge>
+            <Badge tone={range.inRange ? "accent" : "warning"}>{range.inRange ? "In range" : "Out of range"}</Badge>
+          </div>
+          <a
+            href={meteoraUrl(p.lbPair)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-0.5 inline-block text-[12px] text-muted hover:text-sky-400"
           >
-            {actionIcon[a.label] ?? "•"}
-          </button>
-        ))}
-        {menu}
+            View pool on Meteora ↗
+          </a>
+        </div>
+        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+          <ValueBlock usd={p.usd} shareBps={p.shareBps} />
+          <div className="flex items-center gap-1.5">
+            {primaryActions.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                aria-label={a.label}
+                title={a.disabled ? a.reason : a.label}
+                disabled={a.disabled}
+                onClick={a.onSelect}
+                className={cn(
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg text-[15px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                  a.label === "Close position"
+                    ? "bg-danger-soft text-red-300 hover:bg-red-400/30"
+                    : "bg-white/[0.06] text-foreground hover:bg-white/[0.12]",
+                )}
+              >
+                {actionIcon[a.label] ?? "•"}
+              </button>
+            ))}
+            {menu}
+          </div>
+        </div>
       </div>
+
+      <PriceRangeLine
+        lower={Number(range.lowerPrice)}
+        upper={Number(range.upperPrice)}
+        active={activePrice}
+        inRange={range.inRange}
+        quoteSymbol={y.symbol}
+      />
+
+      <div className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
+        <div>
+          <div className={LP_CELL_LABEL}>{x.symbol}</div>
+          <TokenAmount raw={p.amountX} token={x} usd={usdX} />
+        </div>
+        <div>
+          <div className={LP_CELL_LABEL}>{y.symbol}</div>
+          <TokenAmount raw={p.amountY} token={y} usd={usdY} />
+        </div>
+        <div>
+          <div className={LP_CELL_LABEL}>Unclaimed fees</div>
+          <div className="leading-tight">
+            <TokenAmount raw={p.feeX} token={x} />
+            <br />
+            <TokenAmount raw={p.feeY} token={y} />
+            <div className="text-[12px] tabular-nums text-muted">{formatUsd(feesUsd)}</div>
+          </div>
+        </div>
+        <div>
+          <div className={LP_CELL_LABEL}>PNL</div>
+          <PnlBlock usd={p.pnlUsd} pct={p.pnlPct} align="left" />
+        </div>
+      </div>
+
+      <BinChart
+        bins={p.bins}
+        tokenX={x}
+        tokenY={y}
+        activeBinId={range.activeBinId}
+        activePrice={activePrice}
+        priceLabel={(binId) => `${formatPrice(binPrice(binId))} ${y.symbol}`}
+      />
 
       {depositToken.mint !== x.mint && depositToken.mint !== y.mint && (
-        <p className="col-span-2 text-[12px] text-muted sm:col-span-full">Neither side is the vault&apos;s deposit token.</p>
+        <p className="text-[12px] text-muted">Neither side is the vault&apos;s deposit token.</p>
       )}
     </div>
   );

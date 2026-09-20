@@ -15,8 +15,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  # github.repository ("HedgeVaults/app") has uppercase chars GHCR rejects.
-  IMAGE_NAME: hedgevaults/app
+  # github.repository ("HedginVault/app") has uppercase chars GHCR rejects.
+  IMAGE_NAME: hedginvault/app
   DEPLOYMENT: app
   NAMESPACE: hedgevault-prod
   MANIFESTS: k8s

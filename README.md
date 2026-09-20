@@ -187,7 +187,7 @@ test/             vitest suites
 
 `.github/workflows/build-deploy.yml` runs on pushes to `main` (except documentation-only
 changes) and manual dispatches. It builds and pushes immutable and `main` tags to
-`ghcr.io/hedgevaults/app`, runs lint, tests, and the production build, then deploys the
+`ghcr.io/hedginvault/app`, runs lint, tests, and the production build, then deploys the
 immutable image to the `hedgevault-prod` namespace. The Kubernetes manifests provide a
 Deployment, ClusterIP Service, nginx Ingress with cert-manager TLS, and health probes at
 `/api/health`.

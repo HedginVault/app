@@ -410,6 +410,10 @@ export type HedgeVault = {
         },
         {
           "name": "depositorTokenAccount",
+          "docs": [
+            "Recreated when the depositor closed it while the request was pending; they sign here, so",
+            "they pay for it themselves."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -498,6 +502,10 @@ export type HedgeVault = {
         },
         {
           "name": "depositMintTokenProgram"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "systemProgram",
@@ -631,66 +639,6 @@ export type HedgeVault = {
           }
         },
         {
-          "name": "depositorShareTokenAccount",
-          "docs": [
-            "Created upfront so the request can be resolved permissionlessly."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "depositor"
-              },
-              {
-                "kind": "account",
-                "path": "shareTokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "shareMint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
           "name": "depositEscrow",
           "writable": true,
           "pda": {
@@ -727,14 +675,6 @@ export type HedgeVault = {
         },
         {
           "name": "depositMintTokenProgram"
-        },
-        {
-          "name": "shareTokenProgram",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "associatedTokenProgram",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -759,6 +699,7 @@ export type HedgeVault = {
       "accounts": [
         {
           "name": "admin",
+          "writable": true,
           "signer": true
         },
         {
@@ -781,6 +722,9 @@ export type HedgeVault = {
         },
         {
           "name": "depositorTokenAccount",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -798,41 +742,8 @@ export type HedgeVault = {
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associatedTokenProgram"
             }
           }
         },
@@ -871,6 +782,10 @@ export type HedgeVault = {
           "name": "depositMintTokenProgram"
         },
         {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -892,6 +807,7 @@ export type HedgeVault = {
       "accounts": [
         {
           "name": "resolver",
+          "writable": true,
           "signer": true
         },
         {
@@ -918,6 +834,9 @@ export type HedgeVault = {
         },
         {
           "name": "depositorShareTokenAccount",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -935,41 +854,8 @@ export type HedgeVault = {
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associatedTokenProgram"
             }
           }
         },
@@ -1067,6 +953,10 @@ export type HedgeVault = {
         {
           "name": "shareTokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "systemProgram",
@@ -2942,6 +2832,10 @@ export type HedgeVault = {
         },
         {
           "name": "withdrawerShareTokenAccount",
+          "docs": [
+            "Recreated when the withdrawer closed it while the request held every share; they sign here,",
+            "so they pay for it themselves."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3029,6 +2923,10 @@ export type HedgeVault = {
         {
           "name": "shareTokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "systemProgram",
@@ -3165,66 +3063,6 @@ export type HedgeVault = {
           }
         },
         {
-          "name": "withdrawerTokenAccount",
-          "docs": [
-            "Created upfront so the request can be resolved permissionlessly."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "withdrawer"
-              },
-              {
-                "kind": "account",
-                "path": "depositMintTokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "depositMint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
           "name": "shareEscrow",
           "writable": true,
           "pda": {
@@ -3263,10 +3101,6 @@ export type HedgeVault = {
         {
           "name": "shareTokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "associatedTokenProgram",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -3291,6 +3125,7 @@ export type HedgeVault = {
       "accounts": [
         {
           "name": "admin",
+          "writable": true,
           "signer": true
         },
         {
@@ -3313,6 +3148,9 @@ export type HedgeVault = {
         },
         {
           "name": "withdrawerShareTokenAccount",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3330,41 +3168,8 @@ export type HedgeVault = {
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associatedTokenProgram"
             }
           }
         },
@@ -3402,6 +3207,10 @@ export type HedgeVault = {
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -3423,6 +3232,7 @@ export type HedgeVault = {
       "accounts": [
         {
           "name": "resolver",
+          "writable": true,
           "signer": true
         },
         {
@@ -3449,6 +3259,9 @@ export type HedgeVault = {
         },
         {
           "name": "withdrawerTokenAccount",
+          "docs": [
+            "spell out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3466,41 +3279,8 @@ export type HedgeVault = {
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associatedTokenProgram"
             }
           }
         },
@@ -3596,6 +3376,10 @@ export type HedgeVault = {
         {
           "name": "shareTokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "systemProgram",
@@ -4895,6 +4679,14 @@ export type HedgeVault = {
             "type": "u8"
           },
           {
+            "name": "rentEscrow",
+            "docs": [
+              "Lamports held above this account's own rent, earmarked for the payout token account created",
+              "at settlement. Refunded with the rent when the request closes."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "docs": [
               "Reserved for future fields."
@@ -4902,7 +4694,7 @@ export type HedgeVault = {
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }
@@ -6318,6 +6110,14 @@ export type HedgeVault = {
             "type": "u8"
           },
           {
+            "name": "rentEscrow",
+            "docs": [
+              "Lamports held above this account's own rent, earmarked for the payout token account created",
+              "at settlement. Refunded with the rent when the request closes."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "docs": [
               "Reserved for future fields."
@@ -6325,7 +6125,7 @@ export type HedgeVault = {
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }

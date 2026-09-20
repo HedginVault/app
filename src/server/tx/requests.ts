@@ -1,8 +1,9 @@
 import type { Program } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, type TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { BuiltTransaction } from "@/lib/types";
+import { ApiError } from "../errors";
 import { getConfigPda, getDepositRequestPda, getWithdrawalRequestPda } from "../pda";
 import { getProgram } from "../program";
 import { fetchRequestQueue } from "../readers/position";
@@ -91,14 +92,14 @@ export const withdrawalResolveIx = (program: P, ctx: VaultCtx, resolver: PublicK
     .instruction();
 
 /**
- * Both resolve instructions carry 13 accounts. A homogeneous 6-instruction chunk serializes to
- * 1216 bytes in the worst case (a Token-2022 deposit mint, where `deposit_mint_token_program` and
- * the share mint's `share_token_program` are distinct keys), leaving 16 bytes under the 1232-byte
- * packet limit. Mixing deposit and withdrawal resolves in one chunk pulls in both the deposit
- * escrow and the share escrow, which costs another 32 bytes and overruns at 1248 — so chunks are
- * always homogeneous.
+ * Both resolve instructions carry 14 accounts, the last being the associated token program they use
+ * to create a missing payout account. A homogeneous 5-instruction chunk serializes to 1133 bytes in
+ * the worst case (a Token-2022 deposit mint, where `deposit_mint_token_program` and the share mint's
+ * `share_token_program` are distinct keys), leaving 99 bytes under the 1232-byte packet limit. Six
+ * overruns it at 1254. Mixing deposit and withdrawal resolves in one chunk pulls in both the deposit
+ * escrow and the share escrow, which costs another 32 bytes — so chunks are always homogeneous.
  */
-const RESOLVES_PER_TX = 6;
+const RESOLVES_PER_TX = 5;
 
 /** Chunks each list separately at `size`, deposits first, so no chunk ever mixes the two kinds. */
 export function chunkResolves<T>(deposits: T[], withdrawals: T[], size = RESOLVES_PER_TX): T[][] {
@@ -127,6 +128,25 @@ export async function buildResolveBatch(address: string, payer: PublicKey): Prom
     ),
   ]);
   const built: BuiltTransaction[] = [];
-  for (const chunk of chunkResolves(deposits, withdrawals)) built.push(await assemble(payer, chunk));
+  for (const chunk of chunkResolves(deposits, withdrawals)) built.push(...(await assembleResolves(payer, chunk)));
   return built;
+}
+
+/**
+ * Assembles one transaction per chunk, retrying a chunk that fails simulation as one transaction per
+ * request, so a single unsettleable request cannot block the rest of the vault. A request that fails
+ * on its own is left out — the caller settles what it can.
+ */
+async function assembleResolves(payer: PublicKey, chunk: TransactionInstruction[]): Promise<BuiltTransaction[]> {
+  try {
+    return [await assemble(payer, chunk)];
+  } catch (error) {
+    // only a rejected transaction is worth splitting; an RPC or encoding failure is not
+    if (!(error instanceof ApiError)) throw error;
+    if (chunk.length === 1) return [];
+
+    const built: BuiltTransaction[] = [];
+    for (const ix of chunk) built.push(...(await assembleResolves(payer, [ix])));
+    return built;
+  }
 }

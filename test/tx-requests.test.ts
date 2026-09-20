@@ -3,6 +3,7 @@ import BN from "bn.js";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getConfigPda, getDepositEscrowPda, getDepositRequestPda, getShareEscrowPda, getWithdrawalRequestPda } from "@/server/pda";
 import { getProgram, PROGRAM_ID } from "@/server/program";
+import { fitsInTransaction } from "@/server/tx/size";
 import type { VaultCtx } from "@/server/tx/context";
 import {
   buildResolveBatch,
@@ -21,6 +22,8 @@ const mocked = vi.hoisted(() => ({
   ctx: null as unknown,
   queue: { deposits: [] as unknown[], withdrawals: [] as unknown[] },
   assembleCalls: [] as TransactionInstruction[][],
+  /** Request PDAs whose transactions fail simulation. */
+  failing: new Set<string>(),
 }));
 
 vi.mock("@/server/tx/context", () => ({
@@ -28,12 +31,19 @@ vi.mock("@/server/tx/context", () => ({
   assertAuthority: () => {},
 }));
 vi.mock("@/server/readers/position", () => ({ fetchRequestQueue: async () => mocked.queue }));
-vi.mock("@/server/tx/assemble", () => ({
-  assemble: async (_payer: PublicKey, ixs: TransactionInstruction[]) => {
-    mocked.assembleCalls.push(ixs);
-    return { transaction: "", simulation: { unitsConsumed: 0 } };
-  },
-}));
+vi.mock("@/server/tx/assemble", async () => {
+  const { ApiError } = await import("@/server/errors");
+  return {
+    assemble: async (_payer: PublicKey, ixs: TransactionInstruction[]) => {
+      mocked.assembleCalls.push(ixs);
+      const referenced = ixs.flatMap((ix) => ix.keys.map((k) => k.pubkey.toBase58()));
+      if (referenced.some((k) => mocked.failing.has(k))) {
+        throw new ApiError(422, "SimulationFailed", "simulation failed");
+      }
+      return { transaction: "", simulation: { unitsConsumed: 0 } };
+    },
+  };
+});
 
 const TOKEN_PROGRAM = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const pk = (n: number) => new PublicKey(new Uint8Array(32).fill(n));
@@ -89,8 +99,8 @@ describe("chunkResolves", () => {
 
   it("chunks each list at the transaction limit, deposits first", () => {
     expect(chunkResolves(["d1", "d2", "d3", "d4", "d5", "d6", "d7"], ["w1"])).toEqual([
-      ["d1", "d2", "d3", "d4", "d5", "d6"],
-      ["d7"],
+      ["d1", "d2", "d3", "d4", "d5"],
+      ["d6", "d7"],
       ["w1"],
     ]);
   });
@@ -100,8 +110,27 @@ describe("chunkResolves", () => {
   });
 });
 
+const payer = pk(9);
+
+describe("RESOLVES_PER_TX", () => {
+  // Guards the constant itself: adding an account to a resolve instruction silently shrinks how many
+  // fit, which is how a chunk of six came to overrun the packet.
+  const resolves = async (n: number) => {
+    const program = getProgram();
+    const t22Ctx = { ...ctx, tokenProgram: new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb") };
+    return Promise.all(Array.from({ length: n }, (_, i) => depositResolveIx(program, t22Ctx, payer, pk(20 + i))));
+  };
+
+  it("fits a full chunk into one packet, with a Token-2022 deposit mint", async () => {
+    expect(fitsInTransaction(payer, await resolves(5))).toBe(true);
+  });
+
+  it("does not fit one more", async () => {
+    expect(fitsInTransaction(payer, await resolves(6))).toBe(false);
+  });
+});
+
 describe("buildResolveBatch", () => {
-  const payer = pk(9);
   const owner = (n: number) => pk(n).toBase58();
   const deposit = (n: number, state: "pending" | "resolvable") => ({ owner: owner(n), state });
 
@@ -110,6 +139,7 @@ describe("buildResolveBatch", () => {
   });
   beforeEach(() => {
     mocked.assembleCalls.length = 0;
+    mocked.failing.clear();
   });
 
   it("assembles one homogeneous chunk per request kind and skips pending requests", async () => {
@@ -128,6 +158,20 @@ describe("buildResolveBatch", () => {
     expect(all).toContain(getWithdrawalRequestPda(vault, pk(14)).toBase58());
     // The pending request is never built.
     expect(all).not.toContain(getDepositRequestPda(vault, pk(12)).toBase58());
+  });
+
+  it("retries a rejected chunk one request at a time and leaves out the bad one", async () => {
+    mocked.queue = {
+      deposits: [deposit(11, "resolvable"), deposit(12, "resolvable"), deposit(13, "resolvable")],
+      withdrawals: [],
+    };
+    mocked.failing.add(getDepositRequestPda(vault, pk(12)).toBase58());
+
+    const built = await buildResolveBatch(vault.toBase58(), payer);
+
+    // the chunk of three, then one transaction per request
+    expect(mocked.assembleCalls.map((ixs) => ixs.length)).toEqual([3, 1, 1, 1]);
+    expect(built).toHaveLength(2);
   });
 
   it("builds nothing when every request is still pending", async () => {

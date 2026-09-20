@@ -8,8 +8,9 @@ import { type AccountInfo, LAMPORTS_PER_SOL, type PublicKey, SystemProgram, type
 import { decodeTokenAmount } from "./rpc";
 
 /**
- * Native SOL held back from a SOL vault's spendable balance: covers the wSOL ATA, the share ATA and
- * the deposit request rent on a first deposit, plus fees.
+ * Native SOL held back from a SOL vault's spendable balance: covers the wSOL ATA, plus the deposit
+ * request's own rent and the payout-account rent it escrows on a first deposit, plus fees. The
+ * escrow comes back when the request settles or is cancelled.
  */
 export const SOL_RESERVE_LAMPORTS = BigInt(LAMPORTS_PER_SOL / 100);
 

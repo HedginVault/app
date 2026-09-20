@@ -404,6 +404,10 @@
         },
         {
           "name": "depositor_token_account",
+          "docs": [
+            "Recreated when the depositor closed it while the request was pending; they sign here, so",
+            "they pay for it themselves."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -492,6 +496,10 @@
         },
         {
           "name": "deposit_mint_token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "system_program",
@@ -625,66 +633,6 @@
           }
         },
         {
-          "name": "depositor_share_token_account",
-          "docs": [
-            "Created upfront so the request can be resolved permissionlessly."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "depositor"
-              },
-              {
-                "kind": "account",
-                "path": "share_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "share_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
           "name": "deposit_escrow",
           "writable": true,
           "pda": {
@@ -721,14 +669,6 @@
         },
         {
           "name": "deposit_mint_token_program"
-        },
-        {
-          "name": "share_token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -753,6 +693,7 @@
       "accounts": [
         {
           "name": "admin",
+          "writable": true,
           "signer": true
         },
         {
@@ -775,6 +716,9 @@
         },
         {
           "name": "depositor_token_account",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -792,41 +736,8 @@
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associated_token_program"
             }
           }
         },
@@ -865,6 +776,10 @@
           "name": "deposit_mint_token_program"
         },
         {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -886,6 +801,7 @@
       "accounts": [
         {
           "name": "resolver",
+          "writable": true,
           "signer": true
         },
         {
@@ -912,6 +828,9 @@
         },
         {
           "name": "depositor_share_token_account",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -929,41 +848,8 @@
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associated_token_program"
             }
           }
         },
@@ -1061,6 +947,10 @@
         {
           "name": "share_token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "system_program",
@@ -2936,6 +2826,10 @@
         },
         {
           "name": "withdrawer_share_token_account",
+          "docs": [
+            "Recreated when the withdrawer closed it while the request held every share; they sign here,",
+            "so they pay for it themselves."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3023,6 +2917,10 @@
         {
           "name": "share_token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "system_program",
@@ -3159,66 +3057,6 @@
           }
         },
         {
-          "name": "withdrawer_token_account",
-          "docs": [
-            "Created upfront so the request can be resolved permissionlessly."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "withdrawer"
-              },
-              {
-                "kind": "account",
-                "path": "deposit_mint_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "deposit_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
           "name": "share_escrow",
           "writable": true,
           "pda": {
@@ -3257,10 +3095,6 @@
         {
           "name": "share_token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -3285,6 +3119,7 @@
       "accounts": [
         {
           "name": "admin",
+          "writable": true,
           "signer": true
         },
         {
@@ -3307,6 +3142,9 @@
         },
         {
           "name": "withdrawer_share_token_account",
+          "docs": [
+            "out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3324,41 +3162,8 @@
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associated_token_program"
             }
           }
         },
@@ -3396,6 +3201,10 @@
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -3417,6 +3226,7 @@
       "accounts": [
         {
           "name": "resolver",
+          "writable": true,
           "signer": true
         },
         {
@@ -3443,6 +3253,9 @@
         },
         {
           "name": "withdrawer_token_account",
+          "docs": [
+            "spell out the associated token address so the constraint checks it and clients still derive it."
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -3460,41 +3273,8 @@
               }
             ],
             "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
+              "kind": "account",
+              "path": "associated_token_program"
             }
           }
         },
@@ -3590,6 +3370,10 @@
         {
           "name": "share_token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "system_program",
@@ -4889,6 +4673,14 @@
             "type": "u8"
           },
           {
+            "name": "rent_escrow",
+            "docs": [
+              "Lamports held above this account's own rent, earmarked for the payout token account created",
+              "at settlement. Refunded with the rent when the request closes."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "docs": [
               "Reserved for future fields."
@@ -4896,7 +4688,7 @@
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }
@@ -6312,6 +6104,14 @@
             "type": "u8"
           },
           {
+            "name": "rent_escrow",
+            "docs": [
+              "Lamports held above this account's own rent, earmarked for the payout token account created",
+              "at settlement. Refunded with the rent when the request closes."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "docs": [
               "Reserved for future fields."
@@ -6319,7 +6119,7 @@
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }

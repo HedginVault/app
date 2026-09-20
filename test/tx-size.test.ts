@@ -11,6 +11,14 @@ describe("fitsInTransaction", () => {
     expect(fitsInTransaction(payer, [ix(1300)])).toBe(false);
     expect(fitsInTransaction(payer, [ix(600), ix(600)])).toBe(false);
   });
+
+  it("counts the signature, not just the message", () => {
+    // 1020 bytes of instruction data is the largest payload that leaves room for the 65-byte
+    // signature; a message up to 65 bytes longer still serializes on its own, so measuring the
+    // whole transaction is what rejects it
+    expect(fitsInTransaction(payer, [ix(1020)])).toBe(true);
+    expect(fitsInTransaction(payer, [ix(1021)])).toBe(false);
+  });
 });
 
 describe("swapPlan", () => {

@@ -1,6 +1,7 @@
 import {
   AddressLookupTableAccount,
   ComputeBudgetProgram,
+  PACKET_DATA_SIZE,
   PublicKey,
   TransactionInstruction,
   TransactionMessage,
@@ -9,8 +10,10 @@ import {
 
 /**
  * Whether the instructions (plus the compute-budget instruction `assemble` prepends) serialize into
- * one packet. Pure: compiles against a placeholder blockhash. web3.js signals an oversized
- * transaction with a RangeError ("encoding overruns Uint8Array").
+ * one packet. Pure: compiles against a placeholder blockhash. The serialized length is measured
+ * rather than inferred from `serialize()` throwing: that RangeError ("encoding overruns
+ * Uint8Array") only fires once the message alone passes the limit, which misses a transaction whose
+ * message fits but whose signatures push it over.
  */
 export function fitsInTransaction(
   payer: PublicKey,
@@ -23,8 +26,7 @@ export function fitsInTransaction(
       recentBlockhash: PublicKey.default.toBase58(),
       instructions: [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }), ...instructions],
     }).compileToV0Message(lookupTables);
-    new VersionedTransaction(message).serialize();
-    return true;
+    return new VersionedTransaction(message).serialize().length <= PACKET_DATA_SIZE;
   } catch (e) {
     if (e instanceof RangeError) return false;
     throw e;

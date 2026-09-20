@@ -11,26 +11,17 @@ export function BrandLogo({ className, priority = false, size = "header" }: Bran
   const isFooter = size === "footer";
 
   return (
-    <span
+    <Image
+      src="/logo.png"
+      alt="Hedgin"
+      width={2172}
+      height={724}
+      priority={priority}
       className={cn(
-        "relative block overflow-hidden",
-        isFooter ? "h-7 w-24" : "h-9 w-32 sm:h-11 sm:w-40",
+        "h-auto w-auto object-contain",
+        isFooter ? "max-h-7" : "max-h-9 sm:max-h-11",
         className,
       )}
-    >
-      <Image
-        src="/logo.png"
-        alt="Hedgin"
-        width={2172}
-        height={724}
-        priority={priority}
-        className={cn(
-          "absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2",
-          isFooter
-            ? "h-[3.25rem] w-[9.75rem]"
-            : "h-[4.125rem] w-[12.375rem] sm:h-[5.25rem] sm:w-[15.75rem]",
-        )}
-      />
-    </span>
+    />
   );
 }

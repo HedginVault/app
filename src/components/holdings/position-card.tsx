@@ -9,7 +9,6 @@ import { TokenAmount } from "@/components/token/token-amount";
 import { formatPercent, formatPrice, formatRelative, formatShare, formatUsd, usdValue } from "@/lib/format";
 import type { PositionView, TokenInfo } from "@/lib/types";
 import { BinChart } from "./bin-chart";
-import { PriceRangeLine } from "./price-range-line";
 
 const meteoraUrl = (lbPair: string) => `https://app.meteora.ag/dlmm/${lbPair}`;
 
@@ -170,14 +169,6 @@ export function PositionCard({
         </div>
       </div>
 
-      <PriceRangeLine
-        lower={Number(range.lowerPrice)}
-        upper={Number(range.upperPrice)}
-        active={activePrice}
-        inRange={range.inRange}
-        quoteSymbol={y.symbol}
-      />
-
       <div className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
         <div>
           <div className={LP_CELL_LABEL}>{x.symbol}</div>
@@ -206,8 +197,7 @@ export function PositionCard({
         bins={p.bins}
         tokenX={x}
         tokenY={y}
-        activeBinId={range.activeBinId}
-        activePrice={activePrice}
+        range={range}
         priceLabel={(binId) => `${formatPrice(binPrice(binId))} ${y.symbol}`}
       />
 

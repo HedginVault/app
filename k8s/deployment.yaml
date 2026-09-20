@@ -21,8 +21,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-pull
-      securityContext:
-        runAsNonRoot: true
       containers:
         - name: app
           image: ghcr.io/hedginvault/app:__IMAGE_TAG__

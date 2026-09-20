@@ -25,7 +25,7 @@ export function BrandLogo({ className, priority = false, size = "header" }: Bran
         height={724}
         priority={priority}
         className={cn(
-          "absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 mix-blend-screen",
+          "absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2",
           isFooter
             ? "h-[3.25rem] w-[9.75rem]"
             : "h-[4.125rem] w-[12.375rem] sm:h-[5.25rem] sm:w-[15.75rem]",

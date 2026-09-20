@@ -120,7 +120,10 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
       ...money(value),
     };
   });
-  others.sort(byValueDesc);
+  // ponytail: idle, then spot, then LP, then unreadable; value-desc inside each group.
+  // Keeps the tall LP cards together instead of scattering them between one-line spot rows.
+  const groupRank = { swap: 0, lp: 1, error: 2 } as const;
+  others.sort((a, b) => groupRank[a.kind as keyof typeof groupRank] - groupRank[b.kind as keyof typeof groupRank] || byValueDesc(a, b));
 
   const byMint = new Map<string, ValuedHolding[]>();
   for (const h of valued.holdings) byMint.set(h.mint, [...(byMint.get(h.mint) ?? []), h]);

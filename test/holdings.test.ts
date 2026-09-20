@@ -90,6 +90,13 @@ describe("buildHoldingsView", () => {
     expect(h.tokens).toEqual(base.tokens);
   });
 
+  it("groups spot positions before LPs regardless of value", () => {
+    const small: JupiterStrategyView = { ...jupiter(100), address: "strat-jup-2", vaultBalance: "100000000" }; // 0.1 SOL = 10 USDC
+    const h = buildHoldingsView(vault(), [dlmm(100), small, jupiter(100)]);
+    expect(h.positions.map((p) => p.kind)).toEqual(["idle", "swap", "swap", "lp"]);
+    expect(h.positions.map((p) => p.value)).toEqual(["1000000000", "200000000", "10000000", "159900000"]);
+  });
+
   it("flags closable positions and out-of-range LPs", () => {
     const empty = { ...jupiter(100), vaultBalance: "0" };
     const lpOut = { ...dlmm(100), activeBinId: 200, amountX: "0", amountY: "0", pendingFeeX: "0", pendingFeeY: "0" };

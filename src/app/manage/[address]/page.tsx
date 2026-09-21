@@ -6,6 +6,7 @@ import { Suspense, use } from "react";
 import { BalanceTab } from "@/components/manage/balance-tab";
 import { ManagerGuard } from "@/components/manage/guard";
 import { MarketsTab } from "@/components/manage/markets-tab";
+import { QuickSwap } from "@/components/manage/quick-swap";
 import { RequestsBar } from "@/components/manage/requests-bar";
 import { RequestsTab } from "@/components/manage/requests-tab";
 import { SettingsTab } from "@/components/manage/settings-tab";
@@ -60,6 +61,7 @@ export default function ManageVaultPage({ params }: { params: Promise<{ address:
           // useSearchParams below needs a Suspense boundary.
           <Suspense fallback={<Skeleton className="h-96" />}>
             <ManageTabs v={v} owner={owner} />
+            <QuickSwap v={v} owner={owner} />
           </Suspense>
         )}
       </ManagerGuard>

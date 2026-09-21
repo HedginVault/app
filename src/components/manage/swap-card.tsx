@@ -1,32 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AmountInput } from "@/components/token/amount-input";
 import { TokenLogo } from "@/components/token/token-logo";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
-import { useQuote, useTokenSearch } from "@/hooks/queries";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useSendTransaction } from "@/hooks/use-send-transaction";
-import { api } from "@/lib/api";
-import { depositTokenOf } from "@/lib/holdings";
-import { formatBps, formatPrice, formatTokenAmount, parseTokenAmount, toUiNumber, usdValue } from "@/lib/format";
-import type { StepProgress } from "@/lib/tx-steps";
-import type { BuiltStep, HoldingsView, TokenInfo, VaultDetail } from "@/lib/types";
-import {
-  impactPercent,
-  impactSeverity,
-  isOperational,
-  minReceived,
-  swapButtonState,
-} from "@/lib/swap-logic";
+import { useSwapForm } from "@/hooks/use-swap-form";
+import { formatBps, formatPrice, formatTokenAmount, usdValue } from "@/lib/format";
+import { minReceived } from "@/lib/swap-logic";
+import type { HoldingsView, TokenInfo, VaultDetail } from "@/lib/types";
 import { ReviewDialog } from "./review-dialog";
 import { TokenSelect } from "./token-select";
 
 const SLIPPAGE_PRESETS = [10, 50, 100];
-// react-hooks/purity flags a bare `Date.now()` call in render; wrapping it (as other components
-// in this codebase do, e.g. `nowSeconds` in vault-details.tsx) satisfies the static check.
-const now = () => Date.now();
 
 export function SwapCard({
   v,
@@ -41,93 +26,45 @@ export function SwapCard({
   initial: { from?: string; to?: string; amount?: string };
   onParamsChange: (p: { from?: string; to?: string; amount?: string }) => void;
 }) {
-  const deposit = depositTokenOf(v);
-  // Only tokens held via an open Jupiter strategy are eligible sell-side targets: an LP-only
-  // holding (a DLMM position's tokenX/tokenY) has no vault-controlled swap balance, so it must
-  // not appear here (spec §4 / review finding).
-  const heldTokens = holdings.positions.flatMap((p) => (p.kind === "swap" ? [p.token] : []));
-  const balances = new Map(
-    holdings.positions.flatMap((p) => (p.kind === "idle" || p.kind === "swap" ? [[p.token.mint, p.amount] as const] : [])),
-  );
-  const initialTarget = [initial.from, initial.to].find((m) => m && m !== deposit.mint);
-
-  const [buy, setBuy] = useState(initial.from === undefined || initial.from === deposit.mint);
-  // The target is tracked by mint. A token the vault does not hold yet (picked from search, or
-  // pre-filled by "Swap for X") is resolved from the pick itself or, after a remount, from search.
-  const [targetMint, setTargetMint] = useState<string | undefined>(initialTarget);
-  const [picked, setPicked] = useState<TokenInfo | null>(null);
-  const heldTarget = heldTokens.find((t) => t.mint === targetMint);
-  const lookup = useTokenSearch(targetMint && !heldTarget && picked?.mint !== targetMint ? targetMint : "");
-  const target: TokenInfo | null =
-    heldTarget ?? (picked?.mint === targetMint ? picked : lookup.data?.find((t) => t.mint === targetMint) ?? null);
-  const setTarget = (t: TokenInfo) => {
-    setPicked(t);
-    setTargetMint(t.mint);
-  };
-  const [input, setInput] = useState(initial.amount ?? "");
-  const [slippageBps, setSlippageBps] = useState(Math.min(50, v.protocol.maxSlippageBps));
-  // Custom slippage text while editing; null shows the committed value.
-  const [slippageText, setSlippageText] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
-  const [slipOpen, setSlipOpen] = useState(false);
-  const [reviewing, setReviewing] = useState(false);
-  const [progress, setProgress] = useState<StepProgress | null>(null);
-  const [invertRate, setInvertRate] = useState(false);
-  const { send, pending } = useSendTransaction();
-
-  const from = buy ? deposit : target;
-  const to = buy ? target : deposit;
-  const amount = from ? parseTokenAmount(input, from.decimals) : null;
-  const balance = from ? BigInt(balances.get(from.mint) ?? "0") : 0n;
-  const debouncedAmount = useDebounce(amount?.toString() ?? "", 400);
-
-  const quoteParams = {
-    vault: v.address,
-    inputMint: from?.mint ?? "",
-    outputMint: to?.mint ?? "",
-    amount: debouncedAmount,
+  const {
+    deposit,
+    heldTokens,
+    balances,
+    buy,
+    toggleDirection,
+    target,
+    setTarget,
+    picking,
+    setPicking,
+    input,
+    setInput,
     slippageBps,
-  };
-  const quoteEnabled = !!from && !!to && !!amount && amount > 0n && amount <= balance && debouncedAmount === amount.toString();
-  const quote = useQuote(quoteParams, quoteEnabled);
-  // Keep the quote fresh while the card is visible.
-  const { refetch } = quote;
-  useEffect(() => {
-    if (!quoteEnabled) return;
-    const id = setInterval(() => {
-      void refetch();
-    }, 15_000);
-    return () => clearInterval(id);
-  }, [quoteEnabled, refetch]);
-  const quoteAgeMs = quote.data ? now() - quote.dataUpdatedAt : null;
-
-  const button = swapButtonState({
-    operational: isOperational(v),
-    hasToken: !!target,
+    setSlippageBps,
+    slippageText,
+    setSlippageText,
+    slipOpen,
+    setSlipOpen,
+    reviewing,
+    setReviewing,
+    progress,
+    invertRate,
+    setInvertRate,
+    pending,
+    from,
+    to,
     amount,
     balance,
-    quoteLoading: quoteEnabled && (quote.isFetching && !quote.data),
-    quoteError: quote.error ? quote.error.message : null,
-    quoteAgeMs: quoteEnabled ? quoteAgeMs : null,
-  });
-
-  const out = quote.data ? BigInt(quote.data.outAmount) : null;
-  const impact = quote.data ? impactPercent(quote.data.priceImpactPct) : 0;
-  const severity = impactSeverity(impact);
-  const rate = from && to && amount && out && amount > 0n ? toUiNumber(out, to.decimals) / toUiNumber(amount, from.decimals) : null;
-  const invertedRate = rate ? 1 / rate : null;
-  const needsStrategy = !!target && !holdings.positions.some((p) => p.kind === "swap" && p.token.mint === target.mint);
-
-  const update = (next: { buy?: boolean; target?: TokenInfo | null; input?: string }) => {
-    const b = next.buy ?? buy;
-    const t = next.target === undefined ? target : next.target;
-    const i = next.input ?? input;
-    onParamsChange({
-      from: b ? deposit.mint : t?.mint,
-      to: b ? t?.mint : deposit.mint,
-      amount: i || undefined,
-    });
-  };
+    quote,
+    refetch,
+    button,
+    out,
+    impact,
+    severity,
+    rate,
+    invertedRate,
+    needsStrategy,
+    confirm,
+  } = useSwapForm({ v, owner, holdings, initial, onParamsChange });
 
   const tokenButton = (token: TokenInfo | null, selectable: boolean) =>
     selectable ? (
@@ -147,30 +84,6 @@ export function SwapCard({
         <TokenLogo token={deposit} size="sm" /> {deposit.symbol} <span className="text-[11px] text-muted">🔒</span>
       </span>
     );
-
-  const confirm = () => {
-    if (!from || !to || !amount) return;
-    setProgress(null);
-    void send({
-      label: `Swap ${from.symbol} → ${to.symbol}`,
-      vault: v.address,
-      onProgress: setProgress,
-      build: () =>
-        api.build<BuiltStep>("jupiter/swap", {
-          payer: owner,
-          vault: v.address,
-          sourceMint: from.mint,
-          destinationMint: to.mint,
-          amount: amount.toString(),
-          slippageBps,
-        }),
-      onSuccess: () => {
-        setReviewing(false);
-        setInput("");
-        update({ input: "" });
-      },
-    });
-  };
 
   return (
     <div className="space-y-2">
@@ -219,10 +132,7 @@ export function SwapCard({
         token={from}
         tokenSlot={tokenButton(from, !buy)}
         value={input}
-        onChange={(i) => {
-          setInput(i);
-          update({ input: i });
-        }}
+        onChange={setInput}
         balance={from ? balance.toString() : null}
         usd={from && amount !== null ? usdValue(amount, from.decimals, from.priceUsd) : undefined}
         presets={[25, 50, 100]}
@@ -233,11 +143,7 @@ export function SwapCard({
         <button
           type="button"
           aria-label="Switch direction"
-          onClick={() => {
-            setBuy(!buy);
-            setInput("");
-            update({ buy: !buy, input: "" });
-          }}
+          onClick={toggleDirection}
           className="rounded-full border border-border bg-surface p-1.5 text-muted shadow-none hover:text-foreground"
         >
           ⇅
@@ -292,10 +198,7 @@ export function SwapCard({
         held={heldTokens}
         exclude={[deposit.mint, v.shareMint]}
         balances={balances}
-        onSelect={(t) => {
-          setTarget(t);
-          update({ target: t });
-        }}
+        onSelect={setTarget}
       />
 
       {from && to && amount && out !== null && (

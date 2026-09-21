@@ -194,21 +194,18 @@ function ConfigurePosition({
     onRangeChange?.(locked ? null : { min: minPrice, max: maxPrice });
   }, [locked, minPrice, maxPrice, onRangeChange]);
   useEffect(() => () => onRangeChange?.(null), [onRangeChange]);
-  // One-sided ranges anchor the pool price to an edge: X (above) starts at the left, Y (below) ends at the right.
   const domain = {
-    lo: placement === "above" ? active : Math.min(active - DLMM_MAX_POSITION_WIDTH, range.lowerBinId),
-    hi: placement === "below" ? active : Math.max(active + DLMM_MAX_POSITION_WIDTH, last),
+    lo: Math.min(active - DLMM_MAX_POSITION_WIDTH, range.lowerBinId),
+    hi: Math.max(active + DLMM_MAX_POSITION_WIDTH, last),
   };
 
   /**
-   * Sets inclusive bins. Keeps the range on the side the amounts fund, lower <= last, and the width
-   * within the program max by stopping the edge being moved.
+   * Sets inclusive bins, keeping lower <= last and the width within the program max (stopping the
+   * edge being moved). Not clamped to the side the current amounts fund: a manager can open a
+   * position wider than what's deposited today and top up the empty bins with a later add-liquidity.
    */
   const setBins = (lower: number, lastBin: number, moved: "lower" | "last") => {
     if (placement === null) return;
-    if (placement === "above") lower = Math.max(lower, active + 1);
-    if (placement === "below") lastBin = Math.min(lastBin, active);
-    if (placement === "both") [lower, lastBin] = [Math.min(lower, active), Math.max(lastBin, active)];
     if (lastBin < lower) [lower, lastBin] = moved === "lower" ? [lastBin, lastBin] : [lower, lower];
     if (lastBin - lower + 1 > DLMM_MAX_POSITION_WIDTH) {
       // Stop the handle being moved at the max width; never drag the other edge along.

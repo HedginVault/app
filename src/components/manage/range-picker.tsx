@@ -108,7 +108,7 @@ export function RangePicker({
                       className="flex origin-bottom animate-bin-rise flex-col overflow-hidden rounded-t-[4px] transition-[height] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:brightness-125 motion-reduce:animate-none motion-reduce:transition-none"
                       style={{ height: `${h}%` }}
                     >
-                      <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.x / total : 0 }} />
+                      <div className="bg-indigo-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.x / total : 0 }} />
                       <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.y / total : 0 }} />
                     </div>
                   </div>

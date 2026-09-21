@@ -51,7 +51,11 @@ export function RangePicker({
 }) {
   const width = last - lower + 1;
   const byId = new Map(bins.map((b) => [b.binId, b]));
-  const max = Math.max(0, ...bins.map((b) => b.x + b.y));
+  // The active bin holds both tokens (it straddles the price), so its total roughly doubles a normal
+  // single-side bin. Scale off the other bins so a normal bin reaches 100%, and cap the active bin at
+  // the same 100% instead of letting it spike over the rest.
+  const others = bins.filter((b) => b.binId !== activeBinId);
+  const max = Math.max(0, ...(others.length ? others : bins).map((b) => b.x + b.y));
   // Pool price marker inside the selected range; pinned to the nearer edge when the range sits on one side.
   const markerPct = Math.min(100, Math.max(0, ((activeBinId - lower + 0.5) / width) * 100));
   const markerAlign = markerPct < 20 ? "left" : markerPct > 80 ? "right" : "center";
@@ -100,7 +104,7 @@ export function RangePicker({
               {Array.from({ length: width }, (_, i) => {
                 const b = byId.get(lower + i);
                 const total = b ? b.x + b.y : 0;
-                const h = max > 0 && total > 0 ? Math.max((total / max) * 100, 2) : 0;
+                const h = max > 0 && total > 0 ? Math.min(Math.max((total / max) * 100, 2), 100) : 0;
                 return (
                   <div key={i} className="group flex h-full min-w-0 flex-1 flex-col justify-end" title={tickLabel(lower + i)}>
                     {/* keyed by position: an existing bar eases to its new height, a new bar grows up */}

@@ -16,7 +16,6 @@ import {
   distribution,
   rangeForPlacement,
   priceToBinId,
-  suggestOtherSide,
   type BinRange,
   type Placement,
 } from "@/lib/dlmm-range";
@@ -225,7 +224,7 @@ function ConfigurePosition({
 
   // A Min/Max Bin line dragged on the chart: apply whichever raw edge moved further from where it is now.
   // Dragging the far edge of a single-sided draft across the active bin turns it into a both-sided
-  // range; the newly-needed side is auto-filled to match the value already deposited on the other side.
+  // range; the newly-needed side is auto-filled to the same total USD value as the funded side.
   // Adjusted during render, gated on `seq` (not the range values), like the placement reset above: an
   // effect would set state a frame late and cascade an extra render for every mousemove of the drag.
   const [lastDragSeq, setLastDragSeq] = useState<number | undefined>(undefined);
@@ -238,14 +237,12 @@ function ConfigurePosition({
     if (bin !== null) {
       if (placement === "below" && rawEdge === "last" && bin > active) {
         const upperBinId = Math.min(bin + 1, range.lowerBinId + DLMM_MAX_POSITION_WIDTH);
-        const nextRange = { lowerBinId: range.lowerBinId, upperBinId };
-        setInputX(toInput(suggestOtherSide("y", uiY, activePrice, nextRange, active), x.decimals));
-        setRangeState({ placement: "both", range: nextRange });
+        setInputX(toInput(uiY / activePrice, x.decimals));
+        setRangeState({ placement: "both", range: { lowerBinId: range.lowerBinId, upperBinId } });
       } else if (placement === "above" && rawEdge === "lower" && bin <= active) {
         const lowerBinId = Math.max(bin, range.upperBinId - DLMM_MAX_POSITION_WIDTH);
-        const nextRange = { lowerBinId, upperBinId: range.upperBinId };
-        setInputY(toInput(suggestOtherSide("x", uiX, activePrice, nextRange, active), y.decimals));
-        setRangeState({ placement: "both", range: nextRange });
+        setInputY(toInput(uiX * activePrice, y.decimals));
+        setRangeState({ placement: "both", range: { lowerBinId, upperBinId: range.upperBinId } });
       } else {
         applyRawPrice(rawEdge, raw);
       }

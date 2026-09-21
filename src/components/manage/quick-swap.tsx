@@ -16,7 +16,7 @@ export function QuickSwap({ v, owner }: { v: VaultDetail; owner: string }) {
   const holdings = useHoldings(v.address);
 
   return (
-    <div className="fixed bottom-4 left-4 z-40 w-80">
+    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-4 z-40 w-[min(20rem,calc(100vw-2rem))] sm:bottom-4">
       {open && (
         <Card className="mb-2 bg-none bg-surface shadow-xl">
           <CardBody className="space-y-4">

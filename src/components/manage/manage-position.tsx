@@ -6,6 +6,7 @@ import { PairLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Segmented } from "@/components/ui/segmented";
 import { Slider } from "@/components/ui/slider";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
@@ -42,6 +43,7 @@ export function ManagePosition({
   const { tokenX: x, tokenY: y, range } = p;
   const { send, pending } = useSendTransaction();
   const [reviewing, setReviewing] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [inputX, setInputX] = useState("");
   const [inputY, setInputY] = useState("");
   const [shape, setShape] = useState<DlmmShape>("spot");
@@ -155,19 +157,23 @@ export function ManagePosition({
         className="w-full"
         loading={pending}
         disabled={!operational}
-        onClick={() => {
-          if (
-            window.confirm(
-              p.closable
-                ? "Close this empty position and its strategy? Rent returns to your wallet."
-                : "Remove all liquidity, claim fees, and close this position? Rent returns to your wallet.",
-            )
-          )
-            run("Close position", "dlmm/close", { position: p.position });
-        }}
+        onClick={() => setClosing(true)}
       >
         Close position
       </Button>
+
+      <ConfirmDialog
+        open={closing}
+        onClose={() => setClosing(false)}
+        title={`Close ${x.symbol}-${y.symbol} position`}
+        confirmLabel="Close position"
+        pending={pending}
+        onConfirm={() => run("Close position", "dlmm/close", { position: p.position })}
+      >
+        {p.closable
+          ? "This empty position and its strategy are closed. Rent returns to your wallet."
+          : "All liquidity is removed and fees claimed, then the position is closed. Rent returns to your wallet."}
+      </ConfirmDialog>
 
       <ReviewDialog
         open={reviewing}

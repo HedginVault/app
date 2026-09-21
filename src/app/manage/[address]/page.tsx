@@ -107,7 +107,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
           onChange={(t) => go(t)}
         />
       </div>
-      {tab === "balance" && <BalanceTab v={v} owner={owner} onTrade={(panel) => go("markets", panel)} />}
+      {tab === "balance" && <BalanceTab v={v} owner={owner} />}
       {tab === "markets" && <MarketsTab v={v} owner={owner} />}
       {tab === "requests" && <RequestsTab v={v} owner={owner} />}
       {tab === "settings" && <SettingsTab v={v} owner={owner} />}

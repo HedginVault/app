@@ -1,8 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { HoldingsSection } from "@/components/holdings/holdings-section";
 import { SummaryStrip } from "@/components/holdings/summary-strip";
 import type { MenuItem } from "@/components/ui/menu";
+import { ManagePosition } from "@/components/manage/manage-position";
+import { SwapCard } from "@/components/manage/swap-card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Stat } from "@/components/ui/stat";
 import { useHoldings } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
@@ -10,35 +16,52 @@ import { api } from "@/lib/api";
 import { formatTokenAmount, rawToInput } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
 import { isOperational } from "@/lib/swap-logic";
-import type { PositionView, VaultDetail } from "@/lib/types";
+import type { LpPositionView, PositionView, VaultDetail } from "@/lib/types";
 
-/** Balances and positions. Trade actions hand off to the Markets tab via `onTrade`. */
-export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: string; onTrade: (s: PanelState) => void }) {
+/** Balances and positions. Shortcut actions open a modal here, so managing never leaves this tab. */
+export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const holdings = useHoldings(v.address);
   const { send, pending } = useSendTransaction();
 
   const sh = (raw: string) => `${formatTokenAmount(raw, v.depositDecimals, { maxFraction: 4 })} shares`;
   const unclaimed = BigInt(v.unclaimedManagerFeeShares);
 
-  const prefill = onTrade;
+  // Shortcut actions run in a modal so managing a position never leaves the Balance tab.
+  const [action, setAction] = useState<PanelState | null>(null);
+  const prefill = setAction;
+  const managed =
+    action?.panel === "lp" && "position" in action
+      ? (holdings.data?.positions.find((p) => p.kind === "lp" && p.position === action.position) as LpPositionView | undefined)
+      : undefined;
 
-  const closeStrategy = (strategy: string, what: string) => {
-    if (window.confirm(`Close the ${what} strategy? Rent returns to your wallet.`))
-      void send({
-        label: `Close ${what}`,
-        vault: v.address,
-        build: () => api.build("strategy/close", { payer: owner, vault: v.address, strategy }),
-      });
-  };
+  // Destructive closes confirm in a modal instead of window.confirm.
+  const [confirming, setConfirming] = useState<{ title: string; body: string; label: string; run: () => void } | null>(null);
 
-  const closePosition = (position: string, pair: string) => {
-    if (window.confirm(`Remove all liquidity, claim fees, and close the ${pair} position? Rent returns to your wallet.`))
-      void send({
-        label: `Close ${pair}`,
-        vault: v.address,
-        build: () => api.build("dlmm/close", { payer: owner, vault: v.address, position }),
-      });
-  };
+  const closeStrategy = (strategy: string, what: string) =>
+    setConfirming({
+      title: `Close ${what} strategy`,
+      body: "The strategy account is closed and its rent returns to your wallet.",
+      label: "Close strategy",
+      run: () =>
+        void send({
+          label: `Close ${what}`,
+          vault: v.address,
+          build: () => api.build("strategy/close", { payer: owner, vault: v.address, strategy }),
+        }),
+    });
+
+  const closePosition = (position: string, pair: string) =>
+    setConfirming({
+      title: `Close ${pair} position`,
+      body: "All liquidity is removed and fees claimed, then the position is closed. Rent returns to your wallet.",
+      label: "Close position",
+      run: () =>
+        void send({
+          label: `Close ${pair}`,
+          vault: v.address,
+          build: () => api.build("dlmm/close", { payer: owner, vault: v.address, position }),
+        }),
+    });
 
   const operational = isOperational(v);
   const actionsFor = (p: PositionView): MenuItem[] => {
@@ -113,6 +136,44 @@ export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: strin
       </SummaryStrip>
 
       <HoldingsSection address={v.address} actionsFor={actionsFor} />
+
+      <Dialog
+        open={action !== null}
+        onClose={() => setAction(null)}
+        title={action?.panel === "lp" ? "Manage position" : "Swap"}
+      >
+        {action && holdings.data ? (
+          action.panel === "swap" ? (
+            <SwapCard v={v} owner={owner} holdings={holdings.data} initial={action} onParamsChange={(p) => setAction({ panel: "swap", ...p })} />
+          ) : managed ? (
+            <ManagePosition
+              v={v}
+              owner={owner}
+              holdings={holdings.data}
+              position={managed}
+              mode={"position" in action ? action.mode : "add"}
+              onModeChange={(mode) => setAction({ panel: "lp", position: managed.position, mode })}
+              onDone={() => setAction(null)}
+              onSwapFor={({ to, amount }) => setAction({ panel: "swap", from: v.depositMint, to, amount })}
+            />
+          ) : (
+            <p className="text-[13px] text-muted">That position is no longer open.</p>
+          )
+        ) : (
+          <Skeleton className="h-64" />
+        )}
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        title={confirming?.title ?? ""}
+        confirmLabel={confirming?.label}
+        pending={pending}
+        onConfirm={() => confirming?.run()}
+      >
+        {confirming?.body}
+      </ConfirmDialog>
     </div>
   );
 }

@@ -31,6 +31,15 @@ export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: strin
       });
   };
 
+  const closePosition = (position: string, pair: string) => {
+    if (window.confirm(`Remove all liquidity, claim fees, and close the ${pair} position? Rent returns to your wallet.`))
+      void send({
+        label: `Close ${pair}`,
+        vault: v.address,
+        build: () => api.build("dlmm/close", { payer: owner, vault: v.address, position }),
+      });
+  };
+
   const operational = isOperational(v);
   const actionsFor = (p: PositionView): MenuItem[] => {
     if (p.kind === "error") return [];
@@ -70,9 +79,9 @@ export function BalanceTab({ v, owner, onTrade }: { v: VaultDetail; owner: strin
       {
         label: "Close position",
         primary: true,
-        disabled: !operational || !p.closable || pending,
-        reason: !operational ? "Vault not operational" : "Remove 100% and claim fees first",
-        onSelect: () => closeStrategy(p.strategy, pair),
+        disabled: !operational || pending,
+        reason: "Vault not operational",
+        onSelect: () => closePosition(p.position, pair),
       },
     ];
   };

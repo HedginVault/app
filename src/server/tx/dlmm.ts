@@ -258,6 +258,27 @@ export async function dlmmRemoveLiquidityIx(
   return [...createAtaIxs, ix];
 }
 
+/** Removes all liquidity, claims outstanding fees, and closes the position in one instruction. */
+export async function dlmmClosePositionIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  treasuryAuthority: PublicKey,
+) {
+  const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
+    ctx.key,
+    position,
+    authority,
+  );
+  const ix = await program.methods
+    .meteoraDlmmClosePosition(remainingAccountsInfo)
+    .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+  return [...createAtaIxs, ix];
+}
+
 export async function dlmmClaimFeeIx(
   program: P,
   ctx: VaultCtx,

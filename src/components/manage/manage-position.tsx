@@ -150,20 +150,24 @@ export function ManagePosition({
         </div>
       )}
 
-      {p.closable && (
-        <Button
-          variant="secondary"
-          className="w-full"
-          loading={pending}
-          disabled={!operational}
-          onClick={() => {
-            if (window.confirm("Close this empty position and its strategy? Rent returns to your wallet."))
-              run("Close position", "strategy/close", { strategy: p.strategy });
-          }}
-        >
-          Close empty position
-        </Button>
-      )}
+      <Button
+        variant="secondary"
+        className="w-full"
+        loading={pending}
+        disabled={!operational}
+        onClick={() => {
+          if (
+            window.confirm(
+              p.closable
+                ? "Close this empty position and its strategy? Rent returns to your wallet."
+                : "Remove all liquidity, claim fees, and close this position? Rent returns to your wallet.",
+            )
+          )
+            run("Close position", "dlmm/close", { position: p.position });
+        }}
+      >
+        Close position
+      </Button>
 
       <ReviewDialog
         open={reviewing}

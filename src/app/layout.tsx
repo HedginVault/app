@@ -23,6 +23,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Hedgin",
   description: "Managed vaults on Solana",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

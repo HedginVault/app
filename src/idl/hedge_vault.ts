@@ -1759,7 +1759,8 @@ export type HedgeVault = {
           "name": "config"
         },
         {
-          "name": "vault"
+          "name": "vault",
+          "writable": true
         },
         {
           "name": "strategy",

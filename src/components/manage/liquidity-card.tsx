@@ -140,8 +140,11 @@ function ConfigurePosition({
   const [shape, setShape] = useState<DlmmShape>("spot");
   const [inputX, setInputX] = useState("");
   const [inputY, setInputY] = useState("");
+  // Off by default: a single-sided draft stays single-sided when dragged. On, dragging the far edge
+  // across the active bin switches to a both-sided range with the other side auto-filled.
+  const [autoBothSide, setAutoBothSide] = useState(false);
   // Which side was auto-filled by dragging across the active bin, so it keeps tracking the funded
-  // side's value; cleared the moment the user edits that side by hand.
+  // side's value; cleared the moment the user edits that side by hand or the toggle turns off.
   const [autoSide, setAutoSide] = useState<"x" | "y" | null>(null);
   const editInputX = (v: string) => {
     setInputX(v);
@@ -246,12 +249,12 @@ function ConfigurePosition({
     const raw = rawEdge === "last" ? max : min;
     const bin = raw > 0 && Number.isFinite(raw) ? priceToBinId(raw, binStep, x.decimals, y.decimals, rawEdge === "lower" ? "floor" : "ceil") : null;
     if (bin !== null) {
-      if (placement === "below" && rawEdge === "last" && bin > active) {
+      if (autoBothSide && placement === "below" && rawEdge === "last" && bin > active) {
         const upperBinId = Math.min(bin + 1, range.lowerBinId + DLMM_MAX_POSITION_WIDTH);
         setInputX(toInput(uiY / activePrice, x.decimals));
         setAutoSide("x");
         setRangeState({ placement: "both", range: { lowerBinId: range.lowerBinId, upperBinId } });
-      } else if (placement === "above" && rawEdge === "lower" && bin <= active) {
+      } else if (autoBothSide && placement === "above" && rawEdge === "lower" && bin <= active) {
         const lowerBinId = Math.max(bin, range.upperBinId - DLMM_MAX_POSITION_WIDTH);
         setInputY(toInput(uiX * activePrice, y.decimals));
         setAutoSide("y");
@@ -264,10 +267,10 @@ function ConfigurePosition({
 
   // The auto-filled side keeps tracking the funded side's value as it changes (typed or preset), not
   // just at the moment it crossed. Also adjusted during render, for the same reason as the block above.
-  if (autoSide === "x") {
+  if (autoBothSide && autoSide === "x") {
     const want = toInput(uiY / activePrice, x.decimals);
     if (want !== inputX) setInputX(want);
-  } else if (autoSide === "y") {
+  } else if (autoBothSide && autoSide === "y") {
     const want = toInput(uiX * activePrice, y.decimals);
     if (want !== inputY) setInputY(want);
   }
@@ -422,9 +425,36 @@ function ConfigurePosition({
               ↺
             </button>
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-muted">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-indigo-400" />{x.symbol}</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-400" />{y.symbol}</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoBothSide}
+              aria-label="Dragging the range past the pool price auto-fills the other side"
+              title="Drag past the pool price to auto-fill the other side"
+              onClick={() =>
+                setAutoBothSide((on) => {
+                  if (on) setAutoSide(null);
+                  return !on;
+                })
+              }
+              className={cn(
+                "relative h-4 w-7 shrink-0 rounded-full transition-colors",
+                autoBothSide ? "bg-accent" : "bg-white/15",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-3 rounded-full bg-white transition-transform",
+                  autoBothSide ? "translate-x-3.5" : "translate-x-0.5",
+                )}
+              />
+            </button>
+            <span className="text-[11px] text-muted">Auto-fill on drag</span>
+            <div className="flex items-center gap-3 text-[11px] text-muted">
+              <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-indigo-400" />{x.symbol}</span>
+              <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-400" />{y.symbol}</span>
+            </div>
           </div>
         </div>
         <RangePicker

@@ -301,6 +301,42 @@ export interface ErrorPositionView {
 
 export type PositionView = IdlePositionView | SwapPositionView | LpPositionView | ErrorPositionView;
 
+export interface StrategyHistoryToken {
+  mint: string;
+  symbol: string | null;
+  decimals: number | null;
+  contributed: string;
+  returned: string;
+  feesGross: string;
+  feesTreasury: string;
+  feesRetained: string;
+  /** Exact token-unit cash-flow result: returned + retained fees - contributed. */
+  realizedPnl: string;
+}
+
+export interface NavHistoryPoint {
+  epoch: number;
+  ts: number | null;
+  totalAssets: string;
+  navPerShare: string;
+  highWaterMark: string;
+  overridden: boolean;
+}
+
+export interface StrategyHistoryItem {
+  strategy: string;
+  id: number | null;
+  type: "jupiter" | "dlmm" | null;
+  protocolAccount: string | null;
+  openedTs: number | null;
+  closedTs: number;
+  openSignature: string | null;
+  closeSignature: string;
+  /** False for strategies opened before exact V2 accounting events existed. */
+  exact: boolean;
+  tokens: StrategyHistoryToken[];
+}
+
 export type OrganicScoreLabel = "high" | "medium" | "low";
 
 export interface TokenSearchResult extends TokenInfo {

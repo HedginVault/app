@@ -6,6 +6,7 @@ import type {
   ChartTarget,
   ManagerView,
   MarketTimeframe,
+  NavHistoryPoint,
   OhlcvView,
   PoolInfo,
   PoolSearchPage,
@@ -13,6 +14,7 @@ import type {
   RequestQueue,
   SentTransaction,
   StrategyView,
+  StrategyHistoryItem,
   TokenSearchResult,
   TransactionStatus,
   UserPosition,
@@ -79,6 +81,10 @@ export const api = {
     get<RequestQueue>(`/api/vaults/${address}/requests`, o),
   strategies: (address: string, o?: GetOptions) =>
     get<StrategyView[]>(`/api/vaults/${address}/strategies`, o),
+  strategyHistory: (address: string, o?: GetOptions) =>
+    get<StrategyHistoryItem[]>(`/api/vaults/${address}/strategy-history`, o),
+  navHistory: (address: string, o?: GetOptions) =>
+    get<NavHistoryPoint[]>(`/api/vaults/${address}/nav`, o),
   holdings: (address: string, o?: GetOptions) => get<HoldingsView>(`/api/vaults/${address}/holdings`, o),
   manager: (wallet: string, o?: GetOptions) => get<ManagerView>(`/api/manager/${wallet}`, o),
   pool: (lbPair: string) => get<PoolInfo>(`/api/dlmm/pool/${lbPair}`),

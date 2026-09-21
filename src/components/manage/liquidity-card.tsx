@@ -61,6 +61,7 @@ export function LiquidityCard({
   onSwapFor,
   onOpenedPartially,
   onRangeChange,
+  dragRange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -72,6 +73,8 @@ export function LiquidityCard({
   onOpenedPartially?: (position: string) => void;
   /** Draft range in raw pool prices (token Y per token X), null while there is none; drives the chart overlay. */
   onRangeChange?: (range: PriceRange | null) => void;
+  /** A Min/Max Bin line being dragged on the chart; feeds back into the range picker and price inputs. */
+  dragRange?: { range: PriceRange; seq: number } | null;
 }) {
   const deposit = depositTokenOf(v);
   const pool = usePool(poolAddress);
@@ -98,6 +101,7 @@ export function LiquidityCard({
       onSwapFor={onSwapFor}
       onOpenedPartially={onOpenedPartially}
       onRangeChange={onRangeChange}
+      dragRange={dragRange}
     />
   );
 }
@@ -118,6 +122,7 @@ function ConfigurePosition({
   onSwapFor,
   onOpenedPartially,
   onRangeChange,
+  dragRange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -127,6 +132,7 @@ function ConfigurePosition({
   onSwapFor: (p: { to: string; amount?: string }) => void;
   onOpenedPartially?: (position: string) => void;
   onRangeChange?: (range: PriceRange | null) => void;
+  dragRange?: { range: PriceRange; seq: number } | null;
 }) {
   const { tokenX: x, tokenY: y, binStep, activeBinId: active } = pool;
   const deposit = depositTokenOf(v);
@@ -204,16 +210,28 @@ function ConfigurePosition({
     else setBins(range.lowerBinId, last + d, "last");
   };
 
+  /** A raw (non-inverted) pool price moves only the bin it names, through setBins's placement/width clamps. */
+  const applyRawPrice = (own: "lower" | "last", raw: number) => {
+    if (!(raw > 0 && Number.isFinite(raw))) return;
+    const bin = priceToBinId(raw, binStep, x.decimals, y.decimals, own === "lower" ? "floor" : "ceil");
+    if (bin !== null) setBins(own === "lower" ? bin : range.lowerBinId, own === "last" ? bin : last, own);
+  };
   /** A typed price moves only its own edge: displayed min/max map to lower/last bin (swapped when inverted). */
   const applyPrice = (edge: "min" | "max", v: number) => {
-    if (v > 0 && Number.isFinite(v)) {
-      const own = (edge === "min") !== inverted ? "lower" : "last";
-      const bin = priceToBinId(inverted ? 1 / v : v, binStep, x.decimals, y.decimals, own === "lower" ? "floor" : "ceil");
-      // Through setBins so a typed price can't push the range off the funded side or past the max width.
-      if (bin !== null) setBins(own === "lower" ? bin : range.lowerBinId, own === "last" ? bin : last, own);
-    }
+    if (v > 0 && Number.isFinite(v)) applyRawPrice((edge === "min") !== inverted ? "lower" : "last", inverted ? 1 / v : v);
     setEditing(null);
   };
+
+  // A Min/Max Bin line dragged on the chart: apply whichever raw edge moved further from where it is now.
+  // `seq` (not the range values) is the effect key so repeated same-valued drag events still re-apply.
+  const dragSeq = dragRange?.seq;
+  useEffect(() => {
+    if (!dragRange || locked) return;
+    const { min, max } = dragRange.range;
+    if (Math.abs(max - maxPrice) > Math.abs(min - minPrice)) applyRawPrice("last", max);
+    else applyRawPrice("lower", min);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragSeq]);
 
   const invalid = amountX === null || amountY === null;
   const empty = !invalid && locked;

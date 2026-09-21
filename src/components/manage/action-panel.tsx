@@ -21,6 +21,7 @@ export function ActionPanel({
   nonce,
   onPrefill,
   onRangeChange,
+  dragRange,
 }: {
   v: VaultDetail;
   owner: string;
@@ -32,6 +33,8 @@ export function ActionPanel({
   onPrefill: (s: PanelState) => void;
   /** Draft LP range for the chart overlay. */
   onRangeChange?: (range: PriceRange | null) => void;
+  /** A Min/Max Bin line being dragged on the chart; feeds back into the liquidity form's range. */
+  dragRange?: { range: PriceRange; seq: number } | null;
 }) {
   const swapFor = ({ to, amount }: { to: string; amount?: string }) =>
     onPrefill({ panel: "swap", from: v.depositMint, to, amount });
@@ -95,6 +98,7 @@ export function ActionPanel({
             onPoolChange={(pool) => replace(pool ? { panel: "lp", pool } : { panel: "lp" })}
             onSwapFor={swapFor}
             onRangeChange={onRangeChange}
+            dragRange={dragRange}
             onOpenedPartially={(position) => {
               toast("Position created; add liquidity to finish");
               onPrefill({ panel: "lp", position, mode: "add" });

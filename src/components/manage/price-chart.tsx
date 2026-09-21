@@ -19,6 +19,9 @@ import {
 import { useEffect, useRef } from "react";
 import type { Candle, PriceRange } from "@/lib/types";
 
+/** Pixels of slack around a range line's y-position that still counts as grabbing it. */
+const HIT_PX = 6;
+
 const UP = "#38bdf8";
 const DOWN = "#f87171";
 const RANGE = "#f97316";
@@ -90,6 +93,7 @@ export function PriceChart({
   ready = true,
   intraday = true,
   onLoadMore,
+  onRangeChange,
 }: {
   candles: Candle[];
   /** LP range drawn as Min/Max Bin lines with a shaded band, like Meteora. */
@@ -102,6 +106,8 @@ export function PriceChart({
   intraday?: boolean;
   /** Called when the user scrolls near the oldest loaded candle. */
   onLoadMore?: () => void;
+  /** Present makes the Min/Max Bin lines draggable; called with the edited range as the user drags. */
+  onRangeChange?: (range: PriceRange) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
@@ -112,10 +118,18 @@ export function PriceChart({
   const loadMore = useRef(onLoadMore);
   const shown = useRef<{ first: number; last: number; count: number } | null>(null);
   const framed = useRef<string | null>(null);
+  const rangeRef = useRef(range);
+  const onRangeChangeRef = useRef(onRangeChange);
+  const dragging = useRef<"min" | "max" | null>(null);
 
   useEffect(() => {
     loadMore.current = onLoadMore;
   }, [onLoadMore]);
+
+  useEffect(() => {
+    rangeRef.current = range;
+    onRangeChangeRef.current = onRangeChange;
+  }, [range, onRangeChange]);
 
   useEffect(() => {
     const c = createChart(el.current!, {
@@ -150,8 +164,58 @@ export function PriceChart({
       if (r && r.from < LOAD_MORE_BARS) loadMore.current?.();
     };
     c.timeScale().subscribeVisibleLogicalRangeChange(nearOldest);
+
+    // Min/Max Bin lines double as drag handles when `onRangeChange` is wired up: grab within
+    // HIT_PX of a line, drag to a new price, and suspend chart pan/zoom for the gesture.
+    const container = el.current!;
+    const lineNear = (y: number) => {
+      const r = rangeRef.current;
+      const series = price.current;
+      if (!r || !series) return null;
+      const maxY = series.priceToCoordinate(r.max);
+      const minY = series.priceToCoordinate(r.min);
+      if (maxY !== null && Math.abs(y - maxY) <= HIT_PX) return "max" as const;
+      if (minY !== null && Math.abs(y - minY) <= HIT_PX) return "min" as const;
+      return null;
+    };
+    const yInContainer = (e: MouseEvent) => e.clientY - container.getBoundingClientRect().top;
+    const onMouseMove = (e: MouseEvent) => {
+      if (!onRangeChangeRef.current) return;
+      const y = yInContainer(e);
+      if (dragging.current) {
+        const p = price.current?.coordinateToPrice(y);
+        const r = rangeRef.current;
+        if (p === null || p === undefined || !r) return;
+        const next =
+          dragging.current === "max" ? { min: r.min, max: Math.max(p, r.min) } : { min: Math.min(p, r.max), max: r.max };
+        onRangeChangeRef.current(next);
+      } else {
+        container.style.cursor = lineNear(y) ? "ns-resize" : "";
+      }
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      if (!onRangeChangeRef.current) return;
+      const hit = lineNear(yInContainer(e));
+      if (!hit) return;
+      dragging.current = hit;
+      c.applyOptions({ handleScroll: false, handleScale: false });
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const onMouseUp = () => {
+      if (!dragging.current) return;
+      dragging.current = null;
+      c.applyOptions({ handleScroll: true, handleScale: true });
+    };
+    container.addEventListener("mousedown", onMouseDown, true);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
     return () => {
       c.timeScale().unsubscribeVisibleLogicalRangeChange(nearOldest);
+      container.removeEventListener("mousedown", onMouseDown, true);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
       c.remove();
       chart.current = null;
     };

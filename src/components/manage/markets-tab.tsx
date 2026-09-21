@@ -59,6 +59,8 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const target = chartTarget(state, v.depositMint, holdings.data, draftPool.data?.tokenX.mint);
   // Range lines: the draft from the liquidity form, or the open position being managed.
   const [draftRange, setDraftRange] = useState<PriceRange | null>(null);
+  // Dragging a Min/Max Bin line on the chart; `seq` forces the form to re-apply even same-valued repeats.
+  const [dragRange, setDragRange] = useState<{ range: PriceRange; seq: number } | null>(null);
   const managed =
     state.panel === "lp" && "position" in state
       ? holdings.data?.positions.find((p) => p.kind === "lp" && p.position === state.position)
@@ -150,6 +152,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
               ready={covered}
               intraday={isIntraday(tf)}
               onLoadMore={loadMore}
+              onRangeChange={managed ? undefined : (r) => setDragRange((prev) => ({ range: r, seq: (prev?.seq ?? 0) + 1 }))}
             />
           )}
           <div className="flex items-center justify-between gap-3">
@@ -184,7 +187,17 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
 
       <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         {holdings.data ? (
-          <ActionPanel v={v} owner={owner} holdings={holdings.data} state={state} replace={replace} nonce={nonce} onPrefill={prefill} onRangeChange={setDraftRange} />
+          <ActionPanel
+            v={v}
+            owner={owner}
+            holdings={holdings.data}
+            state={state}
+            replace={replace}
+            nonce={nonce}
+            onPrefill={prefill}
+            onRangeChange={setDraftRange}
+            dragRange={dragRange}
+          />
         ) : holdings.error ? (
           <ErrorState message={`Holdings unavailable: ${holdings.error.message}`} onRetry={() => void holdings.refetch()} />
         ) : (

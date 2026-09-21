@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { CLUSTER } from "@/lib/constants";
 import { WalletButton } from "@/components/wallet-button";
@@ -53,10 +54,37 @@ function NavLinks({ path, className }: { path: string; className?: string }) {
   );
 }
 
+// Scrolling down hides the bar so it can't collide with sticky content below it; scrolling up
+// (or being near the top) brings it back.
+function useHideOnScrollDown() {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+  useEffect(() => {
+    lastY.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY.current;
+      if (y < 64) setHidden(false);
+      else if (delta > 4) setHidden(true);
+      else if (delta < -4) setHidden(false);
+      lastY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return hidden;
+}
+
 export function TopBar() {
   const path = usePathname();
+  const hidden = useHideOnScrollDown();
   return (
-    <div className="top-bar sticky top-0 z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:top-4 sm:pt-4">
+    <div
+      className={cn(
+        "top-bar sticky top-0 z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 transition-transform duration-300 sm:top-4 sm:pt-4",
+        hidden && "-translate-y-[150%]",
+      )}
+    >
       <Link
         href="/"
         aria-label="Hedgin home"

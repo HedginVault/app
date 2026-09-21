@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
+import { JupiterWidget } from "@/components/jupiter-widget";
+
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 // Empty adapter list: Phantom, Solflare, Backpack etc. are picked up via Wallet Standard.
@@ -20,6 +22,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <WalletModalProvider>
           {children}
           <Toaster position="bottom-right" theme="dark" richColors closeButton />
+          <JupiterWidget />
         </WalletModalProvider>
       </WalletProvider>
     </QueryClientProvider>

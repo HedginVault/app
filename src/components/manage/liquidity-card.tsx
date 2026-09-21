@@ -16,6 +16,7 @@ import {
   distribution,
   rangeForPlacement,
   priceToBinId,
+  suggestOtherSide,
   type BinRange,
   type Placement,
 } from "@/lib/dlmm-range";
@@ -223,15 +224,33 @@ function ConfigurePosition({
   };
 
   // A Min/Max Bin line dragged on the chart: apply whichever raw edge moved further from where it is now.
-  // `seq` (not the range values) is the effect key so repeated same-valued drag events still re-apply.
-  const dragSeq = dragRange?.seq;
-  useEffect(() => {
-    if (!dragRange || locked) return;
+  // Dragging the far edge of a single-sided draft across the active bin turns it into a both-sided
+  // range; the newly-needed side is auto-filled to match the value already deposited on the other side.
+  // Adjusted during render, gated on `seq` (not the range values), like the placement reset above: an
+  // effect would set state a frame late and cascade an extra render for every mousemove of the drag.
+  const [lastDragSeq, setLastDragSeq] = useState<number | undefined>(undefined);
+  if (dragRange && !locked && dragRange.seq !== lastDragSeq) {
+    setLastDragSeq(dragRange.seq);
     const { min, max } = dragRange.range;
-    if (Math.abs(max - maxPrice) > Math.abs(min - minPrice)) applyRawPrice("last", max);
-    else applyRawPrice("lower", min);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragSeq]);
+    const rawEdge: "lower" | "last" = Math.abs(max - maxPrice) > Math.abs(min - minPrice) ? "last" : "lower";
+    const raw = rawEdge === "last" ? max : min;
+    const bin = raw > 0 && Number.isFinite(raw) ? priceToBinId(raw, binStep, x.decimals, y.decimals, rawEdge === "lower" ? "floor" : "ceil") : null;
+    if (bin !== null) {
+      if (placement === "below" && rawEdge === "last" && bin > active) {
+        const upperBinId = Math.min(bin + 1, range.lowerBinId + DLMM_MAX_POSITION_WIDTH);
+        const nextRange = { lowerBinId: range.lowerBinId, upperBinId };
+        setInputX(toInput(suggestOtherSide("y", uiY, activePrice, nextRange, active), x.decimals));
+        setRangeState({ placement: "both", range: nextRange });
+      } else if (placement === "above" && rawEdge === "lower" && bin <= active) {
+        const lowerBinId = Math.max(bin, range.upperBinId - DLMM_MAX_POSITION_WIDTH);
+        const nextRange = { lowerBinId, upperBinId: range.upperBinId };
+        setInputY(toInput(suggestOtherSide("x", uiX, activePrice, nextRange, active), y.decimals));
+        setRangeState({ placement: "both", range: nextRange });
+      } else {
+        applyRawPrice(rawEdge, raw);
+      }
+    }
+  }
 
   const invalid = amountX === null || amountY === null;
   const empty = !invalid && locked;

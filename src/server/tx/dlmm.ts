@@ -25,6 +25,7 @@ import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, MEMO_PROGRAM_ID, getConnection, 
 import { getMultipleAccounts } from "../rpc";
 import { getTokenInfos } from "../tokens";
 import type { VaultCtx } from "./context";
+import { closeStrategyIx } from "./vault";
 
 type P = Program<HedgeVault>;
 
@@ -259,6 +260,12 @@ export async function dlmmRemoveLiquidityIx(
 }
 
 /** Removes all liquidity, claims outstanding fees, and closes the position in one instruction. */
+/**
+ * Removes all liquidity, claims fees, and closes the position, bundled into one transaction from
+ * the existing remove/claim/close-strategy instructions. A single DLMM position tops out at 70 bins
+ * (Meteora's own `POSITION_MAX_LENGTH`), so this always needs at most 1-2 bin array accounts and
+ * comfortably fits the 1232-byte tx limit without a dedicated on-chain instruction.
+ */
 export async function dlmmClosePositionIx(
   program: P,
   ctx: VaultCtx,
@@ -271,12 +278,18 @@ export async function dlmmClosePositionIx(
     position,
     authority,
   );
-  const ix = await program.methods
-    .meteoraDlmmClosePosition(remainingAccountsInfo)
+  const removeIx = await program.methods
+    .meteoraDlmmRemoveLiquidity({ bpsToRemove: 10_000, remainingAccountsInfo })
+    .accounts({ ...accounts, authority, memoProgram: MEMO_PROGRAM_ID })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+  const claimIx = await program.methods
+    .meteoraDlmmClaimFee(remainingAccountsInfo)
     .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();
-  return [...createAtaIxs, ix];
+  const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy);
+  return [...createAtaIxs, removeIx, claimIx, closeIx];
 }
 
 export async function dlmmClaimFeeIx(

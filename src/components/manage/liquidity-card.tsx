@@ -450,7 +450,7 @@ function ConfigurePosition({
                 )}
               />
             </button>
-            <span className="text-[11px] text-muted">Auto-fill on drag</span>
+            <span className="ml-1.5 text-[11px] text-muted">Auto-fill on drag</span>
             <div className="flex items-center gap-3 text-[11px] text-muted">
               <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-indigo-400" />{x.symbol}</span>
               <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-400" />{y.symbol}</span>

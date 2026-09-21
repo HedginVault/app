@@ -58,10 +58,26 @@ export function BinChart({
   const markerPct = Math.min(100, Math.max(0, ((slot + 0.5) / bins.length) * 100));
   const markerAlign = markerPct < 15 ? "left" : markerPct > 85 ? "right" : "center";
   const tone = range.inRange ? "text-sky-300 border-sky-300" : "text-amber-300 border-amber-400";
+  const hovered = hover !== null ? { bin: bins[hover], split: splits[hover] } : null;
+  const hoverPct = hover !== null ? ((hover + 0.5) / bins.length) * 100 : 0;
+  const hoverAlign = hoverPct < 20 ? "left" : hoverPct > 80 ? "right" : "center";
 
   return (
     <div>
       <div className="relative mt-1 h-28 pt-8">
+        {hovered && (
+          <BinTooltip
+            bin={hovered.bin}
+            split={hovered.split}
+            tokenX={x}
+            tokenY={y}
+            price={priceLabel(hovered.bin.binId)}
+            active={hovered.bin.binId === range.activeBinId}
+            scale={scale}
+            leftPct={hoverPct}
+            align={hoverAlign}
+          />
+        )}
         <div className="pointer-events-none absolute inset-y-0 z-10" style={{ left: `${markerPct}%` }}>
           <div
             className={cn(
@@ -79,7 +95,7 @@ export function BinChart({
           className="flex h-full items-end gap-px border-b border-white/10"
           role="img"
           aria-label={`Liquidity across ${bins.length} bins, fullest ${scale(max)}`}
-          onMouseLeave={() => setHover(null)}
+          onPointerLeave={() => setHover(null)}
         >
           {bins.map((b, i) => {
             const s = splits[i];
@@ -87,8 +103,8 @@ export function BinChart({
             return (
               <div
                 key={b.binId}
-                onMouseEnter={() => setHover(i)}
-                title={`${priceLabel(b.binId)} · ${amountOf(b.amountX, x)} + ${amountOf(b.amountY, y)} · ${scale(s.total)}`}
+                onPointerEnter={() => setHover(i)}
+                onPointerDown={() => setHover(i)}
                 className="flex h-full min-w-0 flex-1 flex-col justify-end"
               >
                 {/* Empty bins keep a 2% stub so the range's width stays readable. */}
@@ -121,6 +137,64 @@ export function BinChart({
     </div>
   );
 }
+
+/** Hover card for one bin: its price level, what it holds of each token, and the total. */
+function BinTooltip({
+  bin,
+  split,
+  tokenX: x,
+  tokenY: y,
+  price,
+  active,
+  scale,
+  leftPct,
+  align,
+}: {
+  bin: PositionBin;
+  split: ReturnType<typeof binSplit>;
+  tokenX: TokenInfo;
+  tokenY: TokenInfo;
+  price: string;
+  active: boolean;
+  scale: (v: number) => string;
+  leftPct: number;
+  align: "left" | "center" | "right";
+}) {
+  return (
+    <div className="pointer-events-none absolute bottom-full z-20 mb-1" style={{ left: `${leftPct}%` }}>
+      <div
+        role="tooltip"
+        className={cn(
+          "absolute bottom-0 w-max min-w-48 rounded-[10px] border border-border bg-surface px-3 py-2 shadow-lg",
+          align === "left" ? "left-0" : align === "right" ? "right-0" : "-translate-x-1/2",
+        )}
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-4 text-[11px] text-muted">
+          <span className="tabular-nums">
+            1 {x.symbol} = <span className="text-foreground">{price}</span>
+          </span>
+          {active && <span className="font-medium text-sky-300">Active</span>}
+        </div>
+        <TooltipRow swatch="bg-emerald-400/80" amount={amountOf(bin.amountX, x)} value={scale(split.vx)} />
+        <TooltipRow swatch="bg-sky-400/80" amount={amountOf(bin.amountY, y)} value={scale(split.vy)} />
+        <div className="mt-1.5 flex items-center justify-between gap-6 border-t border-white/[0.08] pt-1.5 text-[11px]">
+          <span className="text-muted">Liquidity · bin {bin.binId}</span>
+          <span className="font-semibold tabular-nums text-foreground">{scale(split.total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const TooltipRow = ({ swatch, amount, value }: { swatch: string; amount: string; value: string }) => (
+  <div className="flex items-center justify-between gap-6 text-[12px] tabular-nums">
+    <span className="inline-flex items-center gap-1.5 text-foreground">
+      <span className={cn("size-2 rounded-full", swatch)} />
+      {amount}
+    </span>
+    <span className="text-muted">{value}</span>
+  </div>
+);
 
 const Legend = ({ swatch, label }: { swatch: ReactNode; label: string }) => (
   <span className="inline-flex items-center gap-1.5">

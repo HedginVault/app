@@ -140,6 +140,17 @@ function ConfigurePosition({
   const [shape, setShape] = useState<DlmmShape>("spot");
   const [inputX, setInputX] = useState("");
   const [inputY, setInputY] = useState("");
+  // Which side was auto-filled by dragging across the active bin, so it keeps tracking the funded
+  // side's value; cleared the moment the user edits that side by hand.
+  const [autoSide, setAutoSide] = useState<"x" | "y" | null>(null);
+  const editInputX = (v: string) => {
+    setInputX(v);
+    setAutoSide((s) => (s === "x" ? null : s));
+  };
+  const editInputY = (v: string) => {
+    setInputY(v);
+    setAutoSide((s) => (s === "y" ? null : s));
+  };
   // The field being typed into; committed on blur so half-typed numbers don't move the range.
   const [editing, setEditing] = useState<{ field: string; text: string } | null>(null);
   // Non-null while the review dialog is open; frozen so a moving active bin cannot change what was reviewed.
@@ -238,15 +249,27 @@ function ConfigurePosition({
       if (placement === "below" && rawEdge === "last" && bin > active) {
         const upperBinId = Math.min(bin + 1, range.lowerBinId + DLMM_MAX_POSITION_WIDTH);
         setInputX(toInput(uiY / activePrice, x.decimals));
+        setAutoSide("x");
         setRangeState({ placement: "both", range: { lowerBinId: range.lowerBinId, upperBinId } });
       } else if (placement === "above" && rawEdge === "lower" && bin <= active) {
         const lowerBinId = Math.max(bin, range.upperBinId - DLMM_MAX_POSITION_WIDTH);
         setInputY(toInput(uiX * activePrice, y.decimals));
+        setAutoSide("y");
         setRangeState({ placement: "both", range: { lowerBinId, upperBinId: range.upperBinId } });
       } else {
         applyRawPrice(rawEdge, raw);
       }
     }
+  }
+
+  // The auto-filled side keeps tracking the funded side's value as it changes (typed or preset), not
+  // just at the moment it crossed. Also adjusted during render, for the same reason as the block above.
+  if (autoSide === "x") {
+    const want = toInput(uiY / activePrice, x.decimals);
+    if (want !== inputX) setInputX(want);
+  } else if (autoSide === "y") {
+    const want = toInput(uiX * activePrice, y.decimals);
+    if (want !== inputY) setInputY(want);
   }
 
   const invalid = amountX === null || amountY === null;
@@ -338,7 +361,7 @@ function ConfigurePosition({
           label={`Deposit ${x.symbol}`}
           token={x}
           value={inputX}
-          onChange={setInputX}
+          onChange={editInputX}
           balance={balX.toString()}
           usd={amountX ? usdValue(amountX, x.decimals, x.priceUsd) : undefined}
           presets={[50, 100]}
@@ -349,7 +372,7 @@ function ConfigurePosition({
           label={`Deposit ${y.symbol}`}
           token={y}
           value={inputY}
-          onChange={setInputY}
+          onChange={editInputY}
           balance={balY.toString()}
           usd={amountY ? usdValue(amountY, y.decimals, y.priceUsd) : undefined}
           presets={[50, 100]}

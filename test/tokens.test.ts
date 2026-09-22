@@ -15,6 +15,7 @@ import { getTokenInfo, getTokenInfos, getTokenProgram, TOKEN_2022_PROGRAM_ID } f
 import { TOKEN_PROGRAM_ID } from "@/server/program";
 
 const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+const NEARKAT = new PublicKey("6UtY9iTZMQQ5QZVrbzFnNaJntV7oySm9k97mvwnuZcxr");
 const pk = (n: number) => new PublicKey(new Uint8Array(32).fill(n));
 const mintAccount = (decimals: number, owner: PublicKey) => {
   const data = Buffer.alloc(MintLayout.span);
@@ -75,6 +76,36 @@ describe("getTokenInfos", () => {
     expect(info.symbol).toMatch(/…/);
     expect(info.priceUsd).toBeNull();
     expect(info.logo).toBeNull();
+  });
+
+  it("retries token metadata after Jupiter initially omits a mint", async () => {
+    let metadataCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        if (u.pathname.endsWith("/tokens/v2/search")) {
+          metadataCalls += 1;
+          return new Response(
+            JSON.stringify(
+              metadataCalls === 1
+                ? []
+                : [{ id: NEARKAT.toBase58(), symbol: "NEARKAT", name: "NearKat", icon: "https://x/nearkat.png", decimals: 6 }],
+            ),
+          );
+        }
+        if (u.pathname.endsWith("/price/v3")) return new Response(JSON.stringify({}));
+        throw new Error(`unexpected ${url}`);
+      }),
+    );
+    getMultipleAccountsInfo.mockResolvedValueOnce([mintAccount(6, TOKEN_2022_PROGRAM_ID)]);
+
+    const first = (await getTokenInfos([NEARKAT])).get(NEARKAT.toBase58())!;
+    expect(first.logo).toBeNull();
+
+    const second = (await getTokenInfos([NEARKAT])).get(NEARKAT.toBase58())!;
+    expect(second.logo).toBe("https://x/nearkat.png");
+    expect(metadataCalls).toBe(2);
   });
 
   it("throws a 404 ApiError for a mint that does not exist on chain", async () => {

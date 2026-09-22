@@ -86,9 +86,12 @@ async function getMetadata(mints: string[]): Promise<Map<string, JupiterToken>> 
       if (!res.ok) throw new Error(`Jupiter token search ${res.status}`);
       const found = new Map(((await res.json()) as JupiterToken[]).map((t) => [t.id, t]));
       for (const mint of chunk) {
-        const token = found.get(mint) ?? null;
-        setCached(`meta:${mint}`, token, META_TTL_MS);
+        const token = found.get(mint);
+        // Jupiter is eventually consistent: a newly indexed token can be returned before its
+        // icon, or omitted for one response. Do not turn that temporary gap into a one-hour UI
+        // fallback; complete metadata is the only result worth long-term caching.
         if (token) out.set(mint, token);
+        if (token?.icon) setCached(`meta:${mint}`, token, META_TTL_MS);
       }
     } catch (e) {
       console.warn("[tokens] Jupiter unavailable:", e instanceof Error ? e.message : e);

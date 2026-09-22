@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStrategyHistory } from "@/hooks/queries";
@@ -22,7 +22,15 @@ export function StrategyHistory({ address }: { address: string }) {
   if (history.error)
     return <ErrorState message={`Position history unavailable: ${history.error.message}`} onRetry={() => void history.refetch()} />;
   if (!history.data) return <Skeleton className="h-56 rounded-card" />;
-  if (history.data.length === 0) return null;
+  if (history.data.length === 0)
+    return (
+      <Card>
+        <CardHeader title="Closed positions" description="Exact on-chain token cash flows for completed strategies" />
+        <CardBody>
+          <p className="text-sm text-muted">No closed positions have been indexed yet.</p>
+        </CardBody>
+      </Card>
+    );
 
   return (
     <Card>

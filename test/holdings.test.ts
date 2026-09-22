@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHoldingsView } from "@/lib/holdings";
+import { buildHoldingsView, positionKey } from "@/lib/holdings";
 import type { DlmmStrategyView, JupiterStrategyView, UnreadableStrategyView, VaultDetail } from "@/lib/types";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -106,6 +106,8 @@ describe("buildHoldingsView", () => {
       [jupiter(100)],
     );
     expect(h.positions.map((p) => p.kind)).toEqual(["idle", "idle", "swap"]);
+    expect(h.positions.map(positionKey)).toEqual([`idle:${USDC}`, `idle:${FEELSGOOD}`, "swap:strat-jup"]);
+    expect(new Set(h.positions.map(positionKey)).size).toBe(h.positions.length);
     expect(h.positions[1]).toMatchObject({ kind: "idle", token: feelsgood, amount: "5000000", value: "10000000" });
     expect(h.tokens.map((t) => t.token.symbol)).toContain("FEELSGOOD");
   });

@@ -58,7 +58,7 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
       action={<EpochCountdown navEpoch={v.navEpoch} />}
     >
       <SummaryStrip v={v} holdings={holdings.data} />
-      <NavChart address={address} depositSymbol={v.depositSymbol} depositDecimals={v.depositDecimals} />
+      <NavChart address={address} depositSymbol={v.depositSymbol} />
       <HoldingsSection address={address} />
       <StrategyHistory address={address} />
 

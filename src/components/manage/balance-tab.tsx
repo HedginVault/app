@@ -136,7 +136,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         />
       </SummaryStrip>
 
-      <NavChart address={v.address} depositSymbol={v.depositSymbol} depositDecimals={v.depositDecimals} />
+      <NavChart address={v.address} depositSymbol={v.depositSymbol} />
 
       <HoldingsSection address={v.address} actionsFor={actionsFor} />
 

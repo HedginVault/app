@@ -12,11 +12,10 @@ import type { NavHistoryPoint } from "@/lib/types";
 const UP = "#34d399";
 const DOWN = "#f87171";
 
-/** One share's value in deposit-mint UI units: `nav_per_share` is base units scaled by `NAV_PRECISION`. */
-const navPerShareUi = (point: NavHistoryPoint, depositDecimals: number) =>
-  Number(BigInt(point.navPerShare)) / Number(NAV_PRECISION) / 10 ** depositDecimals;
+/** One share's value in deposit-mint UI units: `nav_per_share` is already scaled by `NAV_PRECISION` alone (matches `formatNav`). */
+const navPerShareUi = (point: NavHistoryPoint) => Number(BigInt(point.navPerShare)) / Number(NAV_PRECISION);
 
-export function NavChart({ address, depositSymbol, depositDecimals }: { address: string; depositSymbol: string; depositDecimals: number }) {
+export function NavChart({ address, depositSymbol }: { address: string; depositSymbol: string }) {
   const history = useNavHistory(address);
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
@@ -44,11 +43,11 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
   const first = points?.[0];
   const delta = useMemo(() => {
     if (!latest || !first) return null;
-    const latestUi = navPerShareUi(latest, depositDecimals);
-    const firstUi = navPerShareUi(first, depositDecimals);
+    const latestUi = navPerShareUi(latest);
+    const firstUi = navPerShareUi(first);
     if (firstUi === 0) return null;
     return { abs: latestUi - firstUi, pct: ((latestUi - firstUi) / firstUi) * 100 };
-  }, [latest, first, depositDecimals]);
+  }, [latest, first]);
 
   useEffect(() => {
     const c = chart.current;
@@ -66,10 +65,10 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
       });
     }
     series.current.setData(
-      points.filter((p) => p.ts !== null).map((p) => ({ time: p.ts as UTCTimestamp, value: navPerShareUi(p, depositDecimals) })),
+      points.filter((p) => p.ts !== null).map((p) => ({ time: p.ts as UTCTimestamp, value: navPerShareUi(p) })),
     );
     c.timeScale().fitContent();
-  }, [points, depositDecimals, delta]);
+  }, [points, delta]);
 
   if (history.error) return <ErrorState message={`NAV history unavailable: ${history.error.message}`} onRetry={() => void history.refetch()} />;
 
@@ -86,7 +85,7 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
         ) : (
           <>
             <p className="font-serif text-3xl">
-              {format(navPerShareUi(latest!, depositDecimals))} <span className="text-lg text-muted">{depositSymbol}</span>
+              {format(navPerShareUi(latest!))} <span className="text-lg text-muted">{depositSymbol}</span>
             </p>
             {delta && (
               <p className={`mt-1 text-sm ${delta.abs >= 0 ? "text-emerald-400" : "text-red-400"}`}>

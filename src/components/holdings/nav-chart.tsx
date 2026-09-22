@@ -23,7 +23,8 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
   const series = useRef<ISeriesApi<"Area"> | null>(null);
 
   useEffect(() => {
-    const c = createChart(el.current!, {
+    if (!el.current) return;
+    const c = createChart(el.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "rgba(255,255,255,0.55)", fontSize: 11, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: "rgba(255,255,255,0.04)" } },
@@ -51,7 +52,7 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
 
   useEffect(() => {
     const c = chart.current;
-    if (!c || !points) return;
+    if (!c || !points || points.length === 0) return;
     const up = !delta || delta.abs >= 0;
     series.current?.applyOptions({ lineColor: up ? UP : DOWN, topColor: up ? "rgba(52,211,153,0.28)" : "rgba(248,113,113,0.28)", bottomColor: "rgba(0,0,0,0)" });
     if (!series.current) {
@@ -71,8 +72,6 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
   }, [points, depositDecimals, delta]);
 
   if (history.error) return <ErrorState message={`NAV history unavailable: ${history.error.message}`} onRetry={() => void history.refetch()} />;
-  if (!points) return <Skeleton className="h-72 rounded-card" />;
-  if (points.length === 0) return null;
 
   const format = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
@@ -80,15 +79,23 @@ export function NavChart({ address, depositSymbol, depositDecimals }: { address:
     <Card>
       <CardHeader title="NAV per share" description={`Posted once per epoch, denominated in ${depositSymbol}`} />
       <div className="px-6 pb-2">
-        <p className="font-serif text-3xl">
-          {format(navPerShareUi(latest!, depositDecimals))} <span className="text-lg text-muted">{depositSymbol}</span>
-        </p>
-        {delta && (
-          <p className={`mt-1 text-sm ${delta.abs >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {delta.abs >= 0 ? "+" : ""}
-            {format(delta.abs)} · {delta.pct >= 0 ? "+" : ""}
-            {delta.pct.toFixed(2)}%
-          </p>
+        {!points ? (
+          <Skeleton className="h-9 w-40" />
+        ) : points.length === 0 ? (
+          <p className="text-sm text-muted">No NAV history yet.</p>
+        ) : (
+          <>
+            <p className="font-serif text-3xl">
+              {format(navPerShareUi(latest!, depositDecimals))} <span className="text-lg text-muted">{depositSymbol}</span>
+            </p>
+            {delta && (
+              <p className={`mt-1 text-sm ${delta.abs >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {delta.abs >= 0 ? "+" : ""}
+                {format(delta.abs)} · {delta.pct >= 0 ? "+" : ""}
+                {delta.pct.toFixed(2)}%
+              </p>
+            )}
+          </>
         )}
       </div>
       <div ref={el} className="h-72 w-full min-w-0 overflow-hidden px-2 pb-4" />

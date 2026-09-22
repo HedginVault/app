@@ -23,7 +23,7 @@ export function EpochCountdown({ navEpoch }: { navEpoch: string }) {
 
   return (
     <div className="text-right">
-      <div className="text-sm text-muted">Next NAV update</div>
+      <div className="text-sm text-muted">Next Epoch</div>
       <div className="text-3xl font-medium tabular-nums">{formatCountdown(target - now)}</div>
     </div>
   );

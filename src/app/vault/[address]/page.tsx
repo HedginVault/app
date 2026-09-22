@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TokenLogo } from "@/components/token/token-logo";
+import { EpochCountdown } from "@/components/holdings/epoch-countdown";
 import { HoldingsSection } from "@/components/holdings/holdings-section";
 import { NavChart } from "@/components/holdings/nav-chart";
 import { SummaryStrip } from "@/components/holdings/summary-strip";
@@ -54,6 +55,7 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
         </>
       }
       aside={<PositionPanel v={v} />}
+      action={<EpochCountdown navEpoch={v.navEpoch} />}
     >
       <SummaryStrip v={v} holdings={holdings.data} />
       <NavChart address={address} depositSymbol={v.depositSymbol} depositDecimals={v.depositDecimals} />

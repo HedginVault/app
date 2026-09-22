@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, use } from "react";
+import { HistoryTab } from "@/components/holdings/history-tab";
 import { BalanceTab } from "@/components/manage/balance-tab";
 import { ManagerGuard } from "@/components/manage/guard";
 import { MarketsTab } from "@/components/manage/markets-tab";
@@ -20,7 +21,7 @@ import { useRequests, useVault } from "@/hooks/queries";
 import { serializePanel, type PanelState } from "@/lib/panel-params";
 import type { VaultDetail } from "@/lib/types";
 
-const TABS = ["balance", "markets", "requests", "settings"] as const;
+const TABS = ["balance", "markets", "history", "requests", "settings"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ManageVaultPage({ params }: { params: Promise<{ address: string }> }) {
@@ -92,6 +93,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
           tabs={[
             { id: "balance", label: "Balance" },
             { id: "markets", label: "Markets" },
+            { id: "history", label: "History" },
             {
               id: "requests",
               label: (
@@ -109,6 +111,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
       </div>
       {tab === "balance" && <BalanceTab v={v} owner={owner} />}
       {tab === "markets" && <MarketsTab v={v} owner={owner} />}
+      {tab === "history" && <HistoryTab address={v.address} depositSymbol={v.depositSymbol} />}
       {tab === "requests" && <RequestsTab v={v} owner={owner} />}
       {tab === "settings" && <SettingsTab v={v} owner={owner} />}
     </div>

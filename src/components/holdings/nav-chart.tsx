@@ -62,6 +62,7 @@ export function NavChart({ address, depositSymbol }: { address: string; depositS
         lineWidth: 2,
         priceLineVisible: false,
         lastValueVisible: false,
+        priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
       });
     }
     series.current.setData(

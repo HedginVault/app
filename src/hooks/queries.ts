@@ -11,6 +11,8 @@ export const queryKeys = {
   position: (address: string, owner: string) => ["position", address, owner] as const,
   requests: (address: string) => ["requests", address] as const,
   holdings: (address: string) => ["holdings", address] as const,
+  strategyHistory: (address: string) => ["strategyHistory", address] as const,
+  navHistory: (address: string) => ["navHistory", address] as const,
   manager: (wallet: string) => ["manager", wallet] as const,
   pool: (lbPair: string) => ["pool", lbPair] as const,
   ohlcv: (target: string, tf: string) => ["ohlcv", target, tf] as const,
@@ -76,6 +78,22 @@ export const useHoldings = (address: string) =>
     queryKey: queryKeys.holdings(address),
     queryFn: () => api.holdings(address, takeFresh(queryKeys.holdings(address))),
     refetchInterval: REFRESH,
+  });
+
+export const useStrategyHistory = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.strategyHistory(address),
+    queryFn: () => api.strategyHistory(address, takeFresh(queryKeys.strategyHistory(address))),
+    refetchInterval: REFRESH,
+    retry: false,
+  });
+
+export const useNavHistory = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.navHistory(address),
+    queryFn: () => api.navHistory(address, takeFresh(queryKeys.navHistory(address))),
+    refetchInterval: REFRESH,
+    retry: false,
   });
 
 export const useManager = (wallet: string | undefined) =>
@@ -145,6 +163,7 @@ export function useInvalidateVault() {
       ["position", address],
       queryKeys.requests(address),
       queryKeys.holdings(address),
+      queryKeys.strategyHistory(address),
     ] as const) {
       markFresh(key);
       void client.invalidateQueries({ queryKey: key });

@@ -50,6 +50,7 @@ defaults to `mainnet-beta`.
 | `JUPITER_API_HOST` | server | no | Jupiter API base. Defaults to `https://lite-api.jup.ag` without a key and `https://api.jup.ag` with one. |
 | `JUPITER_API_KEY` | server | no | Sent as `x-api-key`. Raises the rate limit on token metadata, prices and swap instructions. |
 | `METEORA_DLMM_API_HOST` | server | no | Meteora DLMM pool search API base. Defaults to `https://dlmm.datapi.meteora.ag`. |
+| `DATABASE_URL` | **server only** | for closed-position and NAV history | Read-only access to the keeper's indexed strategy-history and nav_history tables. Never exposed to the browser. |
 
 ## IDL
 
@@ -97,6 +98,7 @@ the app builds instructions against a stale program interface.
 | `/api/vaults/[address]/position?owner=` | `UserPosition` |
 | `/api/vaults/[address]/requests` | `RequestQueue` |
 | `/api/vaults/[address]/strategies` | `StrategyView[]` (Jupiter and DLMM) |
+| `/api/vaults/[address]/strategy-history` | Closed strategies with exact per-token contributed, returned, fee and realized-PnL base units; pre-V2 rows are marked incomplete. |
 | `/api/manager/[wallet]` | `ManagerView` — `isManager` plus the vaults that wallet authorizes |
 | `/api/dlmm/pool/[lbPair]` | `PoolInfo` — token X/Y, bin step, active bin id and price |
 | `/api/jupiter/quote?vault=&inputMint=&outputMint=&amount=&slippageBps=` | `QuoteView`, with `slippageBps` clamped to the protocol maximum. `vault` is required: one side of the quote must be that vault's deposit mint, which is the only swap the program will accept. Rate limited per IP. |
@@ -201,8 +203,8 @@ One-time GitHub setup:
 One-time cluster setup (not managed by the workflow):
 
 - `ghcr-pull` in `hedgevault-prod` — image pull credentials for GHCR.
-- `app-secrets` in `hedgevault-prod` — `RPC_URL` and, when used, `JUPITER_API_KEY`. Never put
-  these values in the ConfigMap, image, or a `NEXT_PUBLIC_*` variable.
+- `app-secrets` in `hedgevault-prod` — `RPC_URL`, `DATABASE_URL`, and, when used, `JUPITER_API_KEY`.
+  Never put these values in the ConfigMap, image, or a `NEXT_PUBLIC_*` variable.
 
 `NEXT_PUBLIC_CLUSTER` is intentionally set to `mainnet-beta` in both the image build and
 `k8s/configmap.yaml`. Because Next.js embeds public variables during `yarn build`, change both
@@ -210,8 +212,8 @@ together if the deployment target changes.
 
 ## Further reading
 
-- [`docs/app-fullstack-architecture.md`](docs/app-fullstack-architecture.md) — where this goes
-  next: event indexer, Postgres schema, API evolution, auth, notifications.
+- [`docs/app-fullstack-architecture.md`](docs/app-fullstack-architecture.md) — the broader event-indexing,
+  Postgres, API, auth and notification roadmap; strategy history is the first implemented slice.
 - [`docs/accounts.md`](docs/accounts.md) — the on-chain data model, PDAs and events.
 - [`docs/architecture-evolution.md`](docs/architecture-evolution.md) — how the program itself
   evolves.

@@ -355,7 +355,14 @@ NAV updater never need to diff account snapshots.
 | `DepositRequested`, `DepositCancelled`, `DepositResolved` | deposit flow | vault, authority, amount, pending_amount, epoch, shares, nav_per_share |
 | `WithdrawalRequested`, `WithdrawalCancelled`, `WithdrawalResolved` | withdrawal flow | vault, authority, shares, pending_shares, epoch, amount, nav_per_share |
 | `DepositRejected`, `WithdrawalRejected` | `*_request_reject` | vault, authority, amount or shares |
-| `StrategyInitialized`, `StrategyClosed` | strategy lifecycle | vault, strategy, id, strategy_type |
-| `JupiterSwapped` | `jupiter_swap` | vault, strategy, source/destination mint, amount |
-| `MeteoraDlmmLiquidityAdded`, `MeteoraDlmmLiquidityRemoved` | DLMM liquidity | vault, strategy, position, amount_x/amount_y or bps_to_remove |
-| `MeteoraDlmmFeeClaimed` | `meteora_dlmm_claim_fee` | vault, strategy, position, claimed amount_x/amount_y, treasury_amount_x/treasury_amount_y |
+| `StrategyInitialized`, `StrategyClosed` | strategy lifecycle | compatibility lifecycle events; close carries only vault and strategy |
+| `StrategyInitializedV2`, `StrategyClosedV2` | exact-history lifecycle | vault, strategy, id, strategy_type, chain timestamps |
+| `JupiterSwapped`, `JupiterSwappedV2` | `jupiter_swap` | compatibility amount plus strategy id and measured source spent and destination received |
+| `MeteoraDlmmLiquidityAddedV2`, `MeteoraDlmmLiquidityRemovedV2` | DLMM liquidity | vault, strategy id, strategy, position, token mints, measured vault-account debits/credits |
+| `MeteoraDlmmFeeClaimedV2` | `meteora_dlmm_claim_fee` | strategy id plus gross claimed, treasury debit and vault-retained amount for each mint |
+
+The program continues to emit the original strategy-action events for existing consumers. Exact
+history uses only V2 balance-delta events. A strategy is marked exact only when its V2 initialize
+event exists; older strategies remain `legacy_incomplete` even when some transaction metadata can
+be inferred. The lifecycle key is `(vault, strategy id)`, because a Jupiter strategy PDA can be
+reused after close.

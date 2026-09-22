@@ -1,8 +1,13 @@
 # Hedgin — Fullstack Architecture
 
 How the web app in `app/` grows from a stateless chain reader into a fullstack product with an
-event indexer, a Postgres database and per-user features — without changing the program and
-without changing the JSON the browser already consumes.
+event indexer, a Postgres database and per-user features. Most projections consume existing
+events; exact strategy accounting uses the program's versioned balance-delta events.
+
+**Implementation status (2026-09-21):** the exact strategy-history slice is implemented. The
+keeper can poll and backfill finalized strategy events into Postgres, and the app exposes and
+renders closed positions. The remaining vault, NAV, request, user, auth and notification tables in
+this document are still target architecture.
 
 Each section follows the same shape: **the problem today → the target design (diagram) → how it
 works**. The program stays the system of record; everything described here is a derived, rebuildable
@@ -69,7 +74,7 @@ flowchart LR
 
 **What this costs.**
 
-- **No history.** The chain stores only the *current* `nav_per_share`, `high_water_mark` and
+- **Limited history.** Closed strategy cash flows are indexed when enabled; the chain still stores only the *current* `nav_per_share`, `high_water_mark` and
   `nav_epoch`. A NAV chart, returns since inception, a user's PnL or an activity feed are simply not
   answerable — the data is in old transactions nobody keeps.
 - **N+1 on anything per-vault.** `/api/vaults` is one `getProgramAccounts`, but a list of *positions*
@@ -180,8 +185,8 @@ confirmation, exactly as V1 does today.
 | Fees | `ManagerFeeClaimed`, `PlatformFeeClaimed` | `vaults`, `activity` |
 | Deposits | `DepositRequested`, `DepositCancelled`, `DepositResolved`, `DepositRejected` | `requests`, `user_positions`, `activity` |
 | Withdrawals | `WithdrawalRequested`, `WithdrawalCancelled`, `WithdrawalResolved`, `WithdrawalRejected` | `requests`, `user_positions`, `activity` |
-| Strategies | `StrategyInitialized`, `StrategyClosed` | `strategies`, `activity` |
-| Protocol actions | `JupiterSwapped`, `MeteoraDlmmLiquidityAdded`, `MeteoraDlmmLiquidityRemoved`, `MeteoraDlmmFeeClaimed` | `strategies`, `activity` |
+| Strategies | `StrategyInitializedV2`, `StrategyClosedV2` plus compatibility lifecycle events | `strategy_history`, `strategy_activity` |
+| Protocol actions | V2 Jupiter swap and DLMM liquidity/fee events | `strategy_cash_flows`, `strategy_activity` |
 
 `DepositResolved` and `WithdrawalResolved` carry `shares` / `amount` and `nav_per_share`, which is
 exactly what a cost basis needs — `user_positions` is materialized from them, never from a balance
@@ -215,7 +220,9 @@ erDiagram
 | `activity` | `id pk`, `vault_address`, `owner`, `kind` (the event name), `payload jsonb`, `ts`, `signature`, `event_index`, `slot` | Every event, verbatim. Unique `(signature, event_index)` — this is the idempotency key for the whole pipeline. Everything else in the schema can be rebuilt from here. |
 | `users` | `wallet pk`, `first_seen`, `last_seen`, `email nullable`, `notification_prefs jsonb` | The only table written by a user action rather than by the indexer. A row appears the first time a wallet signs in (§6). |
 | `user_positions` | `wallet`, `vault_address`, `shares`, `cost_basis`, `updated_at` | Primary key `(wallet, vault_address)`. Materialized from `DepositResolved` (shares in, cost basis += amount) and `WithdrawalResolved` (shares out, cost basis reduced pro rata). Share-mint transfers between wallets are not program events, so this is authoritative only for shares acquired through the vault — the live share-ATA balance stays the display number, and `cost_basis` is used for PnL with that caveat. |
-| `strategies` | `address pk`, `vault_address`, `id`, `type` (`jupiter`\|`dlmm`), `protocol_account` (target mint or DLMM position), `opened_ts`, `closed_ts` | From `StrategyInitialized` / `StrategyClosed`. Live valuation still comes from the DLMM SDK and Jupiter prices; this table gives the *set* of strategies and their history without a `getProgramAccounts` scan. |
+| `strategy_history` | `strategy_address pk`, `vault_address`, `strategy_id`, `strategy_type`, `protocol_account`, opening/closing timestamps, slots and signatures, `data_quality` | Lifecycle projection. Only strategies opened with V2 events are labeled exact. |
+| `strategy_activity` | `signature`, `event_index`, `slot`, `block_time`, vault/strategy, event name, parsed payload | Implemented append-only strategy event log; unique `(signature, event_index)`. |
+| `strategy_cash_flows` | signature/event/leg key, slot/time, vault/strategy, mint, category, amount | Exact base-unit movements from V2 events. Per-token PnL is returned plus retained fees minus contributed. |
 
 ---
 

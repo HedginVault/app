@@ -8,7 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TokenLogo } from "@/components/token/token-logo";
 import { HoldingsSection } from "@/components/holdings/holdings-section";
+import { NavChart } from "@/components/holdings/nav-chart";
 import { SummaryStrip } from "@/components/holdings/summary-strip";
+import { StrategyHistory } from "@/components/holdings/strategy-history";
 import { VaultDetails } from "@/components/holdings/vault-details";
 import { HowItWorks } from "@/components/vault/how-it-works";
 import { PositionPanel } from "@/components/vault/position-panel";
@@ -54,7 +56,9 @@ export default function VaultPage({ params }: { params: Promise<{ address: strin
       aside={<PositionPanel v={v} />}
     >
       <SummaryStrip v={v} holdings={holdings.data} />
+      <NavChart address={address} depositSymbol={v.depositSymbol} depositDecimals={v.depositDecimals} />
       <HoldingsSection address={address} />
+      <StrategyHistory address={address} />
 
       {/* ponytail: rarely-needed info folds away; native <details>, no JS */}
       <details className="group rounded-card border border-border bg-white/[0.02] open:border-sky-400/30">

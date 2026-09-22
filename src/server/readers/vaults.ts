@@ -5,10 +5,10 @@ import type { ConfigView, VaultDetail, VaultSummary } from "@/lib/types";
 import { cached } from "../cache";
 import { ApiError } from "../errors";
 import { getConfigPda, getShareMintPda } from "../pda";
-import { getConnection, getProgram } from "../program";
+import { getConnection, getProgram, TOKEN_PROGRAM_ID } from "../program";
 import { getVaultMetadata } from "../registry";
-import { decodeMint, decodeTokenAmount, getMultipleAccounts } from "../rpc";
-import { getTokenInfos, getTokenProgram } from "../tokens";
+import { decodeMint, decodeTokenAmount, getMultipleAccounts, getOwnedTokenAccounts } from "../rpc";
+import { getTokenInfos, getTokenProgram, TOKEN_2022_PROGRAM_ID } from "../tokens";
 import { bn, decodeStatus, toVaultSummary } from "./decode";
 
 const TTL = 15_000;
@@ -71,25 +71,50 @@ export async function fetchVaultAccount(address: string) {
   return { key, account };
 }
 
-/** 2 RPC: the vault, then one batched read of the share mint and the vault's idle token account. */
+/**
+ * 4 RPC: the vault, a batched read of the share mint and the vault's idle token account, and one
+ * `getTokenAccountsByOwner` per token program to catch balances the vault holds outside any
+ * strategy (airdrops, dust) — otherwise invisible since every other read targets a specific mint.
+ */
 export const readVaultDetail = (address: string) =>
   cached(`vault:${address}`, TTL, async (): Promise<VaultDetail> => {
     const { key, account } = await fetchVaultAccount(address);
     // `getTokenProgram` fills the mint cache that `getTokenInfos` then reuses, so a cold cache reads
     // the deposit mint once instead of twice; on a warm cache neither call touches the network.
     const tokenProgram = await getTokenProgram(account.depositMint);
-    const [tokens, config] = await Promise.all([getTokenInfos([account.depositMint]), readConfig()]);
+    const connection = getConnection();
+    const [owned, config] = await Promise.all([
+      Promise.all([
+        getOwnedTokenAccounts(connection, key, TOKEN_PROGRAM_ID),
+        getOwnedTokenAccounts(connection, key, TOKEN_2022_PROGRAM_ID),
+      ]),
+      readConfig(),
+    ]);
+    const depositMintKey = account.depositMint.toBase58();
+    const unmanaged = new Map<string, bigint>();
+    for (const { mint, amount } of [...owned[0], ...owned[1]]) {
+      if (mint === depositMintKey || amount === 0n) continue;
+      unmanaged.set(mint, (unmanaged.get(mint) ?? 0n) + amount);
+    }
+    const [tokens, unmanagedTokens] = await Promise.all([
+      getTokenInfos([account.depositMint]),
+      getTokenInfos([...unmanaged.keys()].map((m) => new PublicKey(m))),
+    ]);
     const shareMint = getShareMintPda(key);
     const vaultTokenAccount = getAssociatedTokenAddressSync(account.depositMint, key, true, tokenProgram);
-    const [shareMintInfo, idleInfo] = await getMultipleAccounts(getConnection(), [shareMint, vaultTokenAccount]);
+    const [shareMintInfo, idleInfo] = await getMultipleAccounts(connection, [shareMint, vaultTokenAccount]);
     const share = decodeMint(shareMintInfo);
     if (!share) throw new ApiError(500, "Internal", "Share mint account is missing");
     return {
-      ...toVaultSummary(address, account, tokens.get(account.depositMint.toBase58())!, getVaultMetadata(address)),
+      ...toVaultSummary(address, account, tokens.get(depositMintKey)!, getVaultMetadata(address)),
       authority: account.authority.toBase58(),
       shareMint: shareMint.toBase58(),
       shareSupply: share.supply.toString(),
       idleBalance: decodeTokenAmount(idleInfo).toString(),
+      unmanagedHoldings: [...unmanaged.entries()].map(([mint, amount]) => ({
+        token: unmanagedTokens.get(mint)!,
+        amount: amount.toString(),
+      })),
       pendingDeposits: bn(account.pendingDeposits),
       pendingWithdrawalShares: bn(account.pendingWithdrawalShares),
       unclaimedManagerFeeShares: bn(account.unclaimedManagerFeeShares),

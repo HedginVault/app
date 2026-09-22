@@ -14,6 +14,7 @@ const vault = (over: Partial<VaultDetail> = {}) =>
     depositLogo: "https://x/usdc.png",
     depositPriceUsd: 1,
     idleBalance: "1000000000", // 1000 USDC
+    unmanagedHoldings: [],
     totalAssets: "1350000000",
     ...over,
   }) as VaultDetail;
@@ -95,6 +96,18 @@ describe("buildHoldingsView", () => {
     const h = buildHoldingsView(vault(), [dlmm(100), small, jupiter(100)]);
     expect(h.positions.map((p) => p.kind)).toEqual(["idle", "swap", "swap", "lp"]);
     expect(h.positions.map((p) => p.value)).toEqual(["1000000000", "200000000", "10000000", "159900000"]);
+  });
+
+  it("surfaces an unmanaged token balance as an idle position", () => {
+    const FEELSGOOD = "FeeL1111111111111111111111111111111111111";
+    const feelsgood = { mint: FEELSGOOD, symbol: "FEELSGOOD", decimals: 6, logo: null, priceUsd: 2 };
+    const h = buildHoldingsView(
+      vault({ unmanagedHoldings: [{ token: feelsgood, amount: "5000000" }] }), // 5 FEELSGOOD
+      [jupiter(100)],
+    );
+    expect(h.positions.map((p) => p.kind)).toEqual(["idle", "idle", "swap"]);
+    expect(h.positions[1]).toMatchObject({ kind: "idle", token: feelsgood, amount: "5000000", value: "10000000" });
+    expect(h.tokens.map((t) => t.token.symbol)).toContain("FEELSGOOD");
   });
 
   it("flags closable positions and out-of-range LPs", () => {

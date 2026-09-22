@@ -36,6 +36,10 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
   const raw: RawHolding[] = [
     { kind: "idle", strategy: null, mint: deposit.mint, decimals: deposit.decimals, amount: BigInt(v.idleBalance) },
   ];
+  for (const h of v.unmanagedHoldings) {
+    if (!tokens.has(h.token.mint)) tokens.set(h.token.mint, h.token);
+    raw.push({ kind: "idle", strategy: null, mint: h.token.mint, decimals: h.token.decimals, amount: BigInt(h.amount) });
+  }
 
   for (const s of strategies) {
     if (s.type === "jupiter") {
@@ -67,6 +71,12 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
   });
 
   const idle: PositionView = { kind: "idle", token: deposit, amount: v.idleBalance, ...money(valued.holdings[0].value) };
+  const unmanaged: PositionView[] = v.unmanagedHoldings.map((h, i) => ({
+    kind: "idle",
+    token: h.token,
+    amount: h.amount,
+    ...money(valued.holdings[1 + i].value),
+  }));
   const others: PositionView[] = strategies.map((s) => {
     if (s.type === "unreadable")
       return {
@@ -146,6 +156,6 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
     partial: valued.partial || strategies.some((s) => s.type === "unreadable"),
     unpriced: valued.unpriced.map((m) => tokens.get(m)!.symbol),
     tokens: exposure,
-    positions: [idle, ...others],
+    positions: [idle, ...unmanaged, ...others],
   };
 }

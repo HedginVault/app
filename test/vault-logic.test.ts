@@ -22,6 +22,7 @@ const detail: VaultDetail = {
   totalAssets: "1000000000", navPerShare: "1100000000", depositCap: "2000000000",
   performanceFeeBps: 1000, managementFeeBps: 200, lastNavTs: 1_700_000_000, metadata: null,
   authority: "A", shareMint: "S", shareSupply: "900000000", idleBalance: "500000000",
+  unmanagedHoldings: [],
   pendingDeposits: "100000000", pendingWithdrawalShares: "0",
   unclaimedManagerFeeShares: "0", unclaimedPlatformFeeShares: "0", epochOutflow: "0",
   highWaterMark: "1100000000", navEpoch: "19675", minDeposit: "10000000", minWithdrawalShares: "1000000",

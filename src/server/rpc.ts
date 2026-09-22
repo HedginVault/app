@@ -1,6 +1,27 @@
 import { AccountLayout, MintLayout } from "@solana/spl-token";
 import type { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
 
+export interface OwnedTokenAccount {
+  mint: string;
+  amount: bigint;
+}
+
+/** Every token account an owner holds under one token program; a malformed account is skipped. */
+export async function getOwnedTokenAccounts(
+  connection: Connection,
+  owner: PublicKey,
+  programId: PublicKey,
+): Promise<OwnedTokenAccount[]> {
+  const { value } = await connection.getTokenAccountsByOwner(owner, { programId });
+  const out: OwnedTokenAccount[] = [];
+  for (const { account } of value) {
+    if (account.data.length < AccountLayout.span) continue;
+    const decoded = AccountLayout.decode(account.data.subarray(0, AccountLayout.span));
+    out.push({ mint: decoded.mint.toBase58(), amount: decoded.amount });
+  }
+  return out;
+}
+
 /** RPC cap for getMultipleAccounts. */
 const MAX_ACCOUNTS_PER_CALL = 100;
 

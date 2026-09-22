@@ -55,6 +55,8 @@ export interface VaultDetail extends VaultSummary {
   shareMint: string;
   shareSupply: string;
   idleBalance: string;
+  /** Non-deposit tokens sitting in the vault's wallet outside any strategy (airdrops, dust). */
+  unmanagedHoldings: { token: TokenInfo; amount: string }[];
   pendingDeposits: string;
   pendingWithdrawalShares: string;
   unclaimedManagerFeeShares: string;

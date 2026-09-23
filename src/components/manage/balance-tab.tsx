@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { HoldingsSection } from "@/components/holdings/holdings-section";
+import { NavChart } from "@/components/holdings/nav-chart";
 import { SummaryStrip } from "@/components/holdings/summary-strip";
 import type { MenuItem } from "@/components/ui/menu";
 import { ManagePosition } from "@/components/manage/manage-position";
@@ -134,6 +135,8 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
           }
         />
       </SummaryStrip>
+
+      <NavChart address={v.address} depositSymbol={v.depositSymbol} />
 
       <HoldingsSection address={v.address} actionsFor={actionsFor} />
 

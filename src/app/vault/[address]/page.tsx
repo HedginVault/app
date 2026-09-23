@@ -5,6 +5,7 @@ import { Suspense, use } from "react";
 import { HistoryTab } from "@/components/holdings/history-tab";
 import { EpochCountdown } from "@/components/holdings/epoch-countdown";
 import { HoldingsSection } from "@/components/holdings/holdings-section";
+import { NavChart } from "@/components/holdings/nav-chart";
 import { SummaryStrip } from "@/components/holdings/summary-strip";
 import { VaultDetails } from "@/components/holdings/vault-details";
 import { Page } from "@/components/shell/page";
@@ -94,6 +95,7 @@ function VaultTabs({ v, holdings }: { v: VaultDetail; holdings: HoldingsView | u
       {tab === "overview" ? (
         <>
           <SummaryStrip v={v} holdings={holdings} />
+          <NavChart address={v.address} depositSymbol={v.depositSymbol} />
           <HoldingsSection address={v.address} />
 
           {/* ponytail: rarely-needed info folds away; native <details>, no JS */}
@@ -124,7 +126,7 @@ function VaultTabs({ v, holdings }: { v: VaultDetail; holdings: HoldingsView | u
           </details>
         </>
       ) : (
-        <HistoryTab address={v.address} depositSymbol={v.depositSymbol} />
+        <HistoryTab address={v.address} />
       )}
     </div>
   );

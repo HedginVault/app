@@ -111,7 +111,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
       </div>
       {tab === "balance" && <BalanceTab v={v} owner={owner} />}
       {tab === "markets" && <MarketsTab v={v} owner={owner} />}
-      {tab === "history" && <HistoryTab address={v.address} depositSymbol={v.depositSymbol} />}
+      {tab === "history" && <HistoryTab address={v.address} />}
       {tab === "requests" && <RequestsTab v={v} owner={owner} />}
       {tab === "settings" && <SettingsTab v={v} owner={owner} />}
     </div>

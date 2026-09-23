@@ -37,10 +37,15 @@ const byValueDesc = (a: { value: string | null }, b: { value: string | null }) =
 export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): HoldingsView {
   const deposit = depositTokenOf(v);
   const tokens = new Map<string, TokenInfo>([[deposit.mint, deposit]]);
+  // Jupiter strategies hold their target mint in the vault's own token account, so that mint also
+  // shows up in `unmanagedHoldings` (a raw scan of every token account the vault owns). Drop it
+  // there to avoid reporting the same on-chain balance as both an idle holding and a strategy holding.
+  const strategyMints = new Set(strategies.filter((s) => s.type === "jupiter").map((s) => s.targetMint));
+  const unmanagedHoldings = v.unmanagedHoldings.filter((h) => !strategyMints.has(h.token.mint));
   const raw: RawHolding[] = [
     { kind: "idle", strategy: null, mint: deposit.mint, decimals: deposit.decimals, amount: BigInt(v.idleBalance) },
   ];
-  for (const h of v.unmanagedHoldings) {
+  for (const h of unmanagedHoldings) {
     if (!tokens.has(h.token.mint)) tokens.set(h.token.mint, h.token);
     raw.push({ kind: "idle", strategy: null, mint: h.token.mint, decimals: h.token.decimals, amount: BigInt(h.amount) });
   }
@@ -75,7 +80,7 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
   });
 
   const idle: PositionView = { kind: "idle", token: deposit, amount: v.idleBalance, ...money(valued.holdings[0].value) };
-  const unmanaged: PositionView[] = v.unmanagedHoldings.map((h, i) => ({
+  const unmanaged: PositionView[] = unmanagedHoldings.map((h, i) => ({
     kind: "idle",
     token: h.token,
     amount: h.amount,

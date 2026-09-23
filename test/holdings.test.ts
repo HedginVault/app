@@ -112,6 +112,17 @@ describe("buildHoldingsView", () => {
     expect(h.tokens.map((t) => t.token.symbol)).toContain("FEELSGOOD");
   });
 
+  it("drops an unmanaged holding that duplicates a Jupiter strategy's target mint", () => {
+    // The vault's target-mint token account IS the Jupiter strategy's balance, so a raw scan of
+    // owned token accounts sees it too — it must not also surface as a separate idle position.
+    const h = buildHoldingsView(vault({ unmanagedHoldings: [{ token: sol(100), amount: "2000000000" }] }), [jupiter(100)]);
+    expect(h.positions.map((p) => p.kind)).toEqual(["idle", "swap"]);
+    expect(h.tokens.map((t) => [t.token.symbol, t.amount])).toEqual([
+      ["USDC", "1000000000"],
+      ["SOL", "2000000000"],
+    ]);
+  });
+
   it("flags closable positions and out-of-range LPs", () => {
     const empty = { ...jupiter(100), vaultBalance: "0" };
     const lpOut = { ...dlmm(100), activeBinId: 200, amountX: "0", amountY: "0", pendingFeeX: "0", pendingFeeY: "0" };

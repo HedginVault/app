@@ -3608,19 +3608,6 @@
       ]
     },
     {
-      "name": "JupiterSwappedV2",
-      "discriminator": [
-        204,
-        97,
-        133,
-        203,
-        142,
-        98,
-        236,
-        138
-      ]
-    },
-    {
       "name": "ManagerAdded",
       "discriminator": [
         247,
@@ -3673,19 +3660,6 @@
       ]
     },
     {
-      "name": "MeteoraDlmmFeeClaimedV2",
-      "discriminator": [
-        185,
-        26,
-        157,
-        68,
-        205,
-        242,
-        192,
-        14
-      ]
-    },
-    {
       "name": "MeteoraDlmmLiquidityAdded",
       "discriminator": [
         93,
@@ -3699,19 +3673,6 @@
       ]
     },
     {
-      "name": "MeteoraDlmmLiquidityAddedV2",
-      "discriminator": [
-        50,
-        48,
-        237,
-        22,
-        66,
-        13,
-        5,
-        130
-      ]
-    },
-    {
       "name": "MeteoraDlmmLiquidityRemoved",
       "discriminator": [
         2,
@@ -3722,19 +3683,6 @@
         30,
         243,
         144
-      ]
-    },
-    {
-      "name": "MeteoraDlmmLiquidityRemovedV2",
-      "discriminator": [
-        161,
-        177,
-        132,
-        45,
-        204,
-        231,
-        88,
-        202
       ]
     },
     {
@@ -3790,19 +3738,6 @@
       ]
     },
     {
-      "name": "StrategyClosedV2",
-      "discriminator": [
-        204,
-        250,
-        81,
-        18,
-        209,
-        232,
-        129,
-        246
-      ]
-    },
-    {
       "name": "StrategyInitialized",
       "discriminator": [
         154,
@@ -3813,19 +3748,6 @@
         30,
         246,
         99
-      ]
-    },
-    {
-      "name": "StrategyInitializedV2",
-      "discriminator": [
-        163,
-        180,
-        130,
-        218,
-        138,
-        138,
-        133,
-        91
       ]
     },
     {
@@ -4881,37 +4803,10 @@
           {
             "name": "amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "JupiterSwappedV2",
-      "docs": [
-        "Exact vault token-account deltas measured around the Jupiter CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategy_id",
             "type": "u32"
-          },
-          {
-            "name": "source_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "destination_mint",
-            "type": "pubkey"
           },
           {
             "name": "source_spent",
@@ -5093,34 +4988,10 @@
           {
             "name": "treasury_amount_y",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "MeteoraDlmmFeeClaimedV2",
-      "docs": [
-        "Claimed fees split into the exact vault credit, treasury debit, and amount retained",
-        "by the vault. Amounts are base units of their corresponding mint."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategy_id",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "token_x_mint",
@@ -5129,22 +5000,6 @@
           {
             "name": "token_y_mint",
             "type": "pubkey"
-          },
-          {
-            "name": "gross_amount_x",
-            "type": "u64"
-          },
-          {
-            "name": "gross_amount_y",
-            "type": "u64"
-          },
-          {
-            "name": "treasury_amount_x",
-            "type": "u64"
-          },
-          {
-            "name": "treasury_amount_y",
-            "type": "u64"
           },
           {
             "name": "vault_retained_x",
@@ -5181,33 +5036,10 @@
           {
             "name": "amount_y",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "MeteoraDlmmLiquidityAddedV2",
-      "docs": [
-        "Exact vault token-account debits measured around the add-liquidity CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategy_id",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "token_x_mint",
@@ -5248,33 +5080,10 @@
           {
             "name": "bps_to_remove",
             "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "MeteoraDlmmLiquidityRemovedV2",
-      "docs": [
-        "Exact vault token-account credits measured around the remove-liquidity CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategy_id",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "token_x_mint",
@@ -5291,10 +5100,6 @@
           {
             "name": "amount_y_received",
             "type": "u64"
-          },
-          {
-            "name": "bps_to_remove",
-            "type": "u16"
           }
         ]
       }
@@ -5655,26 +5460,6 @@
           {
             "name": "strategy",
             "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "StrategyClosedV2",
-      "docs": [
-        "Versioned audit event emitted before a Strategy account is closed. The original",
-        "`StrategyClosed` event remains for backwards-compatible consumers."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "id",
@@ -5701,38 +5486,6 @@
     },
     {
       "name": "StrategyInitialized",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
-          },
-          {
-            "name": "id",
-            "type": "u32"
-          },
-          {
-            "name": "strategy_type",
-            "type": {
-              "defined": {
-                "name": "hedge_vault::state::strategy::StrategyType"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "StrategyInitializedV2",
-      "docs": [
-        "Versioned lifecycle event marking strategies whose complete cash-flow history can be",
-        "reconstructed from the V2 accounting events."
-      ],
       "type": {
         "kind": "struct",
         "fields": [

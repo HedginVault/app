@@ -185,8 +185,8 @@ confirmation, exactly as V1 does today.
 | Fees | `ManagerFeeClaimed`, `PlatformFeeClaimed` | `vaults`, `activity` |
 | Deposits | `DepositRequested`, `DepositCancelled`, `DepositResolved`, `DepositRejected` | `requests`, `user_positions`, `activity` |
 | Withdrawals | `WithdrawalRequested`, `WithdrawalCancelled`, `WithdrawalResolved`, `WithdrawalRejected` | `requests`, `user_positions`, `activity` |
-| Strategies | `StrategyInitializedV2`, `StrategyClosedV2` plus compatibility lifecycle events | `strategy_history`, `strategy_activity` |
-| Protocol actions | V2 Jupiter swap and DLMM liquidity/fee events | `strategy_cash_flows`, `strategy_activity` |
+| Strategies | Enriched `StrategyInitialized`, `StrategyClosed` events | `strategy_history`, `strategy_activity` |
+| Protocol actions | Enriched Jupiter swap and DLMM liquidity/fee events | `strategy_cash_flows`, `strategy_activity` |
 
 `DepositResolved` and `WithdrawalResolved` carry `shares` / `amount` and `nav_per_share`, which is
 exactly what a cost basis needs — `user_positions` is materialized from them, never from a balance
@@ -220,9 +220,9 @@ erDiagram
 | `activity` | `id pk`, `vault_address`, `owner`, `kind` (the event name), `payload jsonb`, `ts`, `signature`, `event_index`, `slot` | Every event, verbatim. Unique `(signature, event_index)` — this is the idempotency key for the whole pipeline. Everything else in the schema can be rebuilt from here. |
 | `users` | `wallet pk`, `first_seen`, `last_seen`, `email nullable`, `notification_prefs jsonb` | The only table written by a user action rather than by the indexer. A row appears the first time a wallet signs in (§6). |
 | `user_positions` | `wallet`, `vault_address`, `shares`, `cost_basis`, `updated_at` | Primary key `(wallet, vault_address)`. Materialized from `DepositResolved` (shares in, cost basis += amount) and `WithdrawalResolved` (shares out, cost basis reduced pro rata). Share-mint transfers between wallets are not program events, so this is authoritative only for shares acquired through the vault — the live share-ATA balance stays the display number, and `cost_basis` is used for PnL with that caveat. |
-| `strategy_history` | `strategy_address pk`, `vault_address`, `strategy_id`, `strategy_type`, `protocol_account`, opening/closing timestamps, slots and signatures, `data_quality` | Lifecycle projection. Only strategies opened with V2 events are labeled exact. |
+| `strategy_history` | `strategy_address pk`, `vault_address`, `strategy_id`, `strategy_type`, `protocol_account`, opening/closing timestamps, slots and signatures, `data_quality` | Lifecycle projection. Only strategies opened with the enriched lifecycle event are labeled exact. |
 | `strategy_activity` | `signature`, `event_index`, `slot`, `block_time`, vault/strategy, event name, parsed payload | Implemented append-only strategy event log; unique `(signature, event_index)`. |
-| `strategy_cash_flows` | signature/event/leg key, slot/time, vault/strategy, mint, category, amount | Exact base-unit movements from V2 events. Per-token PnL is returned plus retained fees minus contributed. |
+| `strategy_cash_flows` | signature/event/leg key, slot/time, vault/strategy, mint, category, amount | Exact base-unit movements from enriched strategy events. Per-token PnL is returned plus retained fees minus contributed. |
 
 ---
 

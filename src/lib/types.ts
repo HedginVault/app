@@ -334,7 +334,7 @@ export interface StrategyHistoryItem {
   closedTs: number;
   openSignature: string | null;
   closeSignature: string;
-  /** False for strategies opened before exact V2 accounting events existed. */
+  /** False for strategies opened before exact accounting fields were added to strategy events. */
   exact: boolean;
   tokens: StrategyHistoryToken[];
 }

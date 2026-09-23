@@ -98,7 +98,7 @@ the app builds instructions against a stale program interface.
 | `/api/vaults/[address]/position?owner=` | `UserPosition` |
 | `/api/vaults/[address]/requests` | `RequestQueue` |
 | `/api/vaults/[address]/strategies` | `StrategyView[]` (Jupiter and DLMM) |
-| `/api/vaults/[address]/strategy-history` | Closed strategies with exact per-token contributed, returned, fee and realized-PnL base units; pre-V2 rows are marked incomplete. |
+| `/api/vaults/[address]/strategy-history` | Closed strategies with exact per-token contributed, returned, fee and realized-PnL base units; pre-upgrade rows are marked incomplete. |
 | `/api/manager/[wallet]` | `ManagerView` — `isManager` plus the vaults that wallet authorizes |
 | `/api/dlmm/pool/[lbPair]` | `PoolInfo` — token X/Y, bin step, active bin id and price |
 | `/api/jupiter/quote?vault=&inputMint=&outputMint=&amount=&slippageBps=` | `QuoteView`, with `slippageBps` clamped to the protocol maximum. `vault` is required: one side of the quote must be that vault's deposit mint, which is the only swap the program will accept. Rate limited per IP. |

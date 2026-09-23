@@ -3614,19 +3614,6 @@ export type HedgeVault = {
       ]
     },
     {
-      "name": "jupiterSwappedV2",
-      "discriminator": [
-        204,
-        97,
-        133,
-        203,
-        142,
-        98,
-        236,
-        138
-      ]
-    },
-    {
       "name": "managerAdded",
       "discriminator": [
         247,
@@ -3679,19 +3666,6 @@ export type HedgeVault = {
       ]
     },
     {
-      "name": "meteoraDlmmFeeClaimedV2",
-      "discriminator": [
-        185,
-        26,
-        157,
-        68,
-        205,
-        242,
-        192,
-        14
-      ]
-    },
-    {
       "name": "meteoraDlmmLiquidityAdded",
       "discriminator": [
         93,
@@ -3705,19 +3679,6 @@ export type HedgeVault = {
       ]
     },
     {
-      "name": "meteoraDlmmLiquidityAddedV2",
-      "discriminator": [
-        50,
-        48,
-        237,
-        22,
-        66,
-        13,
-        5,
-        130
-      ]
-    },
-    {
       "name": "meteoraDlmmLiquidityRemoved",
       "discriminator": [
         2,
@@ -3728,19 +3689,6 @@ export type HedgeVault = {
         30,
         243,
         144
-      ]
-    },
-    {
-      "name": "meteoraDlmmLiquidityRemovedV2",
-      "discriminator": [
-        161,
-        177,
-        132,
-        45,
-        204,
-        231,
-        88,
-        202
       ]
     },
     {
@@ -3796,19 +3744,6 @@ export type HedgeVault = {
       ]
     },
     {
-      "name": "strategyClosedV2",
-      "discriminator": [
-        204,
-        250,
-        81,
-        18,
-        209,
-        232,
-        129,
-        246
-      ]
-    },
-    {
       "name": "strategyInitialized",
       "discriminator": [
         154,
@@ -3819,19 +3754,6 @@ export type HedgeVault = {
         30,
         246,
         99
-      ]
-    },
-    {
-      "name": "strategyInitializedV2",
-      "discriminator": [
-        163,
-        180,
-        130,
-        218,
-        138,
-        138,
-        133,
-        91
       ]
     },
     {
@@ -4887,37 +4809,10 @@ export type HedgeVault = {
           {
             "name": "amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "jupiterSwappedV2",
-      "docs": [
-        "Exact vault token-account deltas measured around the Jupiter CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategyId",
             "type": "u32"
-          },
-          {
-            "name": "sourceMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "destinationMint",
-            "type": "pubkey"
           },
           {
             "name": "sourceSpent",
@@ -5099,34 +4994,10 @@ export type HedgeVault = {
           {
             "name": "treasuryAmountY",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "meteoraDlmmFeeClaimedV2",
-      "docs": [
-        "Claimed fees split into the exact vault credit, treasury debit, and amount retained",
-        "by the vault. Amounts are base units of their corresponding mint."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategyId",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "tokenXMint",
@@ -5135,22 +5006,6 @@ export type HedgeVault = {
           {
             "name": "tokenYMint",
             "type": "pubkey"
-          },
-          {
-            "name": "grossAmountX",
-            "type": "u64"
-          },
-          {
-            "name": "grossAmountY",
-            "type": "u64"
-          },
-          {
-            "name": "treasuryAmountX",
-            "type": "u64"
-          },
-          {
-            "name": "treasuryAmountY",
-            "type": "u64"
           },
           {
             "name": "vaultRetainedX",
@@ -5187,33 +5042,10 @@ export type HedgeVault = {
           {
             "name": "amountY",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "meteoraDlmmLiquidityAddedV2",
-      "docs": [
-        "Exact vault token-account debits measured around the add-liquidity CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategyId",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "tokenXMint",
@@ -5254,33 +5086,10 @@ export type HedgeVault = {
           {
             "name": "bpsToRemove",
             "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "meteoraDlmmLiquidityRemovedV2",
-      "docs": [
-        "Exact vault token-account credits measured around the remove-liquidity CPI."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "strategyId",
             "type": "u32"
-          },
-          {
-            "name": "position",
-            "type": "pubkey"
           },
           {
             "name": "tokenXMint",
@@ -5297,10 +5106,6 @@ export type HedgeVault = {
           {
             "name": "amountYReceived",
             "type": "u64"
-          },
-          {
-            "name": "bpsToRemove",
-            "type": "u16"
           }
         ]
       }
@@ -5661,26 +5466,6 @@ export type HedgeVault = {
           {
             "name": "strategy",
             "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "strategyClosedV2",
-      "docs": [
-        "Versioned audit event emitted before a Strategy account is closed. The original",
-        "`StrategyClosed` event remains for backwards-compatible consumers."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
           },
           {
             "name": "id",
@@ -5707,38 +5492,6 @@ export type HedgeVault = {
     },
     {
       "name": "strategyInitialized",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy",
-            "type": "pubkey"
-          },
-          {
-            "name": "id",
-            "type": "u32"
-          },
-          {
-            "name": "strategyType",
-            "type": {
-              "defined": {
-                "name": "hedge_vault::state::strategy::StrategyType"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "strategyInitializedV2",
-      "docs": [
-        "Versioned lifecycle event marking strategies whose complete cash-flow history can be",
-        "reconstructed from the V2 accounting events."
-      ],
       "type": {
         "kind": "struct",
         "fields": [

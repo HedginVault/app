@@ -2838,6 +2838,952 @@ export type HedgeVault = {
       ]
     },
     {
+      "name": "phoenixCancelOrders",
+      "discriminator": [
+        29,
+        144,
+        12,
+        190,
+        214,
+        75,
+        0,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "perpAssetMap",
+          "writable": true
+        },
+        {
+          "name": "orderbook",
+          "writable": true
+        },
+        {
+          "name": "splineCollection",
+          "writable": true
+        },
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        }
+      ],
+      "args": [
+        {
+          "name": "mode",
+          "type": {
+            "defined": {
+              "name": "phoenixCancelMode"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "phoenixDepositFunds",
+      "discriminator": [
+        159,
+        150,
+        61,
+        11,
+        204,
+        241,
+        235,
+        131
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "usdcMint",
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        },
+        {
+          "name": "canonicalMint",
+          "docs": [
+            "validated against the phoenix global configuration in [handler]"
+          ],
+          "writable": true
+        },
+        {
+          "name": "vaultUsdcTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultCanonicalTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "canonicalMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "emberState",
+          "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz"
+        },
+        {
+          "name": "emberVault",
+          "writable": true,
+          "address": "FKcEb4TdPDTRuMnQDpSEPQBcrm15S73xiUD6Qf8ZLUkq"
+        },
+        {
+          "name": "globalVault",
+          "writable": true
+        },
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        },
+        {
+          "name": "emberProgram",
+          "address": "EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "phoenixEmberWithdraw",
+      "discriminator": [
+        240,
+        165,
+        22,
+        27,
+        12,
+        80,
+        60,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "usdcMint",
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        },
+        {
+          "name": "canonicalMint",
+          "docs": [
+            "validated against the phoenix global configuration in [handler]"
+          ],
+          "writable": true
+        },
+        {
+          "name": "vaultUsdcTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultCanonicalTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "canonicalMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "emberState",
+          "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz"
+        },
+        {
+          "name": "emberVault",
+          "writable": true,
+          "address": "FKcEb4TdPDTRuMnQDpSEPQBcrm15S73xiUD6Qf8ZLUkq"
+        },
+        {
+          "name": "globalConfig",
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "emberProgram",
+          "address": "EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "phoenixInitializeStrategy",
+      "discriminator": [
+        64,
+        161,
+        237,
+        231,
+        163,
+        236,
+        121,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "strategy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  101,
+                  103,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "traderAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "canonicalMint",
+          "docs": [
+            "validated against the phoenix global configuration in [handler]"
+          ]
+        },
+        {
+          "name": "vaultCanonicalTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "canonicalMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "globalConfig",
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "phoenixPlaceLimitOrder",
+      "discriminator": [
+        87,
+        65,
+        210,
+        176,
+        59,
+        77,
+        235,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "perpAssetMap",
+          "writable": true
+        },
+        {
+          "name": "orderbook",
+          "writable": true
+        },
+        {
+          "name": "splineCollection",
+          "writable": true
+        },
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        },
+        {
+          "name": "hawkeyeProgram",
+          "address": "RiSeVw3ZjNfsaXPRb4mgaqYaEEt41pNNJoDvVh7pgQj"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "phoenixLimitOrderParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "phoenixPlaceMarketOrder",
+      "discriminator": [
+        115,
+        228,
+        12,
+        84,
+        57,
+        206,
+        20,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "perpAssetMap",
+          "writable": true
+        },
+        {
+          "name": "orderbook",
+          "writable": true
+        },
+        {
+          "name": "splineCollection",
+          "writable": true
+        },
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        },
+        {
+          "name": "hawkeyeProgram",
+          "address": "RiSeVw3ZjNfsaXPRb4mgaqYaEEt41pNNJoDvVh7pgQj"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "phoenixMarketOrderParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "phoenixWithdrawFunds",
+      "discriminator": [
+        95,
+        155,
+        192,
+        77,
+        108,
+        208,
+        4,
+        75
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "usdcMint",
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        },
+        {
+          "name": "canonicalMint",
+          "docs": [
+            "validated against the phoenix global configuration in [handler]"
+          ],
+          "writable": true
+        },
+        {
+          "name": "vaultUsdcTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultCanonicalTokenAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "canonicalMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "traderAccount",
+          "writable": true
+        },
+        {
+          "name": "perpAssetMap",
+          "writable": true
+        },
+        {
+          "name": "withdrawQueue",
+          "writable": true
+        },
+        {
+          "name": "emberState",
+          "address": "6ur7v6AXNpnHeEb6xuk7PyezvZ1i5GrgYyWZkNCpzbRz"
+        },
+        {
+          "name": "emberVault",
+          "writable": true,
+          "address": "FKcEb4TdPDTRuMnQDpSEPQBcrm15S73xiUD6Qf8ZLUkq"
+        },
+        {
+          "name": "globalVault",
+          "writable": true
+        },
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "address": "2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ"
+        },
+        {
+          "name": "logAuthority",
+          "address": "GdxfTLSsdSY37G6fZoYtdGDSfgFnbT2EmRpuePZxWShS"
+        },
+        {
+          "name": "phoenixProgram",
+          "address": "EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih"
+        },
+        {
+          "name": "emberProgram",
+          "address": "EMBERpYNE6ehWmXymZZS2skiFmCa9V5dp14e1iduM5qy"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "vaultClaimManagerFee",
       "discriminator": [
         18,
@@ -4321,6 +5267,71 @@ export type HedgeVault = {
       ]
     },
     {
+      "name": "phoenixCanonicalUnwrapped",
+      "discriminator": [
+        90,
+        253,
+        38,
+        130,
+        85,
+        106,
+        175,
+        33
+      ]
+    },
+    {
+      "name": "phoenixFundsDeposited",
+      "discriminator": [
+        80,
+        131,
+        176,
+        205,
+        95,
+        73,
+        214,
+        160
+      ]
+    },
+    {
+      "name": "phoenixFundsWithdrawn",
+      "discriminator": [
+        203,
+        20,
+        23,
+        229,
+        110,
+        134,
+        107,
+        177
+      ]
+    },
+    {
+      "name": "phoenixOrderPlaced",
+      "discriminator": [
+        43,
+        72,
+        61,
+        3,
+        37,
+        13,
+        161,
+        167
+      ]
+    },
+    {
+      "name": "phoenixOrdersCancelled",
+      "discriminator": [
+        187,
+        145,
+        42,
+        94,
+        233,
+        165,
+        91,
+        189
+      ]
+    },
+    {
       "name": "platformFeeClaimed",
       "discriminator": [
         11,
@@ -4805,6 +5816,56 @@ export type HedgeVault = {
     },
     {
       "code": 6065,
+      "name": "invalidPhoenixDepositMint",
+      "msg": "Phoenix strategies require a USDC deposit mint"
+    },
+    {
+      "code": 6066,
+      "name": "invalidPhoenixTrader",
+      "msg": "Trader account does not match the strategy"
+    },
+    {
+      "code": 6067,
+      "name": "invalidPhoenixAccount",
+      "msg": "Phoenix account does not match the global configuration"
+    },
+    {
+      "code": 6068,
+      "name": "invalidPhoenixRemainingAccounts",
+      "msg": "Phoenix trader index accounts are malformed"
+    },
+    {
+      "code": 6069,
+      "name": "phoenixTraderNotReady",
+      "msg": "Phoenix trader has not been onboarded"
+    },
+    {
+      "code": 6070,
+      "name": "phoenixAmountMismatch",
+      "msg": "Token movement did not match the requested amount"
+    },
+    {
+      "code": 6071,
+      "name": "phoenixReturnDataInvalid",
+      "msg": "Phoenix return data is missing or malformed"
+    },
+    {
+      "code": 6072,
+      "name": "phoenixAccountLiquidatable",
+      "msg": "Order left the Phoenix account liquidatable"
+    },
+    {
+      "code": 6073,
+      "name": "phoenixOrderUnderfilled",
+      "msg": "Order filled less than the requested minimum"
+    },
+    {
+      "code": 6074,
+      "name": "phoenixStrategyNotEmpty",
+      "msg": "Phoenix strategy still holds collateral, positions or a queued withdrawal"
+    },
+    {
+      "code": 6075,
       "name": "invalidPositionBinRange",
       "msg": "Position bin range is outside the supported bounds"
     }
@@ -5430,6 +6491,18 @@ export type HedgeVault = {
           {
             "name": "amount",
             "type": "u64"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          },
+          {
+            "name": "sourceSpent",
+            "type": "u64"
+          },
+          {
+            "name": "destinationReceived",
+            "type": "u64"
           }
         ]
       }
@@ -5603,6 +6676,26 @@ export type HedgeVault = {
           {
             "name": "treasuryAmountY",
             "type": "u64"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          },
+          {
+            "name": "tokenXMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenYMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vaultRetainedX",
+            "type": "u64"
+          },
+          {
+            "name": "vaultRetainedY",
+            "type": "u64"
           }
         ]
       }
@@ -5631,6 +6724,26 @@ export type HedgeVault = {
           {
             "name": "amountY",
             "type": "u64"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          },
+          {
+            "name": "tokenXMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenYMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountXSpent",
+            "type": "u64"
+          },
+          {
+            "name": "amountYSpent",
+            "type": "u64"
           }
         ]
       }
@@ -5655,6 +6768,26 @@ export type HedgeVault = {
           {
             "name": "bpsToRemove",
             "type": "u16"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          },
+          {
+            "name": "tokenXMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenYMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amountXReceived",
+            "type": "u64"
+          },
+          {
+            "name": "amountYReceived",
+            "type": "u64"
           }
         ]
       }
@@ -5718,6 +6851,480 @@ export type HedgeVault = {
           {
             "name": "overridden",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixCancelId",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nodePointer",
+            "type": "u32"
+          },
+          {
+            "name": "priceInTicks",
+            "type": "u64"
+          },
+          {
+            "name": "orderSequenceNumber",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixCancelMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "all"
+          },
+          {
+            "name": "upTo",
+            "fields": [
+              {
+                "name": "side",
+                "type": {
+                  "defined": {
+                    "name": "phoenixSide"
+                  }
+                }
+              },
+              {
+                "name": "numOrdersToCancel",
+                "type": {
+                  "option": "u64"
+                }
+              },
+              {
+                "name": "tickLimit",
+                "type": {
+                  "option": "u64"
+                }
+              }
+            ]
+          },
+          {
+            "name": "byId",
+            "fields": [
+              {
+                "name": "orders",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "phoenixCancelId"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixCanonicalUnwrapped",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixFundsDeposited",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "traderAccount",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixFundsWithdrawn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "traderAccount",
+            "type": "pubkey"
+          },
+          {
+            "name": "requested",
+            "type": "u64"
+          },
+          {
+            "name": "received",
+            "docs": [
+              "Canonical tokens paid out now and unwrapped into USDC, zero when the throttle queued it."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "queued",
+            "type": "bool"
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixLimitOrderParams",
+      "docs": [
+        "Resting order, sized off-chain in Phoenix ticks and lots."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "phoenixSide"
+              }
+            }
+          },
+          {
+            "name": "priceInTicks",
+            "type": "u64"
+          },
+          {
+            "name": "numBaseLots",
+            "type": "u64"
+          },
+          {
+            "name": "postOnly",
+            "docs": [
+              "Never takes liquidity, `slide` reprices it behind the book instead of failing on a cross."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "slide",
+            "type": "bool"
+          },
+          {
+            "name": "selfTradeBehavior",
+            "docs": [
+              "Ignored for post-only orders."
+            ],
+            "type": {
+              "defined": {
+                "name": "phoenixSelfTradeBehavior"
+              }
+            }
+          },
+          {
+            "name": "matchLimit",
+            "docs": [
+              "Ignored for post-only orders."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "clientOrderId",
+            "type": "u128"
+          },
+          {
+            "name": "lastValidSlot",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "reduceOnly",
+            "type": "bool"
+          },
+          {
+            "name": "cancelExisting",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixMarketOrderParams",
+      "docs": [
+        "Immediate-or-cancel order, sized off-chain in Phoenix ticks and lots."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "phoenixSide"
+              }
+            }
+          },
+          {
+            "name": "priceInTicks",
+            "docs": [
+              "Worst acceptable price, `None` takes any price."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "numBaseLots",
+            "type": "u64"
+          },
+          {
+            "name": "numQuoteLots",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "minBaseLotsToFill",
+            "type": "u64"
+          },
+          {
+            "name": "minQuoteLotsToFill",
+            "type": "u64"
+          },
+          {
+            "name": "selfTradeBehavior",
+            "type": {
+              "defined": {
+                "name": "phoenixSelfTradeBehavior"
+              }
+            }
+          },
+          {
+            "name": "matchLimit",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "clientOrderId",
+            "type": "u128"
+          },
+          {
+            "name": "lastValidSlot",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "reduceOnly",
+            "docs": [
+              "Closing a position is an exit path, so reduce-only orders stay open in reduce-only status."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "cancelExisting",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixOrderKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "market"
+          },
+          {
+            "name": "limit"
+          },
+          {
+            "name": "postOnly"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixOrderPlaced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "orderbook",
+            "type": "pubkey"
+          },
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "phoenixSide"
+              }
+            }
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "phoenixOrderKind"
+              }
+            }
+          },
+          {
+            "name": "priceInTicks",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "numBaseLots",
+            "type": "u64"
+          },
+          {
+            "name": "reduceOnly",
+            "type": "bool"
+          },
+          {
+            "name": "baseLotsFilled",
+            "type": "u64"
+          },
+          {
+            "name": "quoteLotsFilled",
+            "type": "u64"
+          },
+          {
+            "name": "baseLotsPosted",
+            "type": "u64"
+          },
+          {
+            "name": "orderSequenceNumber",
+            "docs": [
+              "Set when part of the order rested on the book, the id cancels it by id."
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixOrdersCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "strategy",
+            "type": "pubkey"
+          },
+          {
+            "name": "orderbook",
+            "type": "pubkey"
+          },
+          {
+            "name": "mode",
+            "type": {
+              "defined": {
+                "name": "phoenixCancelMode"
+              }
+            }
+          },
+          {
+            "name": "strategyId",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixSelfTradeBehavior",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "abort"
+          },
+          {
+            "name": "cancelProvide"
+          },
+          {
+            "name": "decrementTake"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phoenixSide",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "bid"
+          },
+          {
+            "name": "ask"
           }
         ]
       }
@@ -6015,6 +7622,26 @@ export type HedgeVault = {
           {
             "name": "strategy",
             "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u32"
+          },
+          {
+            "name": "strategyType",
+            "type": {
+              "defined": {
+                "name": "hedge_vault::state::strategy::StrategyType"
+              }
+            }
+          },
+          {
+            "name": "createdTs",
+            "type": "i64"
+          },
+          {
+            "name": "closedTs",
+            "type": "i64"
           }
         ]
       }
@@ -6043,6 +7670,10 @@ export type HedgeVault = {
                 "name": "hedge_vault::state::strategy::StrategyType"
               }
             }
+          },
+          {
+            "name": "createdTs",
+            "type": "i64"
           }
         ]
       }
@@ -6863,6 +8494,15 @@ export type HedgeVault = {
             "fields": [
               {
                 "name": "position",
+                "type": "pubkey"
+              }
+            ]
+          },
+          {
+            "name": "phoenixPerp",
+            "fields": [
+              {
+                "name": "traderAccount",
                 "type": "pubkey"
               }
             ]

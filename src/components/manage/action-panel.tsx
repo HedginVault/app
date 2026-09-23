@@ -3,7 +3,6 @@
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { Tabs } from "@/components/ui/tabs";
 import type { PanelState } from "@/lib/panel-params";
 import { isOperational } from "@/lib/swap-logic";
 import type { HoldingsView, LpPositionView, PriceRange, VaultDetail } from "@/lib/types";
@@ -46,14 +45,6 @@ export function ActionPanel({
   return (
     <Card>
       <CardBody className="space-y-4">
-        <Tabs
-          tabs={[
-            { id: "swap", label: "Swap" },
-            { id: "lp", label: "Liquidity" },
-          ]}
-          value={state.panel}
-          onChange={(id) => onPrefill(id === "swap" ? { panel: "swap" } : { panel: "lp" })}
-        />
         <PoweredBy protocol={state.panel === "swap" ? "jupiter" : "meteora"} />
         {!isOperational(v) && (
           <p className="rounded-[10px] border border-amber-400/30 bg-warning-soft px-3 py-2 text-[12px] text-amber-200">

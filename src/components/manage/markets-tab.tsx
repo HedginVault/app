@@ -48,9 +48,22 @@ function chartTarget(
   return "pool" in state && state.pool && draftPoolTokenX ? { pool: state.pool, base: draftPoolTokenX } : undefined;
 }
 
-export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
+/** Chart plus trade panel for one action: the Swap tab (`panel="swap"`) or the Liquidity tab (`"lp"`). */
+export function MarketsTab({
+  v,
+  owner,
+  panel,
+  onSwitch,
+}: {
+  v: VaultDetail;
+  owner: string;
+  panel: PanelState["panel"];
+  /** Jump to the other action's tab, e.g. "swap for the missing token" from the liquidity form. */
+  onSwitch: (s: PanelState) => void;
+}) {
   const holdings = useHoldings(v.address);
-  const { state, replace } = usePanel();
+  const { state: urlState, replace } = usePanel();
+  const state: PanelState = urlState.panel === panel ? urlState : panel === "swap" ? { panel: "swap" } : { panel: "lp" };
   const [nonce, setNonce] = useState(0);
   // A lookback preset picks its own candle size; picking an interval directly clears the preset.
   const [lookback, setLookback] = useState<ChartRangeId | null>(DEFAULT_RANGE);
@@ -76,6 +89,7 @@ export function MarketsTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const { latest: ohlcv, candles, newest, from, loadMore, covered } = useCandles(target, tf, lookback);
 
   const prefill = (s: PanelState) => {
+    if (s.panel !== panel) return onSwitch(s);
     replace(s);
     setNonce((n) => n + 1);
   };

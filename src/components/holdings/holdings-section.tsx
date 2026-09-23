@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import type { MenuItem } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHoldings } from "@/hooks/queries";
-import { positionKey } from "@/lib/holdings";
+import { isEmptyPosition, positionKey } from "@/lib/holdings";
 import type { PositionView } from "@/lib/types";
 import { AllocationCard } from "./allocation-card";
 import { PositionCard } from "./position-card";
@@ -34,7 +34,7 @@ export function HoldingsSection({
       <Card>
         <CardHeader title="Positions" description="Where the vault's capital sits right now" />
         <div className="divide-y divide-border">
-          {h.positions.map((p) => (
+          {h.positions.filter((p) => !isEmptyPosition(p)).map((p) => (
             <PositionCard
               key={positionKey(p)}
               position={p}

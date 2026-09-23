@@ -23,6 +23,17 @@ export const depositTokenOf = (v: VaultDetail): TokenInfo => ({
 export const positionKey = (position: PositionView): string =>
   position.kind === "idle" ? `idle:${position.token.mint}` : `${position.kind}:${position.strategy}`;
 
+/**
+ * True for a zero-balance idle/swap/lp row: nothing to swap, sell, or add to. The underlying swap
+ * or LP strategy account may still be open on-chain (see `closable`) — this only hides the row from
+ * the Positions list, it does not close the account or reclaim its rent.
+ */
+export const isEmptyPosition = (position: PositionView): boolean => {
+  if (position.kind === "idle" || position.kind === "swap") return BigInt(position.amount) === 0n;
+  if (position.kind === "lp") return position.closable;
+  return false;
+};
+
 const sumValues = (list: ValuedHolding[]): bigint | null =>
   list.some((h) => h.value === null) ? null : list.reduce((a, h) => a + (h.value as bigint), 0n);
 

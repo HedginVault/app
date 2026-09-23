@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHoldingsView, positionKey } from "@/lib/holdings";
+import { buildHoldingsView, isEmptyPosition, positionKey } from "@/lib/holdings";
 import type { DlmmStrategyView, JupiterStrategyView, UnreadableStrategyView, VaultDetail } from "@/lib/types";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -131,5 +131,15 @@ describe("buildHoldingsView", () => {
     expect(h.positions.find((p) => p.kind === "swap")).toMatchObject({ closable: true });
     const lp = h.positions.find((p) => p.kind === "lp");
     expect(lp).toMatchObject({ closable: true, range: { inRange: false } });
+  });
+
+  it("marks zero-balance idle, swap, and closable lp positions empty; nonzero ones stay", () => {
+    const empty = { ...jupiter(100), vaultBalance: "0" };
+    const lpOut = { ...dlmm(100), amountX: "0", amountY: "0", pendingFeeX: "0", pendingFeeY: "0" };
+    const h = buildHoldingsView(vault({ idleBalance: "0", totalAssets: "0" }), [empty, lpOut]);
+    expect(h.positions.map(isEmptyPosition)).toEqual([true, true, true]);
+
+    const nonEmpty = buildHoldingsView(vault(), [dlmm(100), jupiter(100)]);
+    expect(nonEmpty.positions.map(isEmptyPosition)).toEqual([false, false, false]);
   });
 });

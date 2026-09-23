@@ -46,15 +46,17 @@ interface Widget {
 const RANGE = "#f97316";
 
 /** Locked Min/Max Bin lines plus a shaded band extended across the whole chart, like Meteora. Returns the entity ids. */
-function drawRange(chart: ActiveChart, range: PriceRange): Promise<EntityId[]> {
+function drawRange(chart: ActiveChart, range: PriceRange, other = false): Promise<EntityId[]> {
   const locked = { lock: true, disableSelection: true, disableSave: true, disableUndo: true };
+  const color = other ? "#38bdf8" : RANGE;
+  const fill = other ? "rgba(56,189,248,0.12)" : "rgba(249,115,22,0.16)";
   const line = (price: number, text: string) =>
     chart.createShape(
       { price },
       {
         shape: "horizontal_line",
         ...locked,
-        overrides: { linecolor: RANGE, linewidth: 1, linestyle: 0, showLabel: true, text, textcolor: RANGE, horzLabelsAlign: "left", vertLabelsAlign: "top" },
+        overrides: { linecolor: color, linewidth: 1, linestyle: other ? 2 : 0, showLabel: !other, text, textcolor: color, horzLabelsAlign: "left", vertLabelsAlign: "top" },
       },
     );
   const now = Math.floor(Date.now() / 1000);
@@ -66,7 +68,7 @@ function drawRange(chart: ActiveChart, range: PriceRange): Promise<EntityId[]> {
     {
       shape: "rectangle",
       ...locked,
-      overrides: { color: "rgba(0,0,0,0)", backgroundColor: "rgba(249,115,22,0.16)", fillBackground: true, extendLeft: true, extendRight: true, linewidth: 0 },
+      overrides: { color: "rgba(0,0,0,0)", backgroundColor: fill, fillBackground: true, extendLeft: true, extendRight: true, linewidth: 0 },
     },
   );
   // Older library builds return ids synchronously, newer ones return promises.
@@ -214,10 +216,13 @@ export function useChartingLibrary(): "loading" | "ready" | "missing" {
 export function TradingViewChart({
   target,
   range = null,
+  otherRanges,
   height = 520,
 }: {
   target: ChartTarget;
   range?: PriceRange | null;
+  /** The vault's other positions in the same pool, drawn muted. */
+  otherRanges?: PriceRange[];
   height?: number;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -292,6 +297,27 @@ export function TradingViewChart({
       if (widget.current === w) ids.forEach((id) => w.activeChart().removeEntity(id));
     };
   }, [min, max, ticker]);
+
+  const othersKey = otherRanges?.map((r) => `${r.min}:${r.max}`).join(",") ?? "";
+  useEffect(() => {
+    const w = widget.current;
+    if (!w || !othersKey) return;
+    const list = othersKey.split(",").map((k) => ({ min: Number(k.split(":")[0]), max: Number(k.split(":")[1]) }));
+    let ids: EntityId[] = [];
+    let cancelled = false;
+    const draw = () =>
+      void Promise.all(list.map((r) => drawRange(w.activeChart(), r, true))).then((created) => {
+        const flat = created.flat();
+        if (cancelled) flat.forEach((id) => w.activeChart().removeEntity(id));
+        else ids = flat;
+      });
+    if (ready.current) draw();
+    else w.onChartReady(draw);
+    return () => {
+      cancelled = true;
+      if (widget.current === w) ids.forEach((id) => w.activeChart().removeEntity(id));
+    };
+  }, [othersKey, ticker]);
 
   return <div ref={container} style={{ height }} className="w-full overflow-hidden rounded-[10px]" />;
 }

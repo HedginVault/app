@@ -25,11 +25,13 @@ const HIT_PX = 6;
 const UP = "#38bdf8";
 const DOWN = "#f87171";
 const RANGE = "#f97316";
+const OTHER_FILL = "rgba(56,189,248,0.12)";
 const RANGE_FILL = "rgba(249,115,22,0.16)";
 
 /** Orange band between the range's min and max price, drawn under the candles and redrawn with every scale change. */
 class RangeBand implements ISeriesPrimitive<Time> {
-  private range: PriceRange | null = null;
+  private ranges: PriceRange[] = [];
+  constructor(private readonly fill = RANGE_FILL) {}
   private attachment: SeriesAttachedParameter<Time> | null = null;
   private readonly view: IPrimitivePaneView = {
     zOrder: () => "bottom",
@@ -37,12 +39,14 @@ class RangeBand implements ISeriesPrimitive<Time> {
       draw: (target) =>
         target.useBitmapCoordinateSpace(({ context, bitmapSize, verticalPixelRatio }) => {
           const series = this.attachment?.series;
-          if (!series || !this.range) return;
-          const top = series.priceToCoordinate(this.range.max);
-          const bottom = series.priceToCoordinate(this.range.min);
-          if (top === null || bottom === null) return;
-          context.fillStyle = RANGE_FILL;
-          context.fillRect(0, Math.min(top, bottom) * verticalPixelRatio, bitmapSize.width, Math.abs(bottom - top) * verticalPixelRatio);
+          if (!series) return;
+          context.fillStyle = this.fill;
+          for (const r of this.ranges) {
+            const top = series.priceToCoordinate(r.max);
+            const bottom = series.priceToCoordinate(r.min);
+            if (top === null || bottom === null) continue;
+            context.fillRect(0, Math.min(top, bottom) * verticalPixelRatio, bitmapSize.width, Math.abs(bottom - top) * verticalPixelRatio);
+          }
         }),
     }),
   };
@@ -55,8 +59,8 @@ class RangeBand implements ISeriesPrimitive<Time> {
   paneViews() {
     return [this.view];
   }
-  setRange(range: PriceRange | null) {
-    this.range = range;
+  setRanges(ranges: PriceRange[]) {
+    this.ranges = ranges;
     this.attachment?.requestUpdate();
   }
 }
@@ -88,6 +92,7 @@ export interface ChartView {
 export function PriceChart({
   candles,
   range = null,
+  otherRanges,
   height = 360,
   view,
   ready = true,
@@ -98,6 +103,8 @@ export function PriceChart({
   candles: Candle[];
   /** LP range drawn as Min/Max Bin lines with a shaded band, like Meteora. */
   range?: PriceRange | null;
+  /** The vault's other positions in the same pool: shaded only, not draggable. */
+  otherRanges?: PriceRange[];
   height?: number;
   view?: ChartView;
   /** False while history for `view.from` is still loading, so the frame waits for the data. */
@@ -114,6 +121,7 @@ export function PriceChart({
   const price = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volume = useRef<ISeriesApi<"Histogram"> | null>(null);
   const band = useRef(new RangeBand());
+  const otherBands = useRef(new RangeBand(OTHER_FILL));
   const lines = useRef<IPriceLine[]>([]);
   const loadMore = useRef(onLoadMore);
   const shown = useRef<{ first: number; last: number; count: number } | null>(null);
@@ -160,6 +168,7 @@ export function PriceChart({
     framed.current = null;
     shown.current = null;
     price.current.attachPrimitive(band.current);
+    price.current.attachPrimitive(otherBands.current);
     const nearOldest = (r: LogicalRange | null) => {
       if (r && r.from < LOAD_MORE_BARS) loadMore.current?.();
     };
@@ -285,7 +294,7 @@ export function PriceChart({
   useEffect(() => {
     const series = price.current;
     if (!series) return;
-    band.current.setRange(range);
+    band.current.setRanges(range ? [range] : []);
     for (const line of lines.current) series.removePriceLine(line);
     lines.current = range
       ? [
@@ -308,6 +317,12 @@ export function PriceChart({
       },
     });
   }, [range?.min, range?.max]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Only the values matter; the parent rebuilds the array every render.
+  const othersKey = otherRanges?.map((r) => `${r.min}:${r.max}`).join(",") ?? "";
+  useEffect(() => {
+    otherBands.current.setRanges(othersKey ? othersKey.split(",").map((k) => ({ min: Number(k.split(":")[0]), max: Number(k.split(":")[1]) })) : []);
+  }, [othersKey]);
 
   return (
     <div ref={el} className="w-full min-w-0 overflow-hidden" style={{ height }} />

@@ -22,6 +22,7 @@ import { formatPrice } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
 import type { ChartTarget, HoldingsView, MarketTimeframe, PriceRange, VaultDetail } from "@/lib/types";
 import { ActionPanel } from "./action-panel";
+import { OpenPositions } from "./open-positions";
 import { PriceChart } from "./price-chart";
 import { TradingViewChart, useChartingLibrary } from "./tradingview-chart";
 
@@ -84,6 +85,13 @@ export function MarketsTab({
       : managed?.kind === "lp"
         ? { min: Number(managed.range.lowerPrice), max: Number(managed.range.upperPrice) }
         : draftRange;
+  // Other open positions in the charted pool, so a new layer can be placed around them.
+  const chartedPool = target && "pool" in target ? target.pool : undefined;
+  const otherRanges: PriceRange[] = [];
+  if (state.panel === "lp" && chartedPool)
+    for (const p of holdings.data?.positions ?? [])
+      if (p.kind === "lp" && p.lbPair === chartedPool && !(managed?.kind === "lp" && p.position === managed.position))
+        otherRanges.push({ min: Number(p.range.lowerPrice), max: Number(p.range.upperPrice) });
   const library = useChartingLibrary();
   const tv = library === "ready";
   const { latest: ohlcv, candles, newest, from, loadMore, covered } = useCandles(target, tf, lookback);
@@ -110,7 +118,8 @@ export function MarketsTab({
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-      <Card className="min-w-0 self-start">
+      <div className="min-w-0 space-y-6 self-start">
+      <Card className="min-w-0">
         <CardBody className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
@@ -151,7 +160,7 @@ export function MarketsTab({
           ) : library === "loading" ? (
             <Skeleton className="h-[360px]" />
           ) : tv ? (
-            <TradingViewChart target={target} range={range} />
+            <TradingViewChart target={target} range={range} otherRanges={otherRanges} />
           ) : ohlcv.error ? (
             <div className="grid h-[360px] place-items-center">
               <ErrorState message={ohlcv.error.message} onRetry={() => void ohlcv.refetch()} />
@@ -162,6 +171,7 @@ export function MarketsTab({
             <PriceChart
               candles={candles}
               range={range}
+              otherRanges={otherRanges}
               view={{ key: `${targetId}:${tf}:${lookback ?? ""}`, from }}
               ready={covered}
               intraday={isIntraday(tf)}
@@ -198,6 +208,8 @@ export function MarketsTab({
           </div>
         </CardBody>
       </Card>
+      {panel === "lp" && holdings.data && <OpenPositions holdings={holdings.data} state={state} onSelect={prefill} />}
+      </div>
 
       <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         {holdings.data ? (

@@ -1,11 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getManagerPda, getVaultPda } from "@/server/pda";
+import { getManagerPda, getStrategyPda, getVaultPda } from "@/server/pda";
 import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, getProgram } from "@/server/program";
 import type { VaultCtx } from "@/server/tx/context";
 import {
   claimManagerFeeIx,
+  closeJupiterStrategyIx,
   closeStrategyIx,
   encodeName,
   toStatusArg,
@@ -103,5 +105,19 @@ describe("closeStrategyIx", () => {
   it("rejects a missing strategy account with 404", async () => {
     stub(null);
     await expect(closeStrategyIx(program, ctx, pk(5), pk(6))).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("closeJupiterStrategyIx", () => {
+  it("uses the known target mint to close the strategy and its vault ATA without an RPC read", async () => {
+    const targetMint = pk(9);
+    const ix = await closeJupiterStrategyIx(getProgram(), ctx, pk(5), targetMint, TOKEN_PROGRAM);
+    expect(keys(ix)).toEqual(
+      expect.arrayContaining([
+        getStrategyPda(ctx.key, targetMint).toBase58(),
+        getAssociatedTokenAddressSync(targetMint, ctx.key, true, TOKEN_PROGRAM).toBase58(),
+        TOKEN_PROGRAM.toBase58(),
+      ]),
+    );
   });
 });

@@ -11,6 +11,7 @@ import {
 import type { BuiltTransaction } from "@/lib/types";
 import { ApiError, decodeAnchorError } from "../errors";
 import { getConnection } from "../program";
+import { getPriorityFeeMicroLamports } from "./priority-fee";
 
 interface AssembleOptions {
   lookupTables?: AddressLookupTableAccount[];
@@ -25,16 +26,28 @@ export async function assemble(
   { lookupTables = [], signers = [], computeUnits = 1_400_000 }: AssembleOptions = {},
 ): Promise<BuiltTransaction> {
   const connection = getConnection();
-  const { blockhash } = await connection.getLatestBlockhash("confirmed");
-  const message = new TransactionMessage({
+  const writableAccounts = [
+    ...new Map(
+      [payer, ...instructions.flatMap((ix) => ix.keys.filter((key) => key.isWritable).map((key) => key.pubkey))].map(
+        (key) => [key.toBase58(), key],
+      ),
+    ).values(),
+  ].slice(0, 128);
+  const priorityFeeMicroLamports = await getPriorityFeeMicroLamports(connection, writableAccounts);
+  const budgetInstructions = (units: number) => [
+    ComputeBudgetProgram.setComputeUnitLimit({ units }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: priorityFeeMicroLamports }),
+  ];
+  const compile = (blockhash: string, units: number) => new TransactionMessage({
     payerKey: payer,
     recentBlockhash: blockhash,
-    instructions: [ComputeBudgetProgram.setComputeUnitLimit({ units: computeUnits }), ...instructions],
+    instructions: [...budgetInstructions(units), ...instructions],
   }).compileToV0Message(lookupTables);
-  const tx = new VersionedTransaction(message);
-  if (signers.length) tx.sign(signers);
 
-  const sim = await connection.simulateTransaction(tx, { sigVerify: false, replaceRecentBlockhash: true });
+  // Simulate before fetching the final blockhash. This gives wallet approval the full blockhash
+  // lifetime and lets the paid CU limit reflect this transaction instead of the 1.4M ceiling.
+  const simulationTx = new VersionedTransaction(compile(PublicKey.default.toBase58(), computeUnits));
+  const sim = await connection.simulateTransaction(simulationTx, { sigVerify: false, replaceRecentBlockhash: true });
   if (sim.value.err) {
     const logs = sim.value.logs ?? [];
     const decoded = decodeAnchorError(logs);
@@ -45,6 +58,13 @@ export async function assemble(
       logs,
     );
   }
+
+  const consumed = sim.value.unitsConsumed ?? computeUnits;
+  const finalComputeUnits = Math.min(computeUnits, Math.max(consumed, Math.ceil(consumed * 1.2) + 10_000));
+  // Fetch the blockhash after every advisory/provider call so wallet approval gets its full lifetime.
+  const { blockhash } = await connection.getLatestBlockhash("confirmed");
+  const tx = new VersionedTransaction(compile(blockhash, finalComputeUnits));
+  if (signers.length) tx.sign(signers);
 
   return {
     transaction: Buffer.from(tx.serialize()).toString("base64"),

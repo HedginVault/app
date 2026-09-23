@@ -9,7 +9,7 @@ import {
 } from "@solana/web3.js";
 
 /**
- * Whether the instructions (plus the compute-budget instruction `assemble` prepends) serialize into
+ * Whether the instructions (plus the compute-budget instructions `assemble` prepends) serialize into
  * one packet. Pure: compiles against a placeholder blockhash. The serialized length is measured
  * rather than inferred from `serialize()` throwing: that RangeError ("encoding overruns
  * Uint8Array") only fires once the message alone passes the limit, which misses a transaction whose
@@ -24,7 +24,11 @@ export function fitsInTransaction(
     const message = new TransactionMessage({
       payerKey: payer,
       recentBlockhash: PublicKey.default.toBase58(),
-      instructions: [ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }), ...instructions],
+      instructions: [
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 10_000 }),
+        ...instructions,
+      ],
     }).compileToV0Message(lookupTables);
     return new VersionedTransaction(message).serialize().length <= PACKET_DATA_SIZE;
   } catch (e) {

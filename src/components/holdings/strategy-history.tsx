@@ -7,15 +7,47 @@ import { useStrategyHistory } from "@/hooks/queries";
 import { formatTokenAmount } from "@/lib/format";
 import type { StrategyHistoryToken } from "@/lib/types";
 
-const signed = (token: StrategyHistoryToken) => {
-  const value = BigInt(token.realizedPnl);
-  const magnitude = value < 0n ? -value : value;
-  const formatted = token.decimals === null ? magnitude.toString() : formatTokenAmount(magnitude.toString(), token.decimals);
-  return `${value > 0n ? "+" : value < 0n ? "−" : ""}${formatted}`;
-};
-
 const amount = (value: string, token: StrategyHistoryToken) =>
   token.decimals === null ? `${value} base units` : formatTokenAmount(value, token.decimals);
+
+const signedAmount = (value: string, token: StrategyHistoryToken) => {
+  const raw = BigInt(value);
+  const magnitude = raw < 0n ? -raw : raw;
+  const formatted = token.decimals === null ? magnitude.toString() : formatTokenAmount(magnitude.toString(), token.decimals);
+  return `${raw > 0n ? "+" : raw < 0n ? "−" : ""}${formatted}`;
+};
+
+const symbol = (token: StrategyHistoryToken) => token.symbol ?? `${token.mint.slice(0, 4)}…${token.mint.slice(-4)}`;
+
+const duration = (openedTs: number | null, closedTs: number) => {
+  if (openedTs === null) return "—";
+  const seconds = Math.max(0, closedTs - openedTs);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
+const TokenLines = ({
+  tokens,
+  render,
+}: {
+  tokens: StrategyHistoryToken[];
+  render: (token: StrategyHistoryToken) => string;
+}) => (
+  <div className="space-y-0.5">
+    {tokens.map((token) => (
+      <span key={token.mint} className="block whitespace-nowrap">
+        {render(token)} {symbol(token)}
+      </span>
+    ))}
+  </div>
+);
+
+const th = "pb-2 pr-4 text-left text-xs font-medium uppercase tracking-wide text-muted";
+const td = "py-3 pr-4 align-top tabular-nums";
 
 export function StrategyHistory({ address }: { address: string }) {
   const history = useStrategyHistory(address);
@@ -35,46 +67,70 @@ export function StrategyHistory({ address }: { address: string }) {
   return (
     <Card>
       <CardHeader title="Closed positions" description="Exact on-chain token cash flows for completed strategies" />
-      <div className="divide-y divide-border">
-        {history.data.map((position) => (
-          <article key={`${position.strategy}:${position.id ?? position.closeSignature}`} className="space-y-4 px-5 py-5 sm:px-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-medium capitalize">{position.type ?? "Legacy"} position{position.id === null ? "" : ` #${position.id}`}</p>
-                <p className="mt-1 text-xs text-muted">
-                  Closed {new Date(position.closedTs * 1000).toLocaleString()}
-                </p>
-              </div>
-              <span className={`rounded-full px-2.5 py-1 text-xs ${position.exact ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>
-                {position.exact ? "Exact" : "Legacy · incomplete"}
-              </span>
-            </div>
-            {position.tokens.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-left text-sm">
-                  <thead className="text-xs text-muted">
-                    <tr><th className="pb-2 font-medium">Token</th><th className="pb-2 font-medium">Contributed</th><th className="pb-2 font-medium">Returned</th><th className="pb-2 font-medium">Fees</th><th className="pb-2 text-right font-medium">Realized PnL</th></tr>
-                  </thead>
-                  <tbody>
-                    {position.tokens.map((token) => (
-                      <tr key={token.mint} className="border-t border-border/70 tabular-nums">
-                        <td className="py-3">{token.symbol ?? `${token.mint.slice(0, 4)}…${token.mint.slice(-4)}`}</td>
-                        <td className="py-3 text-white/70">{amount(token.contributed, token)}</td>
-                        <td className="py-3 text-white/70">{amount(token.returned, token)}</td>
-                        <td className="py-3 text-white/70">
-                          <span className="block">Gross {amount(token.feesGross, token)}</span>
-                          <span className="block text-xs text-muted">Treasury {amount(token.feesTreasury, token)} · vault {amount(token.feesRetained, token)}</span>
-                        </td>
-                        <td className="py-3 text-right font-medium">{signed(token)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
+      <CardBody className="overflow-x-auto pt-0">
+        <table className="w-full min-w-[760px] border-collapse font-mono text-sm">
+          <thead>
+            <tr className="border-b border-border [&>th:last-child]:pr-0">
+              <th className={th}>#</th>
+              <th className={th}>Type</th>
+              <th className={th}>Closed</th>
+              <th className={th}>Duration</th>
+              <th className={th}>Deposited</th>
+              <th className={th}>Withdrawn</th>
+              <th className={th}>Realized PnL</th>
+              <th className={th}>Fees (net)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.data.map((position, index) => (
+              <tr key={`${position.strategy}:${position.id ?? position.closeSignature}`} className="border-b border-border/60 last:border-b-0">
+                <td className={`${td} text-muted`}>{history.data.length - index}</td>
+                <td className={td}>
+                  <span className="capitalize">{position.type ?? "legacy"}</span>
+                  {!position.exact && (
+                    <span
+                      className="ml-2 rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-300"
+                      title="Position predates exact on-chain accounting; totals may be incomplete."
+                    >
+                      Legacy
+                    </span>
+                  )}
+                </td>
+                <td className={`${td} whitespace-nowrap text-white/70`}>{new Date(position.closedTs * 1000).toLocaleString()}</td>
+                <td className={`${td} text-white/70`}>{duration(position.openedTs, position.closedTs)}</td>
+                <td className={td}>
+                  {position.tokens.length > 0 ? <TokenLines tokens={position.tokens} render={(t) => amount(t.contributed, t)} /> : "—"}
+                </td>
+                <td className={td}>
+                  {position.tokens.length > 0 ? <TokenLines tokens={position.tokens} render={(t) => amount(t.returned, t)} /> : "—"}
+                </td>
+                <td className={td}>
+                  {position.tokens.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {position.tokens.map((token) => {
+                        const raw = BigInt(token.realizedPnl);
+                        return (
+                          <span
+                            key={token.mint}
+                            className={`block whitespace-nowrap font-medium ${raw > 0n ? "text-emerald-400" : raw < 0n ? "text-rose-400" : "text-white/70"}`}
+                          >
+                            {signedAmount(token.realizedPnl, token)} {symbol(token)}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-3 pr-0 align-top tabular-nums">
+                  {position.tokens.length > 0 ? <TokenLines tokens={position.tokens} render={(t) => amount(t.feesRetained, t)} /> : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardBody>
     </Card>
   );
 }

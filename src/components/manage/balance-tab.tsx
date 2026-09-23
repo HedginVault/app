@@ -64,10 +64,45 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         }),
     });
 
+  const zapPosition = (position: string, pair: string) =>
+    setConfirming({
+      title: `Zap ${pair} to ${v.depositSymbol}`,
+      body: `All liquidity is removed, fees are claimed, and non-${v.depositSymbol} pool tokens in the vault are swapped to ${v.depositSymbol}. This can require multiple wallet approvals because swaps are quoted after the close confirms. Closed-account rent is returned; a missing treasury token account can still cost rent.`,
+      label: `Zap out to ${v.depositSymbol}`,
+      run: () =>
+        void send({
+          label: `Zap ${pair}`,
+          vault: v.address,
+          build: () =>
+            api.build("dlmm/zap-out", {
+              payer: owner,
+              vault: v.address,
+              position,
+              slippageBps: Math.min(50, v.protocol.maxSlippageBps),
+            }),
+        }),
+    });
+
   const operational = isOperational(v);
   const actionsFor = (p: PositionView): MenuItem[] => {
     if (p.kind === "error") return [];
-    if (p.kind === "idle") return [{ label: `Swap ${p.token.symbol}`, onSelect: () => prefill({ panel: "swap", from: v.depositMint }) }];
+    if (p.kind === "idle")
+      return p.token.mint === v.depositMint
+        ? [{ label: `Swap ${p.token.symbol}`, onSelect: () => prefill({ panel: "swap", from: v.depositMint }) }]
+        : [
+            {
+              label: `Swap ${p.token.symbol} to ${v.depositSymbol}`,
+              disabled: BigInt(p.amount) === 0n,
+              reason: "Nothing to sell",
+              onSelect: () =>
+                prefill({
+                  panel: "swap",
+                  from: p.token.mint,
+                  to: v.depositMint,
+                  amount: rawToInput(p.amount, p.token.decimals),
+                }),
+            },
+          ];
     if (p.kind === "swap")
       return [
         { label: `Buy more ${p.token.symbol}`, onSelect: () => prefill({ panel: "swap", from: v.depositMint, to: p.token.mint }) },
@@ -101,8 +136,14 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         onSelect: () => prefill({ panel: "lp", position: p.position, mode: "claim" }),
       },
       {
-        label: "Close position",
+        label: `Zap out to ${v.depositSymbol}`,
         primary: true,
+        disabled: !operational || pending,
+        reason: "Vault not operational",
+        onSelect: () => zapPosition(p.position, pair),
+      },
+      {
+        label: "Close position",
         disabled: !operational || pending,
         reason: "Vault not operational",
         onSelect: () => closePosition(p.position, pair),

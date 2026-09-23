@@ -42,7 +42,7 @@ export async function getQuote(
   slippageBps: number,
 ): Promise<{ raw: QuoteResponse; view: QuoteView }> {
   const res = await fetch(
-    `${BASE_URL}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}&swapMode=ExactIn`,
+    `${BASE_URL}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}&swapMode=ExactIn&onlyDirectRoutes=true`,
     { headers: headers() },
   );
   if (!res.ok) throw new ApiError(502, "JupiterQuoteFailed", `Jupiter quote failed: ${await res.text()}`);
@@ -75,6 +75,7 @@ function deserializeInstruction(ix: JupiterInstruction) {
 }
 
 async function getLookupTables(keys: string[]) {
+  if (keys.length === 0) return [];
   const infos = await getConnection().getMultipleAccountsInfo(keys.map((k) => new PublicKey(k)));
   return infos.flatMap((info, i) =>
     info
@@ -121,17 +122,32 @@ export async function getJupiterSwap(
         true,
         outputTokenProgram,
       ).toBase58(),
-      useSharedAccounts: true,
+      // The vault PDA, not the manager wallet, signs the Jupiter CPI. Shared-account routes can
+      // forward a separate `real_user` to newer AMMs and lose that PDA signer privilege.
+      useSharedAccounts: false,
       wrapAndUnwrapSol: false,
       dynamicSlippage: false,
     }),
   });
   if (!res.ok) throw new ApiError(502, "JupiterSwapFailed", `Jupiter swap-instructions failed: ${await res.text()}`);
-  const { swapInstruction, addressLookupTableAddresses } = (await res.json()) as {
+  const { swapInstruction, setupInstructions = [], cleanupInstruction, addressLookupTableAddresses } = (await res.json()) as {
     swapInstruction: JupiterInstruction;
+    setupInstructions?: JupiterInstruction[];
+    cleanupInstruction?: JupiterInstruction | null;
     addressLookupTableAddresses: string[];
   };
   const instruction = deserializeInstruction(swapInstruction);
+  const discriminator = Array.from(instruction.data.subarray(0, 8));
+  const shared = [SHARED_ACCOUNTS_ROUTE, SHARED_ACCOUNTS_EXACT_OUT_ROUTE].some((candidate) =>
+    candidate.every((value, index) => value === discriminator[index]),
+  );
+  if (shared || setupInstructions.length > 0 || cleanupInstruction) {
+    throw new ApiError(
+      502,
+      "JupiterUnsupportedCpiRoute",
+      "Jupiter returned a route that requires user-level accounts instead of a direct vault CPI",
+    );
+  }
   return {
     swapData: instruction.data,
     remainingAccounts: extractRemainingAccounts(instruction),

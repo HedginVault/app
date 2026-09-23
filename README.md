@@ -115,7 +115,9 @@ routes return more than the transaction: `vault/initialize` returns `BuiltTransa
 `BuiltTransaction & { position, lowerBinId, upperBinId }` (the generated position key and the range
 the position account will actually store). A builder that cannot fit its work in one transaction
 returns the first transaction plus `next: { path, body }` (`BuiltStep`); the client builds it after
-the first confirms. Every builder is rate limited per IP.
+the first confirms. Builders add a bounded recent-market priority fee, simulate before fetching the
+final blockhash, and size the paid compute limit from observed usage. Every builder is rate limited
+per IP.
 
 | Path | Body beyond `payer`/`vault` | Who may call |
 | --- | --- | --- |
@@ -131,12 +133,13 @@ the first confirms. Every builder is rate limited per IP.
 | `/api/tx/withdrawal/resolve` | `withdrawer` | anyone |
 | `/api/tx/resolve-batch` | — | anyone; returns every resolvable request, chunked into transactions |
 | `/api/tx/jupiter/initialize` | `targetMint` | vault authority |
-| `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps`; initializes the Jupiter strategy for the target mint when missing (`initializesStrategy`) | vault authority |
+| `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps`; initializes the Jupiter strategy for the target mint when missing (`initializesStrategy`); requests a direct non-shared Jupiter route so the vault PDA remains the CPI signer | vault authority |
 | `/api/tx/dlmm/initialize` | `lbPair`, and either `width` or `lowerBinId`/`upperBinId` (at most 70 bins — the DLMM cap for a position created without an extend) | vault authority |
 | `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 70 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/remove` | `position`, `bpsToRemove` | vault authority |
 | `/api/tx/dlmm/claim-fee` | `position` | vault authority |
+| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; removes all liquidity, claims fees, closes the DLMM position, then swaps only the non-deposit tokens returned by that position into the vault deposit mint (pre-existing idle balances are preserved) | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
 
 ### API — send and confirm
@@ -144,7 +147,7 @@ the first confirms. Every builder is rate limited per IP.
 | Path | What it does |
 | --- | --- |
 | `POST /api/tx/send` | Body `{ transaction }`: the wallet-signed transaction in base64. Relays it through `RPC_URL` with preflight and returns `{ signature }`. Only forwards transactions that invoke the hedge_vault program and carry a fee-payer signature; a preflight failure is a `422` with the decoded error. Shares the per-IP builder rate limit. |
-| `GET /api/tx/status?signature=&blockhash=` | `{ status: "pending" \| "confirmed" \| "expired" }`, or `{ status: "failed", code, message, logs }`. `expired` means the blockhash can no longer land and the signature was never seen. Uncached, with its own per-IP rate limit bucket. |
+| `GET /api/tx/status?signature=&blockhash=` | `{ status: "pending" \| "confirmed" \| "expired" }`, or `{ status: "failed", code, message, logs }`. Before returning `expired`, the server verifies the blockhash can no longer land and searches transaction history for the signature. Uncached, with its own per-IP rate limit bucket. |
 
 Manager-only routes call `assertAuthority` before assembling anything; the UI guard is convenience,
 the server check plus the program's `validate_authority()` check in each handler is the enforcement.

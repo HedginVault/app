@@ -64,10 +64,13 @@ describe("parseSignedTransaction", () => {
 
 describe("sendSignedTransaction", () => {
   it("returns the signature from the server's connection", async () => {
-    const sendRawTransaction = vi.fn(async () => "sig");
+    const sendRawTransaction = vi
+      .fn<(bytes: Uint8Array, options?: { preflightCommitment: string }) => Promise<string>>()
+      .mockResolvedValue("sig");
     mocked.connection = { sendRawTransaction };
     expect(await sendSignedTransaction(build(PROGRAM_ID))).toEqual({ signature: "sig" });
     expect(sendRawTransaction).toHaveBeenCalledOnce();
+    expect(sendRawTransaction.mock.calls[0][1]).toEqual({ preflightCommitment: "confirmed" });
   });
   it("turns a preflight failure into a 422 with the decoded Anchor error", async () => {
     mocked.connection = {
@@ -114,8 +117,12 @@ describe("getTransactionStatus", () => {
     expect(await getTransactionStatus("sig", BLOCKHASH)).toEqual({ status: "pending" });
   });
   it("is expired once the blockhash is invalid and the signature never appeared", async () => {
-    mocked.connection = connection([null], false);
+    const rpc = connection([null], false);
+    mocked.connection = rpc;
     expect(await getTransactionStatus("sig", BLOCKHASH)).toEqual({ status: "expired" });
+    expect(rpc.getSignatureStatuses).toHaveBeenLastCalledWith(["sig"], {
+      searchTransactionHistory: true,
+    });
   });
   it("re-checks after expiry, since it may have landed in the last valid block", async () => {
     mocked.connection = connection([null, { confirmationStatus: "confirmed", err: null }], false);

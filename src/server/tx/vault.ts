@@ -5,7 +5,7 @@ import type BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { Status } from "@/lib/types";
 import { ApiError } from "../errors";
-import { getConfigPda, getManagerPda, getVaultPda } from "../pda";
+import { getConfigPda, getManagerPda, getStrategyPda, getVaultPda } from "../pda";
 import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID } from "../program";
 import { getTokenProgram } from "../tokens";
 import type { VaultCtx } from "./context";
@@ -132,3 +132,25 @@ export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: Publ
     .remainingAccounts(remainingAccounts)
     .instruction();
 }
+
+/** Builds the existing close-strategy instruction when the Jupiter target is already known. */
+export const closeJupiterStrategyIx = (
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  targetMint: PublicKey,
+  tokenProgram: PublicKey,
+) =>
+  program.methods
+    .vaultCloseStrategy()
+    .accounts({
+      authority,
+      config: getConfigPda(),
+      vault: ctx.key,
+      strategy: getStrategyPda(ctx.key, targetMint),
+    })
+    .remainingAccounts([
+      writable(getAssociatedTokenAddressSync(targetMint, ctx.key, true, tokenProgram)),
+      readonly(tokenProgram),
+    ])
+    .instruction();

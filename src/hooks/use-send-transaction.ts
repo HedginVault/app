@@ -17,6 +17,8 @@ export interface SendOptions {
   onSuccess?: (signatures: string[]) => void;
   /** Per-transaction progress, for step lists in review dialogs. */
   onProgress?: (p: StepProgress) => void;
+  /** Names each transaction in a multi-tx flow (e.g. ["Create position", "Add liquidity"]) so the toast names the step instead of "(step N)". */
+  stepLabels?: string[];
 }
 
 const POLL_MS = 2_000;
@@ -71,7 +73,7 @@ export function useSendTransaction() {
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
-  const send = async ({ label, build, vault, onSuccess, onProgress }: SendOptions): Promise<string[] | null> => {
+  const send = async ({ label, build, vault, onSuccess, onProgress, stepLabels }: SendOptions): Promise<string[] | null> => {
     if (!publicKey) {
       toast.error("Connect a wallet first");
       return null;
@@ -94,7 +96,11 @@ export function useSendTransaction() {
         buildNext: (next) => api.build(next.path, { ...next.body, payer }),
         onProgress,
         execute: async (b, index, report) => {
-          const step = index > 0 || b.next ? ` (step ${index + 1})` : "";
+          const step = stepLabels?.[index]
+            ? ` — ${stepLabels[index]}`
+            : index > 0 || b.next
+              ? ` (step ${index + 1})`
+              : "";
           report("signing");
           toast.loading(`${label}${step}: approve in wallet`, { id });
           const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));

@@ -40,7 +40,6 @@ export async function sendSignedTransaction(base64: string): Promise<SentTransac
   try {
     const signature = await getConnection().sendRawTransaction(tx.serialize(), {
       preflightCommitment: "confirmed",
-      maxRetries: 5,
     });
     return { signature };
   } catch (e) {
@@ -62,13 +61,16 @@ export async function sendSignedTransaction(base64: string): Promise<SentTransac
  */
 export async function getTransactionStatus(signature: string, blockhash: string): Promise<TransactionStatus> {
   const connection = getConnection();
-  const lookup = async () => (await connection.getSignatureStatuses([signature])).value[0];
+  const lookup = async (searchTransactionHistory = false) =>
+    (await connection.getSignatureStatuses([signature], { searchTransactionHistory })).value[0];
 
   let status = await lookup();
   if (!status) {
     const { value: valid } = await connection.isBlockhashValid(blockhash, { commitment: "confirmed" });
     if (valid) return { status: "pending" };
-    status = await lookup();
+    // The recent-status cache may no longer contain the signature by the time its blockhash
+    // expires. Search confirmed ledger history before classifying the outcome as never landed.
+    status = await lookup(true);
     if (!status) return { status: "expired" };
   }
   if (status.confirmationStatus !== "confirmed" && status.confirmationStatus !== "finalized") {

@@ -36,3 +36,26 @@ export const dlmmOpenBody = z.object({
   shape,
   maxActiveBinSlippage,
 });
+
+export const dlmmZapOutBody = z.object({
+  payer: pubkey,
+  vault: pubkey,
+  position: pubkey,
+  slippageBps: z.number().int().min(1).max(10_000),
+});
+
+export const dlmmZapOutSwapBody = z.object({
+  payer: pubkey,
+  vault: pubkey,
+  sources: z
+    .array(
+      z.object({
+        mint: pubkey,
+        balanceBefore: amountString,
+        closeWhenEmpty: z.boolean().optional(),
+      }),
+    )
+    .min(1)
+    .max(2),
+  slippageBps: z.number().int().min(1).max(10_000),
+});

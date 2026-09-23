@@ -259,21 +259,20 @@ export async function dlmmRemoveLiquidityIx(
   return [...createAtaIxs, ix];
 }
 
-/** Removes all liquidity, claims outstanding fees, and closes the position in one instruction. */
 /**
  * Removes all liquidity, claims fees, and closes the position, bundled into one transaction from
  * the existing remove/claim/close-strategy instructions. A single DLMM position tops out at 70 bins
  * (Meteora's own `POSITION_MAX_LENGTH`), so this always needs at most 1-2 bin array accounts and
  * comfortably fits the 1232-byte tx limit without a dedicated on-chain instruction.
  */
-export async function dlmmClosePositionIx(
+async function buildDlmmClosePosition(
   program: P,
   ctx: VaultCtx,
   authority: PublicKey,
   position: PublicKey,
   treasuryAuthority: PublicKey,
 ) {
-  const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
+  const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
     ctx.key,
     position,
     authority,
@@ -289,8 +288,24 @@ export async function dlmmClosePositionIx(
     .remainingAccounts(remainingAccounts)
     .instruction();
   const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy);
-  return [...createAtaIxs, removeIx, claimIx, closeIx];
+  return {
+    ixs: [...createAtaIxs, removeIx, claimIx, closeIx],
+    tokenMints: [dlmm.tokenX.publicKey, dlmm.tokenY.publicKey],
+  };
 }
+
+export async function dlmmClosePositionIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  treasuryAuthority: PublicKey,
+) {
+  return (await buildDlmmClosePosition(program, ctx, authority, position, treasuryAuthority)).ixs;
+}
+
+/** Close instructions plus the pool mints needed by the post-confirmation zap swap. */
+export const dlmmZapOutIxs = buildDlmmClosePosition;
 
 export async function dlmmClaimFeeIx(
   program: P,

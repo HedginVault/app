@@ -44,6 +44,7 @@ export function ManagePosition({
   const { send, pending } = useSendTransaction();
   const [reviewing, setReviewing] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [zapping, setZapping] = useState(false);
   const [inputX, setInputX] = useState("");
   const [inputY, setInputY] = useState("");
   const [shape, setShape] = useState<DlmmShape>("spot");
@@ -153,6 +154,15 @@ export function ManagePosition({
       )}
 
       <Button
+        className="w-full"
+        loading={pending}
+        disabled={!operational}
+        onClick={() => setZapping(true)}
+      >
+        Zap out to {v.depositSymbol}
+      </Button>
+
+      <Button
         variant="secondary"
         className="w-full"
         loading={pending}
@@ -161,6 +171,22 @@ export function ManagePosition({
       >
         Close position
       </Button>
+
+      <ConfirmDialog
+        open={zapping}
+        onClose={() => setZapping(false)}
+        title={`Zap ${x.symbol}-${y.symbol} to ${v.depositSymbol}`}
+        confirmLabel={`Zap out to ${v.depositSymbol}`}
+        pending={pending}
+        onConfirm={() =>
+          run("Zap out", "dlmm/zap-out", {
+            position: p.position,
+            slippageBps: Math.min(50, v.protocol.maxSlippageBps),
+          })
+        }
+      >
+        All liquidity is removed, fees are claimed, and every non-{v.depositSymbol} pool token in the vault is swapped to {v.depositSymbol}. The wallet may request more than one approval because each swap is quoted only after the preceding transaction confirms. Rent from the closed position, strategy, and unused token accounts is returned to your wallet; creating a missing treasury token account can still cost rent.
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={closing}

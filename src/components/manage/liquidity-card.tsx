@@ -310,6 +310,7 @@ function ConfigurePosition({
       label: `Open ${x.symbol}-${y.symbol} position`,
       vault: v.address,
       onProgress: setProgress,
+      stepLabels: ["Create position", "Add liquidity"],
       build: async () => {
         const built = await api.build<BuiltStep & { position: string }>("dlmm/open", {
           payer: owner,

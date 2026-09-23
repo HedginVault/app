@@ -1,10 +1,10 @@
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/server/errors";
 import { getConfigPda, getStrategyPda } from "@/server/pda";
 import { getProgram } from "@/server/program";
 import type { VaultCtx } from "@/server/tx/context";
-import { extractRemainingAccounts, jupiterInitializeIx } from "@/server/tx/jupiter";
+import { extractRemainingAccounts, getJupiterSwap, jupiterInitializeIx } from "@/server/tx/jupiter";
 
 // The swap route validates the mints against the vault before any Jupiter or strategy lookup; stub
 // the two context calls so those checks run without RPC. The deposit mint matches `ctx` below.
@@ -29,6 +29,9 @@ const keys = (ix: { keys: { pubkey: PublicKey }[] }) => ix.keys.map((k) => k.pub
 
 const ROUTE = [229, 23, 203, 151, 122, 227, 173, 42];
 const SHARED_ACCOUNTS_ROUTE = [193, 32, 155, 51, 65, 214, 156, 129];
+const JUPITER_PROGRAM = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+const SOL = new PublicKey("So11111111111111111111111111111111111111112");
+const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 /** A Jupiter instruction with `n` distinct accounts and the given 8-byte discriminator. */
 const fakeSwapIx = (discriminator: number[], n: number) =>
@@ -109,5 +112,93 @@ describe("extractRemainingAccounts", () => {
       expect((e as ApiError).status).toBe(502);
       expect((e as ApiError).code).toBe("JupiterUnknownRoute");
     }
+  });
+});
+
+describe("getJupiterSwap CPI route", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const response = (body: unknown) => ({
+    ok: true,
+    json: async () => body,
+    text: async () => JSON.stringify(body),
+  });
+  const quote = {
+    inAmount: "1000",
+    outAmount: "900",
+    priceImpactPct: "0",
+    routePlan: [{ swapInfo: { label: "Direct AMM" } }],
+  };
+  const swapInstruction = (discriminator: number[]) => ({
+    programId: JUPITER_PROGRAM,
+    accounts: Array.from({ length: 9 }, (_, index) => ({
+      pubkey: (index === 1 ? ctx.key : pk(index + 10)).toBase58(),
+      isSigner: index === 1,
+      isWritable: index === 2 || index === 3,
+    })),
+    data: Buffer.from([...discriminator, 0, 0, 0, 0]).toString("base64"),
+  });
+
+  it("requests a direct non-shared route with the vault PDA as the Jupiter user", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response(quote))
+      .mockResolvedValueOnce(
+        response({
+          swapInstruction: swapInstruction(ROUTE),
+          setupInstructions: [],
+          cleanupInstruction: null,
+          addressLookupTableAddresses: [],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+
+    await getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key);
+
+    expect(String(fetch.mock.calls[0][0])).toContain("onlyDirectRoutes=true");
+    const request = JSON.parse(String((fetch.mock.calls[1][1] as RequestInit).body));
+    expect(request).toMatchObject({
+      userPublicKey: ctx.key.toBase58(),
+      useSharedAccounts: false,
+      wrapAndUnwrapSol: false,
+    });
+  });
+
+  it("rejects any Jupiter route that still requires user-level setup accounts", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response(quote))
+      .mockResolvedValueOnce(
+        response({
+          swapInstruction: swapInstruction(ROUTE),
+          setupInstructions: [swapInstruction(ROUTE)],
+          cleanupInstruction: null,
+          addressLookupTableAddresses: [],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key)).rejects.toMatchObject({
+      code: "JupiterUnsupportedCpiRoute",
+    });
+  });
+
+  it("rejects a shared-account instruction even if Jupiter ignores the request option", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response(quote))
+      .mockResolvedValueOnce(
+        response({
+          swapInstruction: swapInstruction(SHARED_ACCOUNTS_ROUTE),
+          setupInstructions: [],
+          cleanupInstruction: null,
+          addressLookupTableAddresses: [],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key)).rejects.toMatchObject({
+      code: "JupiterUnsupportedCpiRoute",
+    });
   });
 });

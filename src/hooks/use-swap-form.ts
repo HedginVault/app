@@ -32,10 +32,12 @@ export function useSwapForm({
   onParamsChange: (p: { from?: string; to?: string; amount?: string }) => void;
 }) {
   const deposit = depositTokenOf(v);
-  // Only tokens held via an open Jupiter strategy are eligible sell-side targets: an LP-only
-  // holding (a DLMM position's tokenX/tokenY) has no vault-controlled swap balance, so it must
-  // not appear here (spec §4 / review finding).
-  const heldTokens = holdings.positions.flatMap((p) => (p.kind === "swap" ? [p.token] : []));
+  // Jupiter strategies and non-deposit tokens sitting directly in the vault are eligible
+  // sell-side targets. The latter is the recoverable state after a zap closes successfully but
+  // its follow-up swap fails. LP-only exposure still has no vault-controlled swap balance.
+  const heldTokens = holdings.positions.flatMap((p) =>
+    p.kind === "swap" || (p.kind === "idle" && p.token.mint !== deposit.mint) ? [p.token] : [],
+  );
   const balances = new Map(
     holdings.positions.flatMap((p) => (p.kind === "idle" || p.kind === "swap" ? [[p.token.mint, p.amount] as const] : [])),
   );

@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { NextStep } from "@/lib/types";
-import type { dlmmOpenBody, jupiterSwapBody } from "./schemas";
+import type { dlmmOpenBody, dlmmZapOutSwapBody, jupiterSwapBody } from "./schemas";
 
 /** The swap itself, after a transaction that only created the Jupiter strategy. `body` excludes `payer`. */
 export const swapNextStep = (b: z.infer<typeof jupiterSwapBody>): NextStep => ({
@@ -25,4 +25,13 @@ export const addNextStep = (b: z.infer<typeof dlmmOpenBody>, position: string): 
     shape: b.shape,
     maxActiveBinSlippage: b.maxActiveBinSlippage,
   },
+});
+
+/** Continues a zap with the pre-close balances needed to isolate tokens returned by the position. */
+export const zapSwapNextStep = (
+  b: Pick<z.infer<typeof dlmmZapOutSwapBody>, "vault" | "slippageBps">,
+  sources: z.infer<typeof dlmmZapOutSwapBody>["sources"],
+): NextStep => ({
+  path: "dlmm/zap-out/swap",
+  body: { vault: b.vault, sources, slippageBps: b.slippageBps },
 });

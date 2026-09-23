@@ -19,6 +19,10 @@ export const depositTokenOf = (v: VaultDetail): TokenInfo => ({
   priceUsd: v.depositPriceUsd,
 });
 
+/** Stable React/allocation identity for every position, including multiple idle token balances. */
+export const positionKey = (position: PositionView): string =>
+  position.kind === "idle" ? `idle:${position.token.mint}` : `${position.kind}:${position.strategy}`;
+
 const sumValues = (list: ValuedHolding[]): bigint | null =>
   list.some((h) => h.value === null) ? null : list.reduce((a, h) => a + (h.value as bigint), 0n);
 

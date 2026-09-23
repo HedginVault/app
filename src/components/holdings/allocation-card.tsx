@@ -7,6 +7,7 @@ import { PairLogo, TokenLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
 import { barWidths, toSlices, type SliceInput } from "@/lib/allocation";
 import { formatShare, formatUsd } from "@/lib/format";
+import { positionKey } from "@/lib/holdings";
 import type { HoldingsView, PositionView } from "@/lib/types";
 import type { ReactNode } from "react";
 
@@ -47,7 +48,7 @@ export function AllocationCard({ holdings: h }: { holdings: HoldingsView }) {
             amount: <TokenAmount raw={t.amount} token={t.token} align="right" />,
           }))
       : h.positions.map((p) => ({
-          key: p.kind === "idle" ? "idle" : p.strategy,
+          key: positionKey(p),
           label: positionLabel(p),
           value: p.value === null ? null : BigInt(p.value),
           usd: p.usd,

@@ -5,6 +5,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import type { MenuItem } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHoldings } from "@/hooks/queries";
+import { positionKey } from "@/lib/holdings";
 import type { PositionView } from "@/lib/types";
 import { AllocationCard } from "./allocation-card";
 import { PositionCard } from "./position-card";
@@ -35,7 +36,7 @@ export function HoldingsSection({
         <div className="divide-y divide-border">
           {h.positions.map((p) => (
             <PositionCard
-              key={p.kind === "idle" ? "idle" : p.strategy}
+              key={positionKey(p)}
               position={p}
               depositToken={h.depositToken}
               actions={actionsFor?.(p)}

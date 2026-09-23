@@ -1738,6 +1738,409 @@ export type HedgeVault = {
       ]
     },
     {
+      "name": "meteoraDlmmClaimFeeRange",
+      "discriminator": [
+        216,
+        145,
+        196,
+        142,
+        84,
+        129,
+        191,
+        64
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vaultTokenX",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultTokenY",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasuryAuthority"
+        },
+        {
+          "name": "treasuryTokenX",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasuryAuthority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasuryTokenY",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasuryAuthority"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lbPair",
+          "writable": true
+        },
+        {
+          "name": "reserveX",
+          "writable": true
+        },
+        {
+          "name": "reserveY",
+          "writable": true
+        },
+        {
+          "name": "tokenXMint"
+        },
+        {
+          "name": "tokenYMint"
+        },
+        {
+          "name": "tokenXProgram"
+        },
+        {
+          "name": "tokenYProgram"
+        },
+        {
+          "name": "memoProgram"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "dlmmProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
+        },
+        {
+          "name": "fromBinId",
+          "type": "i32"
+        },
+        {
+          "name": "toBinId",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "meteoraDlmmExtendPosition",
+      "discriminator": [
+        248,
+        78,
+        177,
+        214,
+        128,
+        140,
+        184,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  101,
+                  103,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lbPair"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "dlmmProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        }
+      ],
+      "args": [
+        {
+          "name": "binsToAdd",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "meteoraDlmmInitializePosition",
       "discriminator": [
         223,
@@ -2024,6 +2427,219 @@ export type HedgeVault = {
               "name": "meteoraDlmmRemoveLiquidityParams"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "meteoraDlmmRemoveLiquidityRange",
+      "discriminator": [
+        64,
+        103,
+        62,
+        42,
+        168,
+        22,
+        210,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vaultTokenX",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenXMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultTokenY",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYProgram"
+              },
+              {
+                "kind": "account",
+                "path": "tokenYMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lbPair",
+          "writable": true
+        },
+        {
+          "name": "binArrayBitmapExtension",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserveX",
+          "writable": true
+        },
+        {
+          "name": "reserveY",
+          "writable": true
+        },
+        {
+          "name": "tokenXMint"
+        },
+        {
+          "name": "tokenYMint"
+        },
+        {
+          "name": "tokenXProgram"
+        },
+        {
+          "name": "tokenYProgram"
+        },
+        {
+          "name": "memoProgram"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "dlmmProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "meteoraDlmmRemoveLiquidityParams"
+            }
+          }
+        },
+        {
+          "name": "fromBinId",
+          "type": "i32"
+        },
+        {
+          "name": "toBinId",
+          "type": "i32"
         }
       ]
     },
@@ -4186,6 +4802,11 @@ export type HedgeVault = {
       "code": 6064,
       "name": "vaultWithdrawalPaused",
       "msg": "Vault withdrawals are paused by the manager"
+    },
+    {
+      "code": 6065,
+      "name": "invalidPositionBinRange",
+      "msg": "Position bin range is outside the supported bounds"
     }
   ],
   "types": [
@@ -4809,18 +5430,6 @@ export type HedgeVault = {
           {
             "name": "amount",
             "type": "u64"
-          },
-          {
-            "name": "strategyId",
-            "type": "u32"
-          },
-          {
-            "name": "sourceSpent",
-            "type": "u64"
-          },
-          {
-            "name": "destinationReceived",
-            "type": "u64"
           }
         ]
       }
@@ -4994,26 +5603,6 @@ export type HedgeVault = {
           {
             "name": "treasuryAmountY",
             "type": "u64"
-          },
-          {
-            "name": "strategyId",
-            "type": "u32"
-          },
-          {
-            "name": "tokenXMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "tokenYMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "vaultRetainedX",
-            "type": "u64"
-          },
-          {
-            "name": "vaultRetainedY",
-            "type": "u64"
           }
         ]
       }
@@ -5042,26 +5631,6 @@ export type HedgeVault = {
           {
             "name": "amountY",
             "type": "u64"
-          },
-          {
-            "name": "strategyId",
-            "type": "u32"
-          },
-          {
-            "name": "tokenXMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "tokenYMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amountXSpent",
-            "type": "u64"
-          },
-          {
-            "name": "amountYSpent",
-            "type": "u64"
           }
         ]
       }
@@ -5086,26 +5655,6 @@ export type HedgeVault = {
           {
             "name": "bpsToRemove",
             "type": "u16"
-          },
-          {
-            "name": "strategyId",
-            "type": "u32"
-          },
-          {
-            "name": "tokenXMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "tokenYMint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amountXReceived",
-            "type": "u64"
-          },
-          {
-            "name": "amountYReceived",
-            "type": "u64"
           }
         ]
       }
@@ -5466,26 +6015,6 @@ export type HedgeVault = {
           {
             "name": "strategy",
             "type": "pubkey"
-          },
-          {
-            "name": "id",
-            "type": "u32"
-          },
-          {
-            "name": "strategyType",
-            "type": {
-              "defined": {
-                "name": "hedge_vault::state::strategy::StrategyType"
-              }
-            }
-          },
-          {
-            "name": "createdTs",
-            "type": "i64"
-          },
-          {
-            "name": "closedTs",
-            "type": "i64"
           }
         ]
       }
@@ -5514,10 +6043,6 @@ export type HedgeVault = {
                 "name": "hedge_vault::state::strategy::StrategyType"
               }
             }
-          },
-          {
-            "name": "createdTs",
-            "type": "i64"
           }
         ]
       }

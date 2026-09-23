@@ -101,6 +101,7 @@ the app builds instructions against a stale program interface.
 | `/api/vaults/[address]/strategy-history` | Closed strategies with exact per-token contributed, returned, fee and realized-PnL base units; pre-upgrade rows are marked incomplete. |
 | `/api/manager/[wallet]` | `ManagerView` — `isManager` plus the vaults that wallet authorizes |
 | `/api/dlmm/pool/[lbPair]` | `PoolInfo` — token X/Y, bin step, active bin id and price |
+| `/api/dlmm/position-rent?bins=` | Refundable PositionV2 rent in lamports for 1–1,400 bins, quoted from RPC and cached 10 min; excludes transaction fees and any new bin arrays. |
 | `/api/jupiter/quote?vault=&inputMint=&outputMint=&amount=&slippageBps=` | `QuoteView`, with `slippageBps` clamped to the protocol maximum. `vault` is required: one side of the quote must be that vault's deposit mint, which is the only swap the program will accept. Rate limited per IP. |
 | `/api/vaults/[address]/holdings` | `HoldingsView` — live valuation (keeper rules: deposit units, fees at 90%), token exposure and positions, NAV delta; `partial` when a price is missing. |
 | `/api/tokens/search?query=` | `TokenSearchResult[]` from Jupiter token search, cached 1 h per query, rate limited. |
@@ -134,12 +135,14 @@ per IP.
 | `/api/tx/resolve-batch` | — | anyone; returns every resolvable request, chunked into transactions |
 | `/api/tx/jupiter/initialize` | `targetMint` | vault authority |
 | `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps`; initializes the Jupiter strategy for the target mint when missing (`initializesStrategy`); requests a direct non-shared Jupiter route so the vault PDA remains the CPI signer | vault authority |
-| `/api/tx/dlmm/initialize` | `lbPair`, and either `width` or `lowerBinId`/`upperBinId` (at most 70 bins — the DLMM cap for a position created without an extend) | vault authority |
-| `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 70 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
+| `/api/tx/dlmm/initialize` | `lbPair`, and either `width` or `lowerBinId`/`upperBinId` (at most 70 initial bins) | vault authority |
+| `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 1,400 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage`; wide positions return confirmed extension and chunked funding steps | vault authority |
+| `/api/tx/dlmm/extend` | Confirmed follow-up step that grows a position by at most 91 bins; repeats until the requested upper bin is reached | vault authority |
+| `/api/tx/dlmm/add-range` | Confirmed follow-up step that funds a wide position in transaction-sized bin ranges | vault authority |
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
-| `/api/tx/dlmm/remove` | `position`, `bpsToRemove` | vault authority |
-| `/api/tx/dlmm/claim-fee` | `position` | vault authority |
-| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; removes all liquidity, claims fees, closes the DLMM position, then swaps only the non-deposit tokens returned by that position into the vault deposit mint (pre-existing idle balances are preserved) | vault authority |
+| `/api/tx/dlmm/remove` | `position`, `bpsToRemove`; wide positions return confirmed range steps | vault authority |
+| `/api/tx/dlmm/claim-fee` | `position`; wide positions return confirmed range steps | vault authority |
+| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; available for positions up to 70 bins; removes all liquidity, claims fees, closes the DLMM position, then swaps only the non-deposit tokens returned by that position into the vault deposit mint (pre-existing idle balances are preserved) | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
 
 ### API — send and confirm

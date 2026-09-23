@@ -21,8 +21,7 @@ const GHOST = Array.from({ length: 40 }, (_, i) => 35 + 45 * Math.exp(-((i - 20)
 
 /**
  * Meteora-style range picker.
- * Top: liquidity preview over the selected bins only, so bars always fill the width. Bars are keyed by
- * position, so when the range changes each bar eases from its old height to its new one; extra bars grow up.
+ * Top: liquidity preview over the selected bins, grouping bins for wide positions to keep rendering bounded.
  * Bottom: the wider bin domain with selected/active bins tinted and a two-handle slider on top.
  */
 export function RangePicker({
@@ -51,16 +50,27 @@ export function RangePicker({
 }) {
   const width = last - lower + 1;
   const byId = new Map(bins.map((b) => [b.binId, b]));
-  // The active bin holds both tokens (it straddles the price), so its total roughly doubles a normal
-  // single-side bin. Scale off the other bins so a normal bin reaches 100%, and cap the active bin at
-  // the same 100% instead of letting it spike over the rest.
-  const others = bins.filter((b) => b.binId !== activeBinId);
-  const max = Math.max(0, ...(others.length ? others : bins).map((b) => b.x + b.y));
+  // Sample wide ranges so the preview stays responsive at 1,400 bins.
+  const previewStep = Math.max(1, Math.ceil(width / 140));
+  const preview = Array.from({ length: Math.ceil(width / previewStep) }, (_, i) => {
+    const from = lower + i * previewStep;
+    const to = Math.min(last, from + previewStep - 1);
+    let x = 0;
+    let y = 0;
+    for (let binId = from; binId <= to; binId++) {
+      const bin = byId.get(binId);
+      x += bin?.x ?? 0;
+      y += bin?.y ?? 0;
+    }
+    return { from, to, x, y };
+  });
+  const max = Math.max(0, ...preview.map((b) => b.x + b.y));
   // Pool price marker inside the selected range; pinned to the nearer edge when the range sits on one side.
   const markerPct = Math.min(100, Math.max(0, ((activeBinId - lower + 0.5) / width) * 100));
   const markerAlign = markerPct < 20 ? "left" : markerPct > 80 ? "right" : "center";
 
   const span = domain.hi - domain.lo;
+  const domainStep = Math.max(1, Math.ceil((span + 1) / 200));
   const domainPct = (bin: number) => ((bin - domain.lo) / span) * 100;
   const thumb =
     "pointer-events-none absolute inset-0 h-5 w-full appearance-none bg-transparent focus-visible:outline-none " +
@@ -101,19 +111,18 @@ export function RangePicker({
               <div className="absolute top-10 bottom-0 border-l-2 border-dashed border-white/90" />
             </div>
             <div className="flex h-full items-end gap-[2px] border-b border-white/15">
-              {Array.from({ length: width }, (_, i) => {
-                const b = byId.get(lower + i);
-                const total = b ? b.x + b.y : 0;
+              {preview.map((b) => {
+                const total = b.x + b.y;
                 const h = max > 0 && total > 0 ? Math.min(Math.max((total / max) * 100, 2), 100) : 0;
                 return (
-                  <div key={i} className="group flex h-full min-w-0 flex-1 flex-col justify-end" title={tickLabel(lower + i)}>
-                    {/* keyed by position: an existing bar eases to its new height, a new bar grows up */}
+                  <div key={b.from} className="group flex h-full min-w-0 flex-1 flex-col justify-end" title={b.from === b.to ? tickLabel(b.from) : `${tickLabel(b.from)} – ${tickLabel(b.to)}`}>
+                    {/* keyed by the first bin represented by this bar */}
                     <div
                       className="flex origin-bottom animate-bin-rise flex-col overflow-hidden rounded-t-[4px] transition-[height] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:brightness-125 motion-reduce:animate-none motion-reduce:transition-none"
                       style={{ height: `${h}%` }}
                     >
-                      <div className="bg-indigo-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.x / total : 0 }} />
-                      <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b!.y / total : 0 }} />
+                      <div className="bg-indigo-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b.x / total : 0 }} />
+                      <div className="bg-sky-400 transition-[flex-grow] duration-700" style={{ flexGrow: total > 0 ? b.y / total : 0 }} />
                     </div>
                   </div>
                 );
@@ -132,15 +141,17 @@ export function RangePicker({
       <div className={cn(disabled && "opacity-40")}>
         <div className="relative">
           <div className="flex h-8 items-end gap-px" aria-hidden>
-            {Array.from({ length: span + 1 }, (_, i) => {
-              const bin = domain.lo + i;
-              const selected = !disabled && bin >= lower && bin <= last;
+            {Array.from({ length: Math.ceil((span + 1) / domainStep) }, (_, i) => {
+              const bin = domain.lo + i * domainStep;
+              const endBin = Math.min(domain.hi, bin + domainStep - 1);
+              const selected = !disabled && endBin >= lower && bin <= last;
+              const active = bin <= activeBinId && activeBinId <= endBin;
               return (
                 <div
                   key={bin}
                   className={cn(
                     "h-full flex-1 rounded-t-[1px] transition-colors duration-200",
-                    bin === activeBinId ? "bg-accent" : selected ? "bg-accent/35" : "bg-white/[0.08]",
+                    active ? "bg-accent" : selected ? "bg-accent/35" : "bg-white/[0.08]",
                   )}
                 />
               );

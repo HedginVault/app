@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getConfigPda, getStrategyPda } from "@/server/pda";
 import { getProgram } from "@/server/program";
 import type { VaultCtx } from "@/server/tx/context";
-import { binPrice, dlmmInitializePositionIx, onChainUpper, rangeFromWidth } from "@/server/tx/dlmm";
+import { binPrice, dlmmExtendPositionIx, dlmmInitializePositionIx, onChainUpper, rangeFromWidth } from "@/server/tx/dlmm";
 
 // The initialize route reaches the range check before it touches the chain; stub the two calls that
 // would otherwise need RPC.
@@ -97,6 +97,17 @@ describe("dlmmInitializePositionIx", () => {
   });
 });
 
+describe("dlmmExtendPositionIx", () => {
+  it("builds the vault-authorized Meteora resize instruction", async () => {
+    const position = pk(8);
+    const ix = await dlmmExtendPositionIx(getProgram(), ctx, pk(5), position, pk(9), 91);
+    expect(ix.keys.map((k) => k.pubkey.toBase58())).toEqual(expect.arrayContaining([
+      ctx.key.toBase58(), position.toBase58(), getStrategyPda(ctx.key, position).toBase58(),
+    ]));
+    expect(ix.data.readUInt16LE(8)).toBe(91);
+  });
+});
+
 describe("POST /api/tx/dlmm/initialize", () => {
   const PAYER = "DHjJJ4viFqUjzFHupehqxyEUrKb5Pdu95A29HFm8gdQD";
   const post = async (body: Record<string, unknown>) => {
@@ -141,10 +152,10 @@ describe("POST /api/tx/dlmm/open validation", () => {
     );
   };
 
-  it("rejects ranges wider than 70 bins", async () => {
-    const res = await post({ lowerBinId: 0, upperBinId: 71 });
+  it("rejects ranges wider than 1400 bins", async () => {
+    const res = await post({ lowerBinId: 0, upperBinId: 1401 });
     expect(res.status).toBe(400);
-    expect((await res.json()).error.message).toMatch(/70 bins/);
+    expect((await res.json()).error.message).toMatch(/1400 bins/);
   });
 
   it("rejects an empty or inverted range", async () => {

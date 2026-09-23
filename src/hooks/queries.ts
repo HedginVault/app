@@ -15,6 +15,7 @@ export const queryKeys = {
   navHistory: (address: string) => ["navHistory", address] as const,
   manager: (wallet: string) => ["manager", wallet] as const,
   pool: (lbPair: string) => ["pool", lbPair] as const,
+  positionRent: (binCount: number) => ["positionRent", binCount] as const,
   ohlcv: (target: string, tf: string) => ["ohlcv", target, tf] as const,
   quote: (q: QuoteParams) => ["quote", q] as const,
   tokenSearch: (q: string) => ["tokenSearch", q] as const,
@@ -119,6 +120,14 @@ export const usePool = (lbPair: string | undefined) =>
     queryFn: () => api.pool(lbPair!),
     enabled: !!lbPair,
     retry: false,
+  });
+
+export const usePositionRent = (binCount: number) =>
+  useQuery({
+    queryKey: queryKeys.positionRent(binCount),
+    queryFn: () => api.positionRent(binCount),
+    retry: false,
+    staleTime: 10 * 60_000,
   });
 
 export const useQuote = (q: QuoteParams, enabled: boolean) =>

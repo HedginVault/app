@@ -8,6 +8,7 @@ import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { DlmmShape, PoolInfo } from "@/lib/types";
+import { ApiError } from "../errors";
 import { cached } from "../cache";
 import {
   deriveBinArray,
@@ -134,10 +135,21 @@ export function dlmmContextFor(
  * Context for an existing position (port of `tests/handler/dlmm.ts`): the lbPair and range come off
  * the position account. Costs 1 RPC for the position plus the pool hydration (cached 5 minutes).
  */
-export async function getDlmmContext(vault: PublicKey, position: PublicKey, payer: PublicKey) {
+export async function getDlmmContext(
+  vault: PublicKey,
+  position: PublicKey,
+  payer: PublicKey,
+  range?: { lowerBinId: number; upperBinId: number },
+) {
   const positionAccount = await getProgram().account.positionV2.fetch(position);
+  if (range && (range.lowerBinId < positionAccount.lowerBinId || range.upperBinId > positionAccount.upperBinId || range.lowerBinId > range.upperBinId))
+    throw new ApiError(400, "Validation", "bin range must be inside the position");
   const dlmm = await getPool(positionAccount.lbPair);
-  return dlmmContextFor(vault, position, payer, dlmm, positionAccount.lowerBinId, positionAccount.upperBinId);
+  return dlmmContextFor(
+    vault, position, payer, dlmm,
+    range?.lowerBinId ?? positionAccount.lowerBinId,
+    range?.upperBinId ?? positionAccount.upperBinId,
+  );
 }
 
 /** The position account is created by the DLMM program, so the caller must sign for the new keypair. */
@@ -164,6 +176,28 @@ export async function dlmmInitializePositionIx(
     })
     .instruction();
   return { ix, position };
+}
+
+/** Extend a vault-owned PositionV2 on its upper side by one Meteora-safe resize step. */
+export async function dlmmExtendPositionIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  lbPair: PublicKey,
+  binsToAdd: number,
+) {
+  return program.methods
+    .meteoraDlmmExtendPosition(binsToAdd)
+    .accounts({
+      authority,
+      config: getConfigPda(),
+      vault: ctx.key,
+      position,
+      lbPair,
+      eventAuthority: DLMM_EVENT_AUTHORITY,
+    })
+    .instruction();
 }
 
 const SHAPES: Record<DlmmShape, StrategyTypeValue> = {
@@ -245,14 +279,20 @@ export async function dlmmRemoveLiquidityIx(
   authority: PublicKey,
   position: PublicKey,
   bpsToRemove: number,
+  range?: { lowerBinId: number; upperBinId: number },
 ) {
   const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
     ctx.key,
     position,
     authority,
+    range,
   );
-  const ix = await program.methods
-    .meteoraDlmmRemoveLiquidity({ bpsToRemove, remainingAccountsInfo })
+  const method = range
+    ? program.methods.meteoraDlmmRemoveLiquidityRange(
+        { bpsToRemove, remainingAccountsInfo }, range.lowerBinId, range.upperBinId,
+      )
+    : program.methods.meteoraDlmmRemoveLiquidity({ bpsToRemove, remainingAccountsInfo });
+  const ix = await method
     .accounts({ ...accounts, authority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();
@@ -261,9 +301,8 @@ export async function dlmmRemoveLiquidityIx(
 
 /**
  * Removes all liquidity, claims fees, and closes the position, bundled into one transaction from
- * the existing remove/claim/close-strategy instructions. A single DLMM position tops out at 70 bins
- * (Meteora's own `POSITION_MAX_LENGTH`), so this always needs at most 1-2 bin array accounts and
- * comfortably fits the 1232-byte tx limit without a dedicated on-chain instruction.
+ * the existing remove/claim/close-strategy instructions. Only use this for compact positions;
+ * wide positions must remove and claim in ranges before closing.
  */
 async function buildDlmmClosePosition(
   program: P,
@@ -313,14 +352,18 @@ export async function dlmmClaimFeeIx(
   authority: PublicKey,
   position: PublicKey,
   treasuryAuthority: PublicKey,
+  range?: { lowerBinId: number; upperBinId: number },
 ) {
   const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
     ctx.key,
     position,
     authority,
+    range,
   );
-  const ix = await program.methods
-    .meteoraDlmmClaimFee(remainingAccountsInfo)
+  const method = range
+    ? program.methods.meteoraDlmmClaimFeeRange(remainingAccountsInfo, range.lowerBinId, range.upperBinId)
+    : program.methods.meteoraDlmmClaimFee(remainingAccountsInfo);
+  const ix = await method
     .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();

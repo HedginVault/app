@@ -6,11 +6,11 @@ import { PairLogo } from "@/components/token/token-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePool } from "@/hooks/queries";
+import { usePool, usePositionRent } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
+import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH, DLMM_MAX_RESIZE_LENGTH } from "@/lib/constants";
 import {
   binIdToPrice,
   distribution,
@@ -19,6 +19,7 @@ import {
   type BinRange,
   type Placement,
 } from "@/lib/dlmm-range";
+import { DLMM_MAX_ADD_BINS_PER_TX } from "@/lib/dlmm-wide";
 import { formatPrice, formatTokenAmount, formatUsd, parseTokenAmount, toUiNumber, usdValue } from "@/lib/format";
 import { depositTokenOf } from "@/lib/holdings";
 import { isOperational } from "@/lib/swap-logic";
@@ -29,7 +30,7 @@ import { RangePicker, ShapeIcon } from "./range-picker";
 import { ReviewDialog } from "./review-dialog";
 
 export const ACTIVE_BIN_SLIPPAGE = 10;
-const DEFAULT_WIDTH = 35;
+const DEFAULT_WIDTH = DLMM_INITIAL_POSITION_WIDTH;
 export const SHAPES: { id: DlmmShape; label: string }[] = [
   { id: "spot", label: "Spot" },
   { id: "curve", label: "Curve" },
@@ -111,6 +112,7 @@ interface ReviewedRange {
   range: BinRange;
   activeBinId: number;
   activePrice: number;
+  rentLamports: string;
 }
 
 function ConfigurePosition({
@@ -159,6 +161,7 @@ function ConfigurePosition({
   // Non-null while the review dialog is open; frozen so a moving active bin cannot change what was reviewed.
   const [reviewed, setReviewed] = useState<ReviewedRange | null>(null);
   const [progress, setProgress] = useState<StepProgress | null>(null);
+  const [rangeError, setRangeError] = useState<string | null>(null);
   const { send, pending } = useSendTransaction();
 
   const price = (bin: number) => binIdToPrice(bin, binStep, x.decimals, y.decimals);
@@ -181,10 +184,21 @@ function ConfigurePosition({
     range: rangeForPlacement(active, DEFAULT_WIDTH, placement ?? "both"),
   }));
   // Switching side resets the range to a default width on that side ("adjust state when props change").
-  if (placement !== null && placement !== rangeState.placement)
+  if (placement !== null && placement !== rangeState.placement) {
     setRangeState({ placement, range: rangeForPlacement(active, DEFAULT_WIDTH, placement) });
+    setRangeError(null);
+  }
   const range = placement !== null && placement !== rangeState.placement ? rangeForPlacement(active, DEFAULT_WIDTH, placement) : rangeState.range;
   const locked = placement === null;
+  const binCount = range.upperBinId - range.lowerBinId;
+  const [quotedBinCount, setQuotedBinCount] = useState(binCount);
+  useEffect(() => {
+    const timer = setTimeout(() => setQuotedBinCount(binCount), 250);
+    return () => clearTimeout(timer);
+  }, [binCount]);
+  const rent = usePositionRent(quotedBinCount);
+  const rentLamports = quotedBinCount === binCount && rent.data?.binCount === binCount ? rent.data.lamports : null;
+  const rentLabel = rentLamports === null ? "—" : `${formatTokenAmount(rentLamports, 9, { maxFraction: 6 })} SOL`;
 
   const minPrice = price(range.lowerBinId);
   const maxPrice = price(range.upperBinId - 1);
@@ -194,9 +208,10 @@ function ConfigurePosition({
     onRangeChange?.(locked ? null : { min: minPrice, max: maxPrice });
   }, [locked, minPrice, maxPrice, onRangeChange]);
   useEffect(() => () => onRangeChange?.(null), [onRangeChange]);
+  const domainRadius = Math.max(DLMM_INITIAL_POSITION_WIDTH, range.upperBinId - range.lowerBinId);
   const domain = {
-    lo: Math.min(active - DLMM_MAX_POSITION_WIDTH, range.lowerBinId),
-    hi: Math.max(active + DLMM_MAX_POSITION_WIDTH, last),
+    lo: Math.min(active - domainRadius, range.lowerBinId),
+    hi: Math.max(active + domainRadius, last),
   };
 
   /**
@@ -208,10 +223,10 @@ function ConfigurePosition({
     if (placement === null) return;
     if (lastBin < lower) [lower, lastBin] = moved === "lower" ? [lastBin, lastBin] : [lower, lower];
     if (lastBin - lower + 1 > DLMM_MAX_POSITION_WIDTH) {
-      // Stop the handle being moved at the max width; never drag the other edge along.
-      if (moved === "lower") lower = lastBin - DLMM_MAX_POSITION_WIDTH + 1;
-      else lastBin = lower + DLMM_MAX_POSITION_WIDTH - 1;
+      setRangeError(`Maximum ${DLMM_MAX_POSITION_WIDTH.toLocaleString()} bins`);
+      return;
     }
+    setRangeError(null);
     setRangeState({ placement, range: { lowerBinId: lower, upperBinId: lastBin + 1 } });
   };
   /** Displayed edge -> raw bin edge. Inverted display flips which bin is the min, and the direction of "+". */
@@ -276,6 +291,10 @@ function ConfigurePosition({
   const empty = !invalid && locked;
   const button = !isOperational(v)
     ? { label: "Vault not operational", disabled: true }
+    : rangeError
+      ? { label: "Correct bin range", disabled: true }
+    : rentLamports === null
+      ? { label: "Waiting for rent estimate", disabled: true }
     : invalid
       ? { label: "Invalid amount", disabled: true }
       : empty
@@ -310,7 +329,9 @@ function ConfigurePosition({
       label: `Open ${x.symbol}-${y.symbol} position`,
       vault: v.address,
       onProgress: setProgress,
-      stepLabels: ["Create position", "Add liquidity"],
+      stepLabels: r.upperBinId - r.lowerBinId > DLMM_INITIAL_POSITION_WIDTH
+        ? undefined
+        : ["Create position", "Add liquidity"],
       build: async () => {
         const built = await api.build<BuiltStep & { position: string }>("dlmm/open", {
           payer: owner,
@@ -419,7 +440,10 @@ function ConfigurePosition({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-[12px] font-medium text-muted">
             Price range
-            <button type="button" aria-label="Reset range" title="Reset range" disabled={locked} onClick={() => setRangeState({ placement, range: rangeForPlacement(active, DEFAULT_WIDTH, placement ?? "both") })} className="hover:text-foreground">
+            <button type="button" aria-label="Reset range" title="Reset range" disabled={locked} onClick={() => {
+              setRangeState({ placement, range: rangeForPlacement(active, DEFAULT_WIDTH, placement ?? "both") });
+              setRangeError(null);
+            }} className="hover:text-foreground">
               ↺
             </button>
           </div>
@@ -519,12 +543,19 @@ function ConfigurePosition({
             </div>
           );
         })}
-        <p className="text-[12px] text-muted">
-          Total bins: <span className="tabular-nums text-foreground">{range.upperBinId - range.lowerBinId}</span> / {DLMM_MAX_POSITION_WIDTH}
-        </p>
+        <p className="text-[12px] text-muted">Total bins: <span className="tabular-nums text-foreground">{binCount}</span> / {DLMM_MAX_POSITION_WIDTH.toLocaleString()}</p>
+        {rangeError && <p id="bin-range-error" role="alert" className="text-[12px] text-danger">{rangeError}</p>}
+        <div aria-live="polite" className="space-y-1 border-t border-border pt-3 text-[12px]">
+          <div className="flex justify-between gap-3"><span className="text-muted">Position rent deposit</span><span className="tabular-nums">{rentLabel}</span></div>
+          <div className="flex justify-between gap-3"><span className="text-muted">Refunded when closed</span><span className="tabular-nums">{rentLabel}</span></div>
+          {quotedBinCount === binCount && rent.error && <p role="alert" className="text-danger">Could not load position rent. <button type="button" onClick={() => void rent.refetch()} className="underline underline-offset-2 hover:text-foreground">Try again</button></p>}
+          <p className="text-muted">Network fees and any new bin arrays cost extra.</p>
+        </div>
       </div>
 
-      <Button className="w-full" disabled={button.disabled} onClick={() => setReviewed({ range, activeBinId: active, activePrice })}>
+      <Button className="w-full" disabled={button.disabled} onClick={() => {
+        if (rentLamports !== null) setReviewed({ range, activeBinId: active, activePrice, rentLamports });
+      }}>
         {button.label}
       </Button>
 
@@ -536,23 +567,31 @@ function ConfigurePosition({
         onConfirm={() => void confirm()}
         pending={pending}
         progress={progress}
-        steps={[{ label: "Create position" }, { label: "Add liquidity" }]}
+        steps={shownRange.upperBinId - shownRange.lowerBinId > DLMM_INITIAL_POSITION_WIDTH ? [] : [{ label: "Create position" }, { label: "Add liquidity" }]}
         rows={[
           { label: "Pool", value: `${x.symbol}-${y.symbol} · bin step ${binStep}` },
           { label: "Min price", value: `${formatPrice(price(shownRange.lowerBinId))} ${y.symbol}` },
           { label: "Current price", value: `${formatPrice(reviewed?.activePrice ?? activePrice)} ${y.symbol}` },
           { label: "Max price", value: `${formatPrice(price(shownRange.upperBinId - 1))} ${y.symbol}` },
           { label: "Width", value: `${shownRange.upperBinId - shownRange.lowerBinId} bins` },
+          { label: "Position rent deposit", value: reviewed ? `${formatTokenAmount(reviewed.rentLamports, 9, { maxFraction: 6 })} SOL` : rentLabel },
+          { label: "Refunded when closed", value: reviewed ? `${formatTokenAmount(reviewed.rentLamports, 9, { maxFraction: 6 })} SOL` : rentLabel },
           { label: "Shape", value: SHAPES.find((s) => s.id === shape)!.label },
           { label: `Deposit ${x.symbol}`, value: `${formatTokenAmount(amountX ?? 0n, x.decimals, { maxFraction: 6 })} (${formatUsd(usdValue(amountX ?? 0n, x.decimals, x.priceUsd))})` },
           { label: `Deposit ${y.symbol}`, value: `${formatTokenAmount(amountY ?? 0n, y.decimals, { maxFraction: 6 })} (${formatUsd(usdValue(amountY ?? 0n, y.decimals, y.priceUsd))})` },
         ]}
         notes={[
-          "Position account rent is paid by your wallet and refunded when the position is closed.",
+          "Your wallet pays position rent. Network fees and any new bin arrays cost extra.",
           `Fails if the active bin moves more than ${ACTIVE_BIN_SLIPPAGE} bins before it lands.`,
-          "If creating and funding the position does not fit one transaction, your wallet asks for a second signature.",
+          shownRange.upperBinId - shownRange.lowerBinId > DLMM_INITIAL_POSITION_WIDTH
+            ? `This range needs at least ${1 + Math.ceil((shownRange.upperBinId - shownRange.lowerBinId - DLMM_INITIAL_POSITION_WIDTH) / DLMM_MAX_RESIZE_LENGTH) + Math.ceil((shownRange.upperBinId - shownRange.lowerBinId) / DLMM_MAX_ADD_BINS_PER_TX)} wallet approvals to extend and fund. Some pools need more.`
+            : "If creating and funding the position does not fit one transaction, your wallet asks for a second signature.",
         ]}
-      />
+      >
+        {shownRange.upperBinId - shownRange.lowerBinId > DLMM_INITIAL_POSITION_WIDTH && progress && (
+          <p role="status" className="mb-3 text-[12px] text-muted">Transaction {progress.index + 1}: {progress.state}</p>
+        )}
+      </ReviewDialog>
     </div>
   );
 }

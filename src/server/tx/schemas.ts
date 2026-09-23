@@ -37,6 +37,21 @@ export const dlmmOpenBody = z.object({
   maxActiveBinSlippage,
 });
 
+/** Confirmed follow-up transactions for an extended DLMM position. */
+export const dlmmWideStepBody = z.object({
+  payer: pubkey,
+  vault: pubkey,
+  position: pubkey,
+  targetUpperBinId: z.number().int(),
+  amountX: amountString,
+  amountY: amountString,
+  shape,
+  maxActiveBinSlippage,
+  activeBinId: z.number().int(),
+});
+
+export const dlmmWideAddBody = dlmmWideStepBody.extend({ cursorBinId: z.number().int() });
+
 export const dlmmZapOutBody = z.object({
   payer: pubkey,
   vault: pubkey,

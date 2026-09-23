@@ -9,12 +9,10 @@ export const NAV_PRECISION = 1_000_000_000n;
 export const EPOCH_DURATION = 14_400;
 export const FEE_INCREASE_DELAY = 604_800;
 export const DEFAULT_MAX_SLIPPAGE_BPS = 300;
-/**
- * The program CPIs `initialize_position2(lower, width)` with no extend, and the DLMM program caps a
- * fresh position at `DEFAULT_BIN_PER_POSITION` = 70 bins. (1400 is the extended-position limit,
- * which this program never reaches.)
- */
-export const DLMM_MAX_POSITION_WIDTH = 70;
+/** Meteora PositionV2 starts at 70 bins and can be extended to 1,400. */
+export const DLMM_INITIAL_POSITION_WIDTH = 70;
+export const DLMM_MAX_POSITION_WIDTH = 1_400;
+export const DLMM_MAX_RESIZE_LENGTH = 91;
 
 export const explorerUrl = (kind: "address" | "tx", value: string) => {
   const suffix = CLUSTER === "mainnet-beta" ? "" : `?cluster=${CLUSTER}`;

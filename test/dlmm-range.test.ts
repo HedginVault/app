@@ -21,24 +21,25 @@ describe("price <-> bin", () => {
 });
 
 describe("ranges", () => {
-  it("clamps width to 1..70", () => {
+  it("clamps width to 1..1400", () => {
     expect(clampWidth(0)).toBe(1);
-    expect(clampWidth(500)).toBe(70);
+    expect(clampWidth(500)).toBe(500);
+    expect(clampWidth(1401)).toBe(1400);
     expect(clampWidth(34.6)).toBe(35);
   });
   it("places ranges around, below and above the active bin (upper exclusive)", () => {
     expect(rangeForPlacement(100, 10, "both")).toEqual({ lowerBinId: 95, upperBinId: 105 });
     expect(rangeForPlacement(100, 10, "below")).toEqual({ lowerBinId: 91, upperBinId: 101 });
     expect(rangeForPlacement(100, 10, "above")).toEqual({ lowerBinId: 101, upperBinId: 111 });
-    expect(rangeForPlacement(100, 999, "both").upperBinId - rangeForPlacement(100, 999, "both").lowerBinId).toBe(70);
+    expect(rangeForPlacement(100, 999, "both").upperBinId - rangeForPlacement(100, 999, "both").lowerBinId).toBe(999);
   });
-  it("builds a range from prices, clamped to 70 bins", () => {
+  it("builds a range from prices, clamped to 1400 bins", () => {
     const lo = binIdToPrice(10, 10, 9, 6);
     const hi = binIdToPrice(20, 10, 9, 6);
     expect(rangeFromPrices(lo, hi, 10, 9, 6)).toEqual({ lowerBinId: 10, upperBinId: 21 });
     expect(rangeFromPrices(hi, lo, 10, 9, 6)).toBeNull();
-    const wide = rangeFromPrices(lo, binIdToPrice(500, 10, 9, 6), 10, 9, 6)!;
-    expect(wide.upperBinId - wide.lowerBinId).toBe(70);
+    const wide = rangeFromPrices(lo, binIdToPrice(2000, 10, 9, 6), 10, 9, 6)!;
+    expect(wide.upperBinId - wide.lowerBinId).toBe(1400);
   });
   it("reports which tokens a range needs", () => {
     expect(sidesForRange({ lowerBinId: 90, upperBinId: 100 }, 100)).toEqual({ x: false, y: true });

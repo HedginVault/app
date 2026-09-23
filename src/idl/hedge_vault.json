@@ -1732,6 +1732,409 @@
       ]
     },
     {
+      "name": "meteora_dlmm_claim_fee_range",
+      "discriminator": [
+        216,
+        145,
+        196,
+        142,
+        84,
+        129,
+        191,
+        64
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vault_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_authority"
+        },
+        {
+          "name": "treasury_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury_authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury_authority"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
+        },
+        {
+          "name": "from_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "to_bin_id",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_extend_position",
+      "discriminator": [
+        248,
+        78,
+        177,
+        214,
+        128,
+        140,
+        184,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  114,
+                  97,
+                  116,
+                  101,
+                  103,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        }
+      ],
+      "args": [
+        {
+          "name": "bins_to_add",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "meteora_dlmm_initialize_position",
       "discriminator": [
         223,
@@ -2018,6 +2421,219 @@
               "name": "MeteoraDlmmRemoveLiquidityParams"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_remove_liquidity_range",
+      "discriminator": [
+        64,
+        103,
+        62,
+        42,
+        168,
+        22,
+        210,
+        38
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "strategy",
+          "writable": true
+        },
+        {
+          "name": "vault_token_x",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_x_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_token_y",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_y_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "bin_array_bitmap_extension",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "dlmm_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "MeteoraDlmmRemoveLiquidityParams"
+            }
+          }
+        },
+        {
+          "name": "from_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "to_bin_id",
+          "type": "i32"
         }
       ]
     },
@@ -4180,6 +4796,11 @@
       "code": 6064,
       "name": "VaultWithdrawalPaused",
       "msg": "Vault withdrawals are paused by the manager"
+    },
+    {
+      "code": 6065,
+      "name": "InvalidPositionBinRange",
+      "msg": "Position bin range is outside the supported bounds"
     }
   ],
   "types": [
@@ -4803,18 +5424,6 @@
           {
             "name": "amount",
             "type": "u64"
-          },
-          {
-            "name": "strategy_id",
-            "type": "u32"
-          },
-          {
-            "name": "source_spent",
-            "type": "u64"
-          },
-          {
-            "name": "destination_received",
-            "type": "u64"
           }
         ]
       }
@@ -4988,26 +5597,6 @@
           {
             "name": "treasury_amount_y",
             "type": "u64"
-          },
-          {
-            "name": "strategy_id",
-            "type": "u32"
-          },
-          {
-            "name": "token_x_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "token_y_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "vault_retained_x",
-            "type": "u64"
-          },
-          {
-            "name": "vault_retained_y",
-            "type": "u64"
           }
         ]
       }
@@ -5036,26 +5625,6 @@
           {
             "name": "amount_y",
             "type": "u64"
-          },
-          {
-            "name": "strategy_id",
-            "type": "u32"
-          },
-          {
-            "name": "token_x_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "token_y_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount_x_spent",
-            "type": "u64"
-          },
-          {
-            "name": "amount_y_spent",
-            "type": "u64"
           }
         ]
       }
@@ -5080,26 +5649,6 @@
           {
             "name": "bps_to_remove",
             "type": "u16"
-          },
-          {
-            "name": "strategy_id",
-            "type": "u32"
-          },
-          {
-            "name": "token_x_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "token_y_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount_x_received",
-            "type": "u64"
-          },
-          {
-            "name": "amount_y_received",
-            "type": "u64"
           }
         ]
       }
@@ -5460,26 +6009,6 @@
           {
             "name": "strategy",
             "type": "pubkey"
-          },
-          {
-            "name": "id",
-            "type": "u32"
-          },
-          {
-            "name": "strategy_type",
-            "type": {
-              "defined": {
-                "name": "hedge_vault::state::strategy::StrategyType"
-              }
-            }
-          },
-          {
-            "name": "created_ts",
-            "type": "i64"
-          },
-          {
-            "name": "closed_ts",
-            "type": "i64"
           }
         ]
       }
@@ -5508,10 +6037,6 @@
                 "name": "hedge_vault::state::strategy::StrategyType"
               }
             }
-          },
-          {
-            "name": "created_ts",
-            "type": "i64"
           }
         ]
       }

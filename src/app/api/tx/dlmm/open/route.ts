@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import { DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
-import { getPool } from "@/server/dlmm-pool";
+import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
+import { getActiveBinIds, getPool } from "@/server/dlmm-pool";
 import { ApiError } from "@/server/errors";
 import { getProgram } from "@/server/program";
 import { handlePost } from "@/server/route";
@@ -18,8 +18,8 @@ import { dlmmOpenBody } from "@/server/tx/schemas";
 import { fitsInTransaction } from "@/server/tx/size";
 
 /**
- * Opens a position: missing bin arrays, `meteora_dlmm_initialize_position`, then add liquidity — in one
- * transaction when it fits, otherwise the first transaction plus a `next` step for `dlmm/add`.
+ * Opens a position: the initial 70 bins are created first; wider ranges are extended and funded
+ * in confirmed follow-up transactions.
  * `upperBinId` is exclusive, as in `dlmm/initialize`.
  */
 export const POST = handlePost(
@@ -39,6 +39,36 @@ export const POST = handlePost(
     const lbPair = new PublicKey(b.lbPair);
     const dlmm = await getPool(lbPair);
     const upper = onChainUpper(b.upperBinId);
+
+    if (b.upperBinId - b.lowerBinId > DLMM_INITIAL_POSITION_WIDTH) {
+      const activeBinId = (await getActiveBinIds([dlmm])).get(lbPair.toBase58()) ?? dlmm.lbPair.activeId;
+      if ((BigInt(b.amountX) > 0n && upper < activeBinId) || (BigInt(b.amountY) > 0n && b.lowerBinId > activeBinId))
+        throw new ApiError(400, "Validation", "the selected range cannot hold the supplied token amount");
+      const initialUpperExclusive = b.lowerBinId + DLMM_INITIAL_POSITION_WIDTH;
+      const { ix, position } = await dlmmInitializePositionIx(
+        program, ctx, authority, lbPair, b.lowerBinId, initialUpperExclusive,
+      );
+      const positionAddress = position.publicKey.toBase58();
+      return {
+        ...(await assemble(authority, [ix], { signers: [position] })),
+        position: positionAddress,
+        lowerBinId: b.lowerBinId,
+        upperBinId: onChainUpper(initialUpperExclusive),
+        next: {
+          path: "dlmm/extend",
+          body: {
+            vault: b.vault,
+            position: positionAddress,
+            targetUpperBinId: upper,
+            amountX: b.amountX,
+            amountY: b.amountY,
+            shape: b.shape,
+            maxActiveBinSlippage: b.maxActiveBinSlippage,
+            activeBinId,
+          },
+        },
+      };
+    }
 
     const { ix: initIx, position } = await dlmmInitializePositionIx(program, ctx, authority, lbPair, b.lowerBinId, b.upperBinId);
     const binArrays = await missingBinArrayIxs(dlmm, b.lowerBinId, upper, authority);

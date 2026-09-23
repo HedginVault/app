@@ -14,6 +14,7 @@ import { Stat } from "@/components/ui/stat";
 import { useHoldings } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
+import { DLMM_INITIAL_POSITION_WIDTH } from "@/lib/constants";
 import { formatTokenAmount, rawToInput } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
 import { isOperational } from "@/lib/swap-logic";
@@ -138,8 +139,10 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
       {
         label: `Zap out to ${v.depositSymbol}`,
         primary: true,
-        disabled: !operational || pending,
-        reason: "Vault not operational",
+        disabled: !operational || pending || p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH,
+        reason: p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH
+          ? "Remove liquidity and claim fees in ranges before closing"
+          : "Vault not operational",
         onSelect: () => zapPosition(p.position, pair),
       },
       {

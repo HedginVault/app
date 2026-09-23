@@ -11,6 +11,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Slider } from "@/components/ui/slider";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
+import { DLMM_INITIAL_POSITION_WIDTH } from "@/lib/constants";
 import { sidesForRange } from "@/lib/dlmm-range";
 import { formatPrice, formatUsd, parseTokenAmount, usdValue } from "@/lib/format";
 import type { LpMode } from "@/lib/panel-params";
@@ -41,6 +42,7 @@ export function ManagePosition({
   onSwapFor: (p: { to: string; amount?: string }) => void;
 }) {
   const { tokenX: x, tokenY: y, range } = p;
+  const wide = range.upperBinId - range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH;
   const { send, pending } = useSendTransaction();
   const [reviewing, setReviewing] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -156,11 +158,12 @@ export function ManagePosition({
       <Button
         className="w-full"
         loading={pending}
-        disabled={!operational}
+        disabled={!operational || wide}
         onClick={() => setZapping(true)}
       >
         Zap out to {v.depositSymbol}
       </Button>
+      {wide && <p className="text-[12px] text-muted">For wide positions, remove liquidity and claim fees first, then close the empty position.</p>}
 
       <Button
         variant="secondary"
@@ -196,7 +199,9 @@ export function ManagePosition({
         pending={pending}
         onConfirm={() => run("Close position", "dlmm/close", { position: p.position })}
       >
-        {p.closable
+        {wide
+          ? "Remove all liquidity and claim fees first. The program closes this position only when every bin is empty."
+          : p.closable
           ? "This empty position and its strategy are closed. Rent returns to your wallet."
           : "All liquidity is removed and fees claimed, then the position is closed. Rent returns to your wallet."}
       </ConfirmDialog>
@@ -238,7 +243,10 @@ export function ManagePosition({
                   { label: `${y.symbol} fees`, value: <TokenAmount raw={p.feeY} token={y} align="right" /> },
                 ]
         }
-        notes={mode === "claim" ? ["10% of claimed fees goes to the protocol treasury."] : []}
+        notes={[
+          ...(mode === "claim" ? ["10% of claimed fees goes to the protocol treasury."] : []),
+          ...(wide ? ["This wide position is processed in smaller ranges and needs several wallet approvals."] : []),
+        ]}
       />
     </div>
   );

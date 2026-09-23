@@ -1,5 +1,7 @@
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import { DLMM_INITIAL_POSITION_WIDTH } from "@/lib/constants";
+import { ApiError } from "@/server/errors";
 import { getConnection, getProgram } from "@/server/program";
 import { readConfig } from "@/server/readers/vaults";
 import { handlePost } from "@/server/route";
@@ -15,13 +17,17 @@ export const POST = handlePost(dlmmZapOutBody, async (b) => {
   const authority = new PublicKey(b.payer);
   const ctx = await loadVaultCtx(b.vault);
   assertAuthority(ctx, authority);
+  const position = new PublicKey(b.position);
+  const account = await getProgram().account.positionV2.fetch(position);
+  if (account.upperBinId - account.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH)
+    throw new ApiError(400, "Validation", "wide positions must be removed and claimed in ranges before closing");
   const config = await readConfig();
   const slippageBps = Math.min(b.slippageBps, config.maxSlippageBps);
   const { ixs, tokenMints } = await dlmmZapOutIxs(
     getProgram(),
     ctx,
     authority,
-    new PublicKey(b.position),
+    position,
     new PublicKey(config.treasuryAuthority),
   );
   const sourceMints = [...new Set(tokenMints.map((mint) => mint.toBase58()))].filter(

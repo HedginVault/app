@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { z } from "zod";
-import { DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
+import { DLMM_INITIAL_POSITION_WIDTH } from "@/lib/constants";
 import { getActiveBinIds, getPool } from "@/server/dlmm-pool";
 import { ApiError } from "@/server/errors";
 import { getProgram } from "@/server/program";
@@ -14,7 +14,7 @@ export const POST = handlePost(
     payer: pubkey,
     vault: pubkey,
     lbPair: pubkey,
-    width: z.number().int().min(1).max(DLMM_MAX_POSITION_WIDTH).optional(),
+    width: z.number().int().min(1).max(DLMM_INITIAL_POSITION_WIDTH).optional(),
     lowerBinId: z.number().int().optional(),
     upperBinId: z.number().int().optional(),
   }),
@@ -33,8 +33,8 @@ export const POST = handlePost(
       ({ lowerBinId: lower, upperBinId: upper } = rangeFromWidth(active, b.width));
     }
     if (upper <= lower) throw new ApiError(400, "Validation", "upperBinId must be greater than lowerBinId");
-    if (upper - lower > DLMM_MAX_POSITION_WIDTH)
-      throw new ApiError(400, "Validation", `range must span at most ${DLMM_MAX_POSITION_WIDTH} bins`);
+    if (upper - lower > DLMM_INITIAL_POSITION_WIDTH)
+      throw new ApiError(400, "Validation", `range must span at most ${DLMM_INITIAL_POSITION_WIDTH} bins`);
 
     const { ix, position } = await dlmmInitializePositionIx(getProgram(), ctx, authority, lbPair, lower, upper);
     const built = await assemble(authority, [ix], { signers: [position] });

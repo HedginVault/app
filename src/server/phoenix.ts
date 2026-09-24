@@ -1,12 +1,14 @@
 import "server-only";
 import { decodePerpAssetMap, decodeTrader } from "@ellipsis-labs/rise";
-import { PublicKey, type AccountInfo } from "@solana/web3.js";
+import { PublicKey, type AccountInfo, type AccountMeta } from "@solana/web3.js";
 import { cached, setCached } from "./cache";
 
 // Ported from hedgin_keeper/src/valuation/phoenix.ts; keep the two in step when either changes.
 
 export const PHOENIX_PROGRAM_ID = new PublicKey("EtrnLzgbS7nMMy5fbD42kXiUzGg8XQzJ972Xtk1cjWih");
 export const PHOENIX_GLOBAL_CONFIG = new PublicKey("2zskx2iyCvb6Stg7RBZkt1f6MrF4dpYtMG3yMvKwqtUZ");
+/** Phoenix strategies only run on USDC vaults (`InvalidPhoenixDepositMint`). */
+export const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 // `sha256("account:<name>")[..8]`
 const GLOBAL_CONFIG_DISCRIMINATOR = Buffer.from([37, 146, 212, 210, 47, 136, 111, 20]);
@@ -20,9 +22,11 @@ export class PhoenixReadError extends Error {}
 
 export interface PhoenixGlobalConfig {
   canonicalMint: PublicKey;
+  globalVault: PublicKey;
   perpAssetMap: PublicKey;
   globalTraderIndex: PublicKey;
   activeTraderBuffer: PublicKey;
+  withdrawQueue: PublicKey;
 }
 
 export interface PhoenixPosition {
@@ -63,11 +67,44 @@ export function parseGlobalConfig(info: AccountInfo<Buffer>): PhoenixGlobalConfi
   if (!isPhoenix(info, GLOBAL_CONFIG_DISCRIMINATOR) || info.data.length < GLOBAL_CONFIG_LEN) throw decodeError(PHOENIX_GLOBAL_CONFIG);
   return {
     canonicalMint: readKey(info.data, 296),
+    globalVault: readKey(info.data, 328),
     perpAssetMap: readKey(info.data, 360),
     globalTraderIndex: readKey(info.data, 392),
     activeTraderBuffer: readKey(info.data, 424),
+    withdrawQueue: readKey(info.data, 472),
   };
 }
+
+const findPhoenixPda = (seeds: Buffer[]) => PublicKey.findProgramAddressSync(seeds, PHOENIX_PROGRAM_ID)[0];
+
+/** The cross-margin trader `(0, 0)` the program registers for a vault. */
+export const getPhoenixTraderAddress = (vault: PublicKey) =>
+  findPhoenixPda([Buffer.from("trader"), vault.toBuffer(), Buffer.from([0, 0])]);
+
+export const getPhoenixSplineAddress = (orderbook: PublicKey) => findPhoenixPda([Buffer.from("spline"), orderbook.toBuffer()]);
+
+/** Capability bits an onboarded trader holds: place market, deposit, withdraw. Mirrors the program's readiness check. */
+const TRADER_READY_FLAGS = (1 << 2) | (1 << 4) | (1 << 5);
+
+export const isTraderReady = (info: AccountInfo<Buffer>) =>
+  isPhoenix(info, TRADER_DISCRIMINATOR) && info.data.length >= 100 && (info.data.readUInt32LE(96) & TRADER_READY_FLAGS) === TRADER_READY_FLAGS;
+
+export type PhoenixArenaSeed = "global_trader_index" | "active_trader_buffer";
+
+/**
+ * A trader index's header followed by its arenas `PDA([seed, [i]])`. The count, header included, is
+ * `min(u16@52, u16@54)` of the header; the program validates the same list, so it is never hard-coded.
+ */
+export function arenaAccounts(header: PublicKey, info: AccountInfo<Buffer>, seed: PhoenixArenaSeed): PublicKey[] {
+  if (!isPhoenix(info) || info.data.length < 56) throw decodeError(header);
+  const count = Math.min(info.data.readUInt16LE(52), info.data.readUInt16LE(54));
+  if (count < 1) throw decodeError(header);
+  return [header, ...Array.from({ length: count - 1 }, (_, i) => findPhoenixPda([Buffer.from(seed), Buffer.from([i + 1])]))];
+}
+
+/** Remaining accounts of every Phoenix market or collateral CPI: both trader indexes, headers first, all writable. */
+export const phoenixTail = (globalTraderIndex: PublicKey[], activeTraderBuffer: PublicKey[]): AccountMeta[] =>
+  [...globalTraderIndex, ...activeTraderBuffer].map((pubkey) => ({ pubkey, isSigner: false, isWritable: true }));
 
 export function decodeTraderState(key: PublicKey, info: AccountInfo<Buffer>): PhoenixTraderState {
   if (!isPhoenix(info, TRADER_DISCRIMINATOR)) throw decodeError(key);
@@ -190,30 +227,86 @@ export function describePosition(p: PhoenixPosition, m: PhoenixMarket): PhoenixP
   };
 }
 
-const PHOENIX_API_URL = "https://perp-api.phoenix.trade";
-const MARKET_NAMES_TTL = 10 * 60_000;
-/** How long a failed fetch's empty map is served before the next call retries the API. */
-const MARKET_NAMES_FAILURE_TTL = 60_000;
-const MARKET_NAMES_CACHE_KEY = "phoenix:markets";
+export const PHOENIX_API_URL = "https://perp-api.phoenix.trade";
+const MARKETS_TTL = 10 * 60_000;
+/** How long a failed fetch's empty list is served before the next call retries the API. */
+const MARKETS_FAILURE_TTL = 60_000;
+const MARKETS_CACHE_KEY = "phoenix:markets";
 
-async function fetchMarketNames(): Promise<Map<number, string>> {
+export interface PhoenixMarketMeta {
+  symbol: string;
+  assetId: number;
+  marketPubkey: string;
+  tickSize: number;
+  baseLotsDecimals: number;
+  takerFee: number;
+  makerFee: number;
+  marketStatus: string;
+  /** Tradable only from an isolated subaccount; the vault's cross-margin trader cannot open these. */
+  isolatedOnly: boolean;
+  name: string;
+  logoUri: string | null;
+  /** Brand color from Phoenix's market metadata, e.g. "#9945FF". */
+  color: string | null;
+  /** Leverage of the first (smallest) size tier; initial margin is 1 / maxLeverage of notional. */
+  maxLeverage: number;
+  /** Maintenance margin as a fraction of initial margin (Phoenix `riskFactors.maintenanceBps`). */
+  maintenanceFactor: number;
+}
+
+interface RawMarket {
+  symbol: string;
+  assetId: number;
+  marketPubkey: string;
+  tickSize: number;
+  baseLotsDecimals: number;
+  takerFee: number;
+  makerFee: number;
+  marketStatus: string;
+  isolatedOnly: boolean;
+  metadata?: { name?: string; logoUri?: string | null; displayColor?: string | null } | null;
+  leverageTiers?: { maxLeverage: number }[];
+  riskFactors?: { maintenanceBps?: number };
+}
+
+async function fetchMarkets(): Promise<PhoenixMarketMeta[]> {
   const res = await fetch(`${PHOENIX_API_URL}/v1/view/exchange/markets`, { signal: AbortSignal.timeout(5_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const rows = (await res.json()) as { symbol: string; assetId: number }[];
-  return new Map(rows.map((r) => [r.assetId, r.symbol]));
+  const rows = (await res.json()) as RawMarket[];
+  return rows.map((r) => ({
+    symbol: r.symbol,
+    assetId: r.assetId,
+    marketPubkey: r.marketPubkey,
+    tickSize: r.tickSize,
+    baseLotsDecimals: r.baseLotsDecimals,
+    takerFee: r.takerFee,
+    makerFee: r.makerFee,
+    marketStatus: r.marketStatus,
+    isolatedOnly: r.isolatedOnly,
+    name: r.metadata?.name ?? r.symbol,
+    logoUri: r.metadata?.logoUri ?? null,
+    color: r.metadata?.displayColor ?? null,
+    maxLeverage: r.leverageTiers?.[0]?.maxLeverage ?? 1,
+    maintenanceFactor: (r.riskFactors?.maintenanceBps ?? 5_000) / 10_000,
+  }));
 }
 
 /**
- * Symbols by asset id, for display only. A failure caches an empty map for a minute, so a hanging
- * or down perp-api adds its timeout to one read instead of every uncached one.
+ * Every Phoenix market's static parameters. A failure caches an empty list for a minute, so a hanging
+ * or down perp-api adds its timeout to one read instead of every uncached one; build paths treat an
+ * empty list as the API being unavailable.
  */
-export async function getPhoenixMarketNames(): Promise<Map<number, string>> {
+export async function getPhoenixMarkets(): Promise<PhoenixMarketMeta[]> {
   try {
-    return await cached(MARKET_NAMES_CACHE_KEY, MARKET_NAMES_TTL, fetchMarketNames);
+    return await cached(MARKETS_CACHE_KEY, MARKETS_TTL, fetchMarkets);
   } catch (e) {
-    console.warn(`[phoenix] market names unavailable: ${(e as Error).message}`);
-    const empty = new Map<number, string>();
-    setCached(MARKET_NAMES_CACHE_KEY, empty, MARKET_NAMES_FAILURE_TTL);
-    return empty;
+    console.warn(`[phoenix] markets unavailable: ${(e as Error).message}`);
+    setCached(MARKETS_CACHE_KEY, [], MARKETS_FAILURE_TTL);
+    return [];
   }
+}
+
+/** Symbols by asset id, for display only. */
+export async function getPhoenixMarketNames(): Promise<Map<number, string>> {
+  return new Map((await getPhoenixMarkets()).map((m) => [m.assetId, m.symbol]));
 }

@@ -48,7 +48,7 @@ const phoenix = (over: Partial<PhoenixStrategyView> = {}): PhoenixStrategyView =
   leverage: 1.5,
   closable: false,
   positions: [{
-    assetId: 0, symbol: "SOL", side: "long", size: "2", entryPrice: "100", markPrice: "110",
+    assetId: 0, symbol: "SOL", logo: null, side: "long", size: "2", entryPrice: "100", markPrice: "110",
     notional: "220000000", unrealizedPnl: "20000000", accruedFunding: "0",
   }],
   ...over,

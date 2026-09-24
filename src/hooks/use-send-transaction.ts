@@ -19,6 +19,8 @@ export interface SendOptions {
   onProgress?: (p: StepProgress) => void;
   /** Names each transaction in a multi-tx flow (e.g. ["Create position", "Add liquidity"]) so the toast names the step instead of "(step N)". */
   stepLabels?: string[];
+  /** Submits a signed transaction somewhere other than the app's relay (e.g. to a co-signer); defaults to `/api/tx/send`. */
+  submit?: (transaction: string) => Promise<{ signature: string }>;
 }
 
 const POLL_MS = 2_000;
@@ -73,7 +75,7 @@ export function useSendTransaction() {
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
 
-  const send = async ({ label, build, vault, onSuccess, onProgress, stepLabels }: SendOptions): Promise<string[] | null> => {
+  const send = async ({ label, build, vault, onSuccess, onProgress, stepLabels, submit = api.send }: SendOptions): Promise<string[] | null> => {
     if (!publicKey) {
       toast.error("Connect a wallet first");
       return null;
@@ -126,7 +128,7 @@ export function useSendTransaction() {
               const name = stepLabels?.[index] ?? `Transaction ${index + 1} of ${startIndex + signed.length}`;
               report(index, "sending");
               progress(`${name}: submitting transaction...`);
-              return (await api.send(encodeBase64(transaction.serialize()))).signature;
+              return (await submit(encodeBase64(transaction.serialize()))).signature;
             },
             confirm: async (transaction, signature, offset) => {
               report(startIndex + offset, "confirming");
@@ -146,7 +148,7 @@ export function useSendTransaction() {
           const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));
           report("sending");
           progress(at("submitting transaction..."));
-          const { signature } = await api.send(encodeBase64(signed.serialize()));
+          const { signature } = await submit(encodeBase64(signed.serialize()));
           report("confirming");
           progress(at("waiting for confirmation..."));
           await waitForConfirmation(signature, signed.message.recentBlockhash);

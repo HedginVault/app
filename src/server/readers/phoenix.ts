@@ -3,7 +3,7 @@ import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import type { PhoenixStrategyView, UnreadableStrategyView } from "@/lib/types";
 import {
-  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, describePosition, getPhoenixMarketNames,
+  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, describePosition, getPhoenixMarkets,
   parseGlobalConfig, PHOENIX_GLOBAL_CONFIG, PhoenixReadError, type PhoenixMarket, type PhoenixTraderState,
 } from "../phoenix";
 import { getConnection, TOKEN_PROGRAM_ID } from "../program";
@@ -24,6 +24,8 @@ export interface PhoenixViewInput {
   /** Slot the accounts were read at, for the mark-age check. */
   slot: bigint;
   names: Map<number, string>;
+  /** Market logos by asset id; missing entries render the symbol's initials. */
+  logos?: Map<number, string | null>;
 }
 
 const reasonOf = (e: unknown) => (e instanceof Error && e.message ? e.message : "Phoenix read failed");
@@ -53,6 +55,7 @@ export function toPhoenixView(i: PhoenixViewInput): PhoenixStrategyView | Unread
         return {
           assetId,
           symbol: i.names.get(assetId) ?? `Asset #${assetId}`,
+          logo: i.logos?.get(assetId) ?? null,
           side: d.side,
           size: d.size,
           entryPrice: d.entryPrice,
@@ -94,7 +97,9 @@ export async function phoenixViewsFor(
   if (items.length === 0) return [];
   const connection = getConnection();
   try {
-    const [configInfo, names] = await Promise.all([connection.getAccountInfo(PHOENIX_GLOBAL_CONFIG), getPhoenixMarketNames()]);
+    const [configInfo, metas] = await Promise.all([connection.getAccountInfo(PHOENIX_GLOBAL_CONFIG), getPhoenixMarkets()]);
+    const names = new Map(metas.map((m) => [m.assetId, m.symbol]));
+    const logos = new Map(metas.map((m) => [m.assetId, m.logoUri]));
     if (!configInfo) throw new PhoenixReadError(`account_missing:${PHOENIX_GLOBAL_CONFIG.toBase58()}`);
     const config = parseGlobalConfig(configInfo);
     // the program creates the canonical ATA with SPL Token
@@ -126,6 +131,7 @@ export async function phoenixViewsFor(
         markets,
         slot: BigInt(context.slot),
         names,
+        logos,
       });
       if (view.type === "unreadable") console.warn(`[strategies] Phoenix trader ${item.trader.toBase58()} unreadable: ${view.reason}`);
       return view;

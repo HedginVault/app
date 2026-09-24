@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { JupiterIcon, MeteoraIcon } from "@/components/manage/powered-by";
+import { JupiterIcon, MeteoraIcon, PhoenixIcon } from "@/components/manage/powered-by";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export const metadata: Metadata = {
@@ -421,6 +421,7 @@ export default function LandingPage() {
                 {[
                   { name: "Meteora", Icon: MeteoraIcon },
                   { name: "Jupiter", Icon: JupiterIcon },
+                  { name: "Phoenix", Icon: PhoenixIcon },
                 ].map(({ name, Icon }) => (
                   <span
                     key={name}

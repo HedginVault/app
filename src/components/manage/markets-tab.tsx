@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import type { PanelState } from "@/lib/panel-params";
-import type { ChartTarget, HoldingsView, MarketTimeframe, PriceRange, VaultDetail } from "@/lib/types";
+import { chartTargetKey, type ChartTarget, type HoldingsView, type MarketTimeframe, type PriceRange, type VaultDetail } from "@/lib/types";
 import { ActionPanel } from "./action-panel";
 import { OpenPositions } from "./open-positions";
 import { PriceChart } from "./price-chart";
@@ -112,7 +112,7 @@ export function MarketsTab({
         ? changeSince(candles, newest - DAY)
         : null;
   const changeLabel = lookback ? (lookback === "ALL" ? "all time" : chartRange(lookback).label) : "24H";
-  const targetId = target ? ("mint" in target ? target.mint : `${target.pool}:${target.base ?? ""}`) : "";
+  const targetId = target ? chartTargetKey(target) : "";
   const quote = ohlcv.data?.quote === "usd" ? "$" : "";
   const quoteSuffix = ohlcv.data && ohlcv.data.quote !== "usd" ? ` ${ohlcv.data.quote}` : "";
 

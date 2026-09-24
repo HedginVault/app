@@ -35,7 +35,7 @@ describe("toPhoenixView", () => {
       leverage: 3_505_200 / Number(10_000_000n + 83_700n - 9_378n),
       closable: false,
       positions: [{
-        assetId: 0, symbol: "SOL", side: "long", size: "0.03", entryPrice: "114.05", markPrice: "116.84",
+        assetId: 0, symbol: "SOL", logo: null, side: "long", size: "0.03", entryPrice: "114.05", markPrice: "116.84",
         notional: "3505200", unrealizedPnl: "83700", accruedFunding: "-9378",
       }],
     });
@@ -86,5 +86,12 @@ describe("toPhoenixView", () => {
     ["an undecodable asset map", input({ markets: new Error("phoenix_decode:map") }), "phoenix_decode:map"],
   ])("reports %s as an unreadable Phoenix strategy", (_, i, reason) => {
     expect(toPhoenixView(i)).toEqual({ ...base, type: "unreadable", protocol: "phoenix", position: trader.toBase58(), reason });
+  });
+});
+
+describe("toPhoenixView logos", () => {
+  it("attaches the market logo when Phoenix's market list has one", () => {
+    const v = toPhoenixView(input({ logos: new Map([[0, "https://cdn/sol.svg"]]) }));
+    expect(v.type === "phoenix" && v.positions[0].logo).toBe("https://cdn/sol.svg");
   });
 });

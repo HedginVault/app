@@ -86,3 +86,13 @@ body {
 .wallet-adapter-dropdown-list {
   font-family: var(--font-geist-sans) !important;
 }
+
+/* Spans the viewport from inside the page's centred column. 100vw includes a classic scrollbar, so the
+   body clips the few pixels it would add rather than scrolling sideways. */
+.viewport-band {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+body {
+  overflow-x: clip;
+}

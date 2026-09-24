@@ -7,13 +7,20 @@ import { cn } from "@/lib/cn";
 import { PairLogo, TokenLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
 import { formatPercent, formatPrice, formatRelative, formatShare, formatUsd, usdValue } from "@/lib/format";
-import { formatLeverage, formatSignedUsd, perpTotals, signTone, usdc } from "@/lib/perps";
-import type { PositionView, TokenInfo } from "@/lib/types";
+import { formatLeverage, formatSignedPercent, formatSignedUsd, perpTotals, signTone, usdc } from "@/lib/perps";
+import type { PhoenixPerpPositionView, PositionView, TokenInfo } from "@/lib/types";
+import { PhoenixIcon } from "@/components/manage/powered-by";
 import { BinChart } from "./bin-chart";
 
 const meteoraUrl = (lbPair: string) => `https://app.meteora.ag/dlmm/${lbPair}`;
 
 const LP_CELL_LABEL = "text-[11px] text-muted";
+
+/** Price move from entry in the position's favour, as a fraction; null without an entry. */
+const perpMove = (q: PhoenixPerpPositionView) => {
+  const entry = Number(q.entryPrice);
+  return entry > 0 ? ((q.side === "long" ? 1 : -1) * (Number(q.markPrice) - entry)) / entry : null;
+};
 
 /** Glyph shown on the compact icon buttons in the actions column, keyed by `MenuItem.label`. */
 const actionIcon: Record<string, string> = {
@@ -94,18 +101,23 @@ export function PositionCard({
   if (p.kind === "perp") {
     const totals = perpTotals(p);
     return (
-      <div className="space-y-3 px-6 py-4">
+      <div className="space-y-4 px-6 py-5">
         <div className="flex flex-wrap items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/[0.06]">
+            <PhoenixIcon className="h-5" />
+          </span>
           <div className="min-w-0 flex-1 basis-48">
-            <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-              Phoenix Perps
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">Phoenix Perps</span>
               <Badge>Cross margin</Badge>
-              <Address value={p.traderAccount} />
+              {p.positions.length > 0 && (
+                <Badge tone="accent">
+                  {p.positions.length} open {p.positions.length === 1 ? "position" : "positions"}
+                </Badge>
+              )}
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[12px] text-muted">
-              <span>Collateral {formatUsd(usdc(p.collateral))}</span>
-              <span>Leverage {formatLeverage(p.leverage)}</span>
-              <span className={signTone(totals.unrealizedPnl)}>uPnL {formatSignedUsd(totals.unrealizedPnl)}</span>
+              <Address value={p.traderAccount} />
               {p.lastActionTs > 0 && <span>Last action {formatRelative(p.lastActionTs)}</span>}
             </div>
           </div>
@@ -114,22 +126,112 @@ export function PositionCard({
             {menu}
           </div>
         </div>
-        {p.positions.length > 0 ? (
-          <ul className="space-y-1 text-[12px] tabular-nums">
-            {p.positions.map((q) => (
-              <li key={q.assetId} className="flex flex-wrap items-center gap-x-2">
-                <span className="font-medium">{q.symbol}</span>
-                <Badge tone={q.side === "long" ? "accent" : "danger"}>{q.side === "long" ? "Long" : "Short"}</Badge>
-                <span className="text-muted">{q.size}</span>
-                <span className={signTone(q.unrealizedPnl)}>uPnL {formatSignedUsd(q.unrealizedPnl)}</span>
-              </li>
-            ))}
-          </ul>
+
+        <div className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
+          <div>
+            <div className={LP_CELL_LABEL}>Collateral</div>
+            <div className="text-[13px] font-medium tabular-nums">{formatUsd(usdc(p.collateral))}</div>
+          </div>
+          <div>
+            <div className={LP_CELL_LABEL}>Unrealized PnL</div>
+            <div className={cn("text-[13px] font-medium tabular-nums", signTone(totals.unrealizedPnl))}>{formatSignedUsd(totals.unrealizedPnl)}</div>
+          </div>
+          <div>
+            <div className={LP_CELL_LABEL}>Leverage</div>
+            <div className="text-[13px] font-medium tabular-nums">{formatLeverage(p.leverage)}</div>
+          </div>
+          <div>
+            <div className={LP_CELL_LABEL}>Accrued funding</div>
+            <div className={cn("text-[13px] font-medium tabular-nums", signTone(totals.accruedFunding))}>{formatSignedUsd(totals.accruedFunding)}</div>
+          </div>
+        </div>
+
+        {p.positions.length === 0 ? (
+          <p className="rounded-lg bg-white/[0.03] px-3 py-2.5 text-[12px] text-muted">No open positions. Collateral is idle in the account.</p>
         ) : (
-          <p className="text-[12px] text-muted">No open positions.</p>
+          <div className="overflow-hidden rounded-xl border border-border">
+            {/* Table from sm up; stacked cards on phones. */}
+            <table className="hidden w-full text-[13px] tabular-nums sm:table">
+              <thead className="bg-white/[0.02] text-[11px] text-muted">
+                <tr className="text-right [&>th:first-child]:text-left">
+                  <th scope="col" className="px-3 py-2 font-normal">Market</th>
+                  <th scope="col" className="px-3 py-2 font-normal">Size</th>
+                  <th scope="col" className="px-3 py-2 font-normal">Entry</th>
+                  <th scope="col" className="px-3 py-2 font-normal">Mark</th>
+                  <th scope="col" className="px-3 py-2 font-normal">PnL</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {p.positions.map((q) => {
+                  const move = perpMove(q);
+                  return (
+                    <tr key={q.assetId} className="text-right [&>td:first-child]:text-left">
+                      <td className="px-3 py-2.5">
+                        <span className="flex items-center gap-2">
+                          <TokenLogo token={{ symbol: q.symbol, logo: q.logo }} size="sm" />
+                          <span className="font-medium">{q.symbol}</span>
+                          <Badge tone={q.side === "long" ? "accent" : "danger"}>{q.side === "long" ? "Long" : "Short"}</Badge>
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div>
+                          {q.size} <span className="text-muted">{q.symbol}</span>
+                        </div>
+                        <div className="text-[11px] text-muted">{formatUsd(usdc(q.notional))}</div>
+                      </td>
+                      <td className="px-3 py-2.5">${formatPrice(Number(q.entryPrice))}</td>
+                      <td className="px-3 py-2.5">${formatPrice(Number(q.markPrice))}</td>
+                      <td className={cn("px-3 py-2.5", signTone(q.unrealizedPnl))}>
+                        <div>{formatSignedUsd(q.unrealizedPnl)}</div>
+                        {move !== null && <div className="text-[11px] opacity-80">{formatSignedPercent(move)}</div>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <ul className="divide-y divide-border sm:hidden">
+              {p.positions.map((q) => {
+                const move = perpMove(q);
+                return (
+                  <li key={q.assetId} className="space-y-2 p-3 text-[13px] tabular-nums">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <TokenLogo token={{ symbol: q.symbol, logo: q.logo }} size="sm" />
+                        <span className="font-medium">{q.symbol}</span>
+                        <Badge tone={q.side === "long" ? "accent" : "danger"}>{q.side === "long" ? "Long" : "Short"}</Badge>
+                      </span>
+                      <span className={signTone(q.unrealizedPnl)}>
+                        {formatSignedUsd(q.unrealizedPnl)}
+                        {move !== null && <span className="ml-1 text-[11px] opacity-80">{formatSignedPercent(move)}</span>}
+                      </span>
+                    </div>
+                    <dl className="grid grid-cols-3 gap-2 text-[12px]">
+                      <div>
+                        <dt className="text-[11px] text-muted">Size</dt>
+                        <dd>
+                          {q.size} {q.symbol}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] text-muted">Entry</dt>
+                        <dd>${formatPrice(Number(q.entryPrice))}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] text-muted">Mark</dt>
+                        <dd>${formatPrice(Number(q.markPrice))}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
         {BigInt(p.canonicalBalance) > 0n && (
-          <p className="text-[12px] text-muted">{formatUsd(usdc(p.canonicalBalance))} withdrawn from Phoenix, awaiting unwrap.</p>
+          <p className="rounded-lg bg-warning-soft px-3 py-2 text-[12px] text-amber-300">
+            {formatUsd(usdc(p.canonicalBalance))} returned from Phoenix, awaiting unwrap.
+          </p>
         )}
       </div>
     );

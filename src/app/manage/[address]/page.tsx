@@ -116,6 +116,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
       <div>
         <Tabs
           variant="underline"
+          divider={false}
           tabs={[
             { id: "portfolio", label: <TabLabel id="portfolio">Portfolio</TabLabel> },
             { id: "swap", label: <TabLabel id="swap">Swap</TabLabel> },
@@ -137,15 +138,20 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
           // Fresh panel state when entering a trade tab, so a stale swap/pool param never leaks across.
           onChange={(t) => go(t, t === "swap" ? { panel: "swap" } : t === "liquidity" ? { panel: "lp" } : undefined)}
         />
+        {/* The divider and the band below it span the viewport; each tab picks its own content width inside. */}
+        <div className="viewport-band -mt-px -mb-24 border-t border-border bg-black/25 pt-6 pb-24">
+          <div className={tab === "perps" ? "mx-auto max-w-[1920px] px-6 lg:px-8" : "mx-auto max-w-6xl px-6"}>
+            {tab === "portfolio" && <BalanceTab v={v} owner={owner} />}
+            {(tab === "swap" || tab === "liquidity") && (
+              <MarketsTab key={tab} v={v} owner={owner} panel={tab === "swap" ? "swap" : "lp"} onSwitch={(s) => go(s.panel === "swap" ? "swap" : "liquidity", s)} />
+            )}
+            {tab === "perps" && <PerpsTab v={v} owner={owner} />}
+            {tab === "history" && <HistoryTab address={v.address} />}
+            {tab === "requests" && <RequestsTab v={v} owner={owner} />}
+            {tab === "settings" && <SettingsTab v={v} owner={owner} />}
+          </div>
+        </div>
       </div>
-      {tab === "portfolio" && <BalanceTab v={v} owner={owner} />}
-      {(tab === "swap" || tab === "liquidity") && (
-        <MarketsTab key={tab} v={v} owner={owner} panel={tab === "swap" ? "swap" : "lp"} onSwitch={(s) => go(s.panel === "swap" ? "swap" : "liquidity", s)} />
-      )}
-      {tab === "perps" && <PerpsTab v={v} />}
-      {tab === "history" && <HistoryTab address={v.address} />}
-      {tab === "requests" && <RequestsTab v={v} owner={owner} />}
-      {tab === "settings" && <SettingsTab v={v} owner={owner} />}
     </div>
   );
 }

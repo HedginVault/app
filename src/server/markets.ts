@@ -2,6 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { cached } from "./cache";
 import type { Candle, ChartTarget, MarketTimeframe, OhlcvView } from "@/lib/types";
 import { ApiError } from "./errors";
+import { PHOENIX_API_URL } from "./phoenix";
 import { getPrices } from "./prices";
 import { getTokenInfo } from "./tokens";
 import { readPoolInfo } from "./tx/dlmm";
@@ -110,12 +111,35 @@ const pairOf = (pool: string) =>
  * Candles for a token (USD) or for a pool (priced in its quote token, which matches how DLMM quotes a pair).
  * Both come from Jupiter's per-token USD history; a pool's candles are the ratio of its two tokens.
  */
+const PHOENIX_TIMEFRAMES: Record<MarketTimeframe, string> = { "5m": "5m", "15m": "15m", "1h": "1h", "4h": "4h", "1d": "1d", "1w": "1d" };
+
+/** Phoenix trade candles for a perp market, ascending, only before `before` (unix seconds) when paging back. */
+const perpCandles = (symbol: string, tf: MarketTimeframe, before?: number) =>
+  cached(`phoenix:chart:${symbol}:${tf}:${before ?? ""}`, CANDLES_TTL_MS, async (): Promise<Candle[]> => {
+    const params = new URLSearchParams({ timeframe: PHOENIX_TIMEFRAMES[tf], limit: String(CANDLES) });
+    if (before) params.set("endTime", String(before * 1000 - 1));
+    const res = await fetch(`${PHOENIX_API_URL}/v1/candles/${encodeURIComponent(symbol)}?${params}`, { signal: AbortSignal.timeout(8_000) });
+    if (res.status === 400 || res.status === 404) throw new ApiError(404, "NotFound", `No Phoenix market ${symbol}`);
+    if (!res.ok) throw new ApiError(502, "Upstream", `Phoenix candles ${res.status}`);
+    const rows = (await res.json()) as { time: number; open: number; high: number; low: number; close: number; volume: number }[];
+    return rows
+      .map((c) => ({ time: Math.floor(c.time / 1000), open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume }))
+      .filter((c) => c.close > 0 && (!before || c.time < before))
+      .sort((a, b) => a.time - b.time)
+      .filter((c, i, all) => i === 0 || c.time !== all[i - 1].time);
+  });
+
 export async function getOhlcv(
   target: ChartTarget,
   tf: MarketTimeframe,
   /** Unix seconds: only candles before this, for scrolling back in history. */
   before?: number,
 ): Promise<OhlcvView> {
+  if ("perp" in target) {
+    const candles = await perpCandles(target.perp, tf, before);
+    if (!candles.length && !before) throw new ApiError(404, "NotFound", "No price history for this market");
+    return { name: `${target.perp}-PERP`, quote: "usd", candles };
+  }
   if ("mint" in target) {
     const [symbol, candles] = await Promise.all([symbolOf(target.mint), usdCandles(target.mint, tf, before)]);
     if (!candles.length && !before) throw new ApiError(404, "NotFound", "No price history for this token");

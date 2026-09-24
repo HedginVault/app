@@ -8,6 +8,7 @@ import { TokenAmount } from "@/components/token/token-amount";
 import { barWidths, toSlices, type SliceInput } from "@/lib/allocation";
 import { formatShare, formatUsd } from "@/lib/format";
 import { positionKey } from "@/lib/holdings";
+import { PhoenixIcon } from "@/components/manage/powered-by";
 import type { HoldingsView, PositionView } from "@/lib/types";
 import type { ReactNode } from "react";
 
@@ -30,7 +31,9 @@ const positionIcon = (p: PositionView): ReactNode =>
   ) : p.kind === "error" ? (
     <span className="size-5 shrink-0 rounded-full bg-warning-soft" />
   ) : p.kind === "perp" ? (
-    <span className="size-5 shrink-0 rounded-full bg-accent-soft" />
+    <span className="grid size-5 shrink-0 place-items-center">
+      <PhoenixIcon />
+    </span>
   ) : (
     <TokenLogo token={p.token} size="sm" />
   );

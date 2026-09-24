@@ -8,6 +8,7 @@ import type {
   MarketTimeframe,
   NavHistoryPoint,
   OhlcvView,
+  PhoenixManagerView,
   PoolInfo,
   PoolSearchPage,
   QuoteView,
@@ -86,12 +87,13 @@ export const api = {
   navHistory: (address: string, o?: GetOptions) =>
     get<NavHistoryPoint[]>(`/api/vaults/${address}/nav`, o),
   holdings: (address: string, o?: GetOptions) => get<HoldingsView>(`/api/vaults/${address}/holdings`, o),
+  phoenix: (address: string, o?: GetOptions) => get<PhoenixManagerView>(`/api/vaults/${address}/phoenix`, o),
   manager: (wallet: string, o?: GetOptions) => get<ManagerView>(`/api/manager/${wallet}`, o),
   pool: (lbPair: string) => get<PoolInfo>(`/api/dlmm/pool/${lbPair}`),
   positionRent: (binCount: number) => get<{ binCount: number; lamports: string }>(`/api/dlmm/position-rent?bins=${binCount}`),
   ohlcv: (target: ChartTarget, tf: MarketTimeframe, before?: number) =>
     get<OhlcvView>(
-      `/api/markets/ohlcv?${"mint" in target ? `mint=${target.mint}` : `pool=${target.pool}${target.base ? `&base=${target.base}` : ""}`}&tf=${tf}${before ? `&before=${before}` : ""}`,
+      `/api/markets/ohlcv?${"mint" in target ? `mint=${target.mint}` : "perp" in target ? `perp=${encodeURIComponent(target.perp)}` : `pool=${target.pool}${target.base ? `&base=${target.base}` : ""}`}&tf=${tf}${before ? `&before=${before}` : ""}`,
     ),
   quote: (q: QuoteParams) =>
     get<QuoteView & { slippageBps: number }>(

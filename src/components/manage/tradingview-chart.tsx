@@ -84,10 +84,11 @@ const RESOLUTIONS: Record<string, MarketTimeframe> = { "5": "5m", "15": "15m", "
 const POLL_MS = 60_000;
 
 /** Tickers carry the target so resolveSymbol/getBars stay stateless: "mint:<address>" or "pool:<address>[:<base>]". */
-const toTicker = (t: ChartTarget) => ("mint" in t ? `mint:${t.mint}` : `pool:${t.pool}${t.base ? `:${t.base}` : ""}`);
+const toTicker = (t: ChartTarget) =>
+  "mint" in t ? `mint:${t.mint}` : "perp" in t ? `perp:${t.perp}` : `pool:${t.pool}${t.base ? `:${t.base}` : ""}`;
 const fromTicker = (ticker: string): ChartTarget => {
   const [kind, address, base] = ticker.split(":");
-  return kind === "pool" ? { pool: address, base } : { mint: address };
+  return kind === "pool" ? { pool: address, base } : kind === "perp" ? { perp: address } : { mint: address };
 };
 
 const pricescaleFor = (price: number) =>

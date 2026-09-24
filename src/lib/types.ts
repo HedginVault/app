@@ -159,6 +159,8 @@ export interface PhoenixPerpPositionView {
   assetId: number;
   /** Market symbol, or `Asset #<id>` when Phoenix's market list is unavailable. */
   symbol: string;
+  /** Market logo from Phoenix's market list, when available. */
+  logo: string | null;
   side: "long" | "short";
   /** Whole base units, always positive. */
   size: string;
@@ -184,6 +186,65 @@ export interface PhoenixStrategyView extends StrategyBase {
   positions: PhoenixPerpPositionView[];
   /** Mirrors the program's close precondition: zero collateral, zero positions, no queued withdrawal and no canonical balance awaiting unwrap. */
   closable: boolean;
+}
+
+/** A Phoenix perp market the manager can trade from the vault's cross-margin account. */
+export interface PhoenixMarketView {
+  symbol: string;
+  /** e.g. "Solana". */
+  name: string;
+  logoUri: string | null;
+  color: string | null;
+  maxLeverage: number;
+  /** Maintenance margin as a fraction of initial margin. */
+  maintenanceFactor: number;
+  /** USD per base unit, decimal string; "0" when the mark is unavailable. */
+  markPrice: string;
+  tickSize: number;
+  baseLotsDecimals: number;
+  /** Fee rates as fractions (0.00035 = 3.5 bps). */
+  takerFee: number;
+  makerFee: number;
+}
+
+export interface PhoenixOpenOrderView {
+  symbol: string;
+  side: "long" | "short";
+  /** USD per base unit and remaining base units, decimal strings. */
+  price: string;
+  size: string;
+  priceInTicks: string;
+  orderSequenceNumber: string;
+  reduceOnly: boolean;
+}
+
+/** The vault's Phoenix margin account from perp-api, USDC atoms as strings. */
+export interface PhoenixAccountView {
+  collateral: string;
+  /** Collateral + uPnL + unsettled funding: what margin is measured against. */
+  equity: string;
+  initialMargin: string;
+  maintenanceMargin: string;
+  withdrawable: string;
+  riskState: string;
+  /** Liquidation price per market symbol, USD decimal strings. */
+  liquidationPrices: Record<string, string>;
+}
+
+/** What the manager's Phoenix card needs beyond the holdings view. */
+export interface PhoenixManagerView {
+  /** `none`: no strategy; `registered`: strategy exists, trader not onboarded yet; `ready`: can deposit and trade. */
+  status: "none" | "registered" | "ready";
+  /** Phoenix strategies need a USDC deposit mint. */
+  usdcVault: boolean;
+  traderAccount: string;
+  markets: PhoenixMarketView[];
+  /** From perp-api; null when it is unavailable. */
+  openOrders: PhoenixOpenOrderView[] | null;
+  /** USDC atoms withdrawable while the account stays healthy; null when perp-api is unavailable. */
+  withdrawable: string | null;
+  /** Margin summary; null before onboarding or when perp-api is unavailable. */
+  account: PhoenixAccountView | null;
 }
 
 export type StrategyProtocol = "dlmm" | "phoenix";
@@ -213,7 +274,12 @@ export interface PriceRange {
   max: number;
 }
 
-export type ChartTarget = { mint: string } | { pool: string; base?: string };
+/** A token priced in USD, a DLMM pool priced in its quote token, or a Phoenix perp market by symbol. */
+export type ChartTarget = { mint: string } | { pool: string; base?: string } | { perp: string };
+
+/** Stable cache key for a chart target. */
+export const chartTargetKey = (t: ChartTarget) =>
+  "mint" in t ? t.mint : "perp" in t ? `perp:${t.perp}` : `${t.pool}:${t.base ?? ""}`;
 
 export interface Candle {
   time: number;

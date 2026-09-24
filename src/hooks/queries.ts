@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type QuoteParams } from "@/lib/api";
-import type { ChartTarget, MarketTimeframe } from "@/lib/types";
+import { chartTargetKey, type ChartTarget, type MarketTimeframe } from "@/lib/types";
 
 export const queryKeys = {
   config: ["config"] as const,
@@ -11,6 +11,7 @@ export const queryKeys = {
   position: (address: string, owner: string) => ["position", address, owner] as const,
   requests: (address: string) => ["requests", address] as const,
   holdings: (address: string) => ["holdings", address] as const,
+  phoenix: (address: string) => ["phoenix", address] as const,
   strategyHistory: (address: string) => ["strategyHistory", address] as const,
   navHistory: (address: string) => ["navHistory", address] as const,
   manager: (wallet: string) => ["manager", wallet] as const,
@@ -81,6 +82,14 @@ export const useHoldings = (address: string) =>
     refetchInterval: REFRESH,
   });
 
+/** Manager-only Phoenix state: onboarding status, markets, open orders, withdrawable collateral. */
+export const usePhoenixManager = (address: string) =>
+  useQuery({
+    queryKey: queryKeys.phoenix(address),
+    queryFn: () => api.phoenix(address, takeFresh(queryKeys.phoenix(address))),
+    refetchInterval: REFRESH,
+  });
+
 export const useStrategyHistory = (address: string) =>
   useQuery({
     queryKey: queryKeys.strategyHistory(address),
@@ -107,7 +116,7 @@ export const useManager = (wallet: string | undefined) =>
 /** Candles for a token (USD) or a pool (quote token). `target` undefined disables the query. */
 export const useOhlcv = (target: ChartTarget | undefined, tf: MarketTimeframe) =>
   useQuery({
-    queryKey: queryKeys.ohlcv(target ? ("mint" in target ? target.mint : `${target.pool}:${target.base ?? ""}`) : "", tf),
+    queryKey: queryKeys.ohlcv(target ? chartTargetKey(target) : "", tf),
     queryFn: () => api.ohlcv(target!, tf),
     enabled: !!target,
     refetchInterval: 60_000,
@@ -172,6 +181,7 @@ export function useInvalidateVault() {
       ["position", address],
       queryKeys.requests(address),
       queryKeys.holdings(address),
+      queryKeys.phoenix(address),
       queryKeys.strategyHistory(address),
     ] as const) {
       markFresh(key);

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { type ChartRangeId, mergeCandles, rangeStart } from "@/lib/chart-ranges";
-import type { Candle, ChartTarget, MarketTimeframe } from "@/lib/types";
+import { chartTargetKey as targetKey, type Candle, type ChartTarget, type MarketTimeframe } from "@/lib/types";
 import { useOhlcv } from "./queries";
 
 interface History {
@@ -18,7 +18,6 @@ interface History {
 const NONE: Candle[] = [];
 const empty = (key: string): History => ({ key, candles: NONE, done: false, failedAt: null });
 
-const targetKey = (t: ChartTarget) => ("mint" in t ? t.mint : `${t.pool}:${t.base ?? ""}`);
 
 /**
  * The live page from `useOhlcv` (newest candles, refreshed every minute) plus older pages fetched on

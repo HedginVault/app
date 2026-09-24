@@ -65,6 +65,13 @@ class RangeBand implements ISeriesPrimitive<Time> {
   }
 }
 
+export interface ChartLine {
+  price: number;
+  title: string;
+  color: string;
+  dashed?: boolean;
+}
+
 /** Enough decimals to show movement on micro-priced tokens without drowning $100 prices in zeros. */
 function precisionFor(price: number) {
   if (!(price > 0)) return 2;
@@ -99,6 +106,7 @@ export function PriceChart({
   intraday = true,
   onLoadMore,
   onRangeChange,
+  lines: priceLines,
 }: {
   candles: Candle[];
   /** LP range drawn as Min/Max Bin lines with a shaded band, like Meteora. */
@@ -115,6 +123,8 @@ export function PriceChart({
   onLoadMore?: () => void;
   /** Present makes the Min/Max Bin lines draggable; called with the edited range as the user drags. */
   onRangeChange?: (range: PriceRange) => void;
+  /** Labelled horizontal price lines, e.g. a perp position's entry and liquidation price. */
+  lines?: ChartLine[];
 }) {
   const el = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
@@ -123,6 +133,7 @@ export function PriceChart({
   const band = useRef(new RangeBand());
   const otherBands = useRef(new RangeBand(OTHER_FILL));
   const lines = useRef<IPriceLine[]>([]);
+  const markerLines = useRef<IPriceLine[]>([]);
   const loadMore = useRef(onLoadMore);
   const shown = useRef<{ first: number; last: number; count: number } | null>(null);
   const framed = useRef<string | null>(null);
@@ -319,6 +330,16 @@ export function PriceChart({
   }, [range?.min, range?.max]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Only the values matter; the parent rebuilds the array every render.
+  const linesKey = JSON.stringify(priceLines ?? []);
+  useEffect(() => {
+    const series = price.current;
+    if (!series) return;
+    for (const line of markerLines.current) series.removePriceLine(line);
+    markerLines.current = (JSON.parse(linesKey) as ChartLine[]).map((l) =>
+      series.createPriceLine({ price: l.price, title: l.title, color: l.color, lineWidth: 1, lineStyle: l.dashed ? 2 : 0, axisLabelVisible: true }),
+    );
+  }, [linesKey]);
+
   const othersKey = otherRanges?.map((r) => `${r.min}:${r.max}`).join(",") ?? "";
   useEffect(() => {
     otherBands.current.setRanges(othersKey ? othersKey.split(",").map((k) => ({ min: Number(k.split(":")[0]), max: Number(k.split(":")[1]) })) : []);

@@ -84,14 +84,14 @@ describe("checkTrader", () => {
 });
 
 describe("parseGlobalConfig", () => {
-  const keys = [PublicKey.unique(), PublicKey.unique(), PublicKey.unique(), PublicKey.unique()];
+  const keys = Array.from({ length: 6 }, () => PublicKey.unique());
   const data = Buffer.alloc(776);
   Buffer.from([37, 146, 212, 210, 47, 136, 111, 20]).copy(data);
-  [296, 360, 392, 424].forEach((offset, i) => keys[i].toBuffer().copy(data, offset));
+  [296, 328, 360, 392, 424, 472].forEach((offset, i) => keys[i].toBuffer().copy(data, offset));
 
   it("reads the exchange accounts", () => {
     expect(parseGlobalConfig(accountInfo(data, PHOENIX_PROGRAM_ID))).toEqual({
-      canonicalMint: keys[0], perpAssetMap: keys[1], globalTraderIndex: keys[2], activeTraderBuffer: keys[3],
+      canonicalMint: keys[0], globalVault: keys[1], perpAssetMap: keys[2], globalTraderIndex: keys[3], activeTraderBuffer: keys[4], withdrawQueue: keys[5],
     });
   });
 

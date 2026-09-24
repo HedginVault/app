@@ -8,12 +8,15 @@ export function Tabs<T extends string>({
   value,
   onChange,
   variant = "pill",
+  divider = true,
 }: {
   tabs: { id: T; label: ReactNode }[];
   value: T;
   onChange: (id: T) => void;
   /** `underline` is a full-width bar for many tabs; it scrolls sideways on narrow screens. */
   variant?: "pill" | "underline";
+  /** `underline` only: false leaves the bottom line to the caller, e.g. a full-width divider drawn below the bar. */
+  divider?: boolean;
 }) {
   const underline = variant === "underline";
   return (
@@ -22,7 +25,7 @@ export function Tabs<T extends string>({
       className={cn(
         "flex max-w-full overflow-x-auto",
         underline
-          ? "gap-1 border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          ? cn("gap-1 overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", divider && "border-b border-border")
           : "gap-1 rounded-full border border-border bg-white/[0.03] p-1",
       )}
     >
@@ -36,7 +39,8 @@ export function Tabs<T extends string>({
             "min-w-max text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-sky-400",
             underline
               ? cn(
-                  "-mb-px border-b-2 px-3 py-3 sm:px-4",
+                  "border-b-2 px-3 py-3 sm:px-4",
+                  divider && "-mb-px",
                   value === t.id ? "border-sky-400 text-white" : "border-transparent text-muted hover:text-foreground",
                 )
               : cn(

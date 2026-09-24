@@ -107,9 +107,9 @@ interface PhoenixStrategyView extends StrategyBase {
 - Select rows with `"phoenixPerp" in strategyType`.
 - `phoenixViewsFor(vault, items)`:
   1. Read `PHOENIX_GLOBAL_CONFIG`; parse for `perpAssetMap` and `canonicalMint`.
-  2. One `getMultipleAccounts` for the perp asset map, every trader account and each canonical ATA
-     (`getAssociatedTokenAddressSync(canonicalMint, vault, true, TOKEN_PROGRAM_ID)`), plus the slot via
-     `getSlot` for the mark-age check.
+  2. One `getMultipleAccountsInfoAndContext` for the perp asset map, the vault's canonical ATA
+     (`getAssociatedTokenAddressSync(canonicalMint, vault, true, TOKEN_PROGRAM_ID)`) and every trader
+     account; its context slot drives the mark-age check, so all values come from one slot.
   3. `getPhoenixMarketNames()` in parallel.
   4. Per strategy: decode, `checkTrader`, `computeTraderEquity`, `describePosition` for each position with
      non-zero base lots.
@@ -123,15 +123,15 @@ interface PhoenixStrategyView extends StrategyBase {
 
 ### `src/lib/holdings.ts`
 
-- For each `phoenix` strategy push `phoenix_equity` (mint USDC, amount `equity`) and `phoenix_canonical`
-  (mint `canonicalMint`, amount `canonicalBalance`).
+- For each `phoenix` strategy push `phoenix_equity` and `phoenix_canonical`, both with the vault's deposit
+  mint and decimals (amounts `equity` and `canonicalBalance`). This is exactly what the keeper books: the
+  canonical token is USDC wrapped 1:1, so it needs no price of its own and never makes the total partial.
 - Drop the canonical mint from `unmanagedHoldings`, as Jupiter target mints are, so it is not counted twice.
-- Register the canonical mint as a token priced like USDC (it is 1:1 wrapped USDC and may have no market
-  price), so the total is not reported partial.
-- A Phoenix strategy in a non-USDC vault is valued through the normal price path and logs a warning
-  (the keeper refuses this case with `phoenix_requires_usdc`; the live view stays up).
+- No non-USDC fallback: `phoenix_initialize_strategy` requires `vault.deposit_mint == USDC_MINT`, so a
+  Phoenix strategy only exists in a USDC vault.
 - Build `kind: "perp"` rows; `closable` = no positions, equity 0 and canonical balance 0.
-- Sort order: idle → swap → lp → perp → error. `isEmptyPosition` treats a closable perp as empty.
+- Sort order: idle → swap → lp → perp → error. `isEmptyPosition` never hides a perp row: an empty Phoenix
+  account is exactly the row whose "Close strategy" action must stay reachable.
 
 ### `src/server/tx/vault.ts`
 
@@ -149,6 +149,13 @@ interface PhoenixStrategyView extends StrategyBase {
 NAV share via `ValueBlock`; collateral, leverage and net uPnL (sign-colored); one line per position
 (`SOL-PERP · Long 12.5 · uPnL +$84.20`); a note when `canonicalBalance > 0` ("X USDC withdrawn, awaiting
 unwrap"); last action time. Renders on both manage Portfolio and the public vault page via `HoldingsSection`.
+On the manage Portfolio, a closable perp row gets the same "Close strategy" menu action swap rows have, so the
+fixed `closeStrategyIx` has a caller. The unreadable card names its protocol ("Phoenix account" vs
+"DLMM position") instead of always saying DLMM.
+
+Units, verified against 67 mainnet positions: USDC price = `ticks × tickSize × 10^baseLotDecimals / 10^6`;
+`baseLotDecimals` can be negative (PUMP is −2). `accumulatedFundingForActivePosition` is 0 on every sampled
+position, so accrued funding uses the snapshot formula above.
 
 `src/components/manage/perps-tab.tsx` (new) replaces the placeholder in `app/manage/[address]/page.tsx`:
 - Uses the existing holdings query; no new API route.

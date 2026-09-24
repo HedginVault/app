@@ -120,15 +120,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
             { id: "portfolio", label: <TabLabel id="portfolio">Portfolio</TabLabel> },
             { id: "swap", label: <TabLabel id="swap">Swap</TabLabel> },
             { id: "liquidity", label: <TabLabel id="liquidity">Liquidity</TabLabel> },
-            {
-              id: "perps",
-              label: (
-                <TabLabel id="perps">
-                  Perps
-                  <span className="rounded-full bg-white/10 px-1.5 text-[11px]">Soon</span>
-                </TabLabel>
-              ),
-            },
+            { id: "perps", label: <TabLabel id="perps">Perps</TabLabel> },
             { id: "history", label: <TabLabel id="history">History</TabLabel> },
             {
               id: "requests",

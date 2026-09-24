@@ -1,10 +1,18 @@
 import type DLMM from "@meteora-ag/dlmm";
 import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 import { describe, expect, it, vi } from "vitest";
 import { getConfigPda, getStrategyPda } from "@/server/pda";
 import { getProgram } from "@/server/program";
 import type { VaultCtx } from "@/server/tx/context";
-import { binPrice, dlmmExtendPositionIx, dlmmInitializePositionIx, onChainUpper, rangeFromWidth } from "@/server/tx/dlmm";
+import {
+  binPrice,
+  dlmmExtendPositionIx,
+  dlmmInitializePositionIx,
+  onChainUpper,
+  rangeFromWidth,
+  zapOutEstimatedAmount,
+} from "@/server/tx/dlmm";
 
 // The initialize route reaches the range check before it touches the chain; stub the two calls that
 // would otherwise need RPC.
@@ -69,6 +77,18 @@ describe("onChainUpper", () => {
   it("handles the single-bin range", () => {
     const { lowerBinId, upperBinId } = rangeFromWidth(-7, 1);
     expect(onChainUpper(upperBinId)).toBe(lowerBinId);
+  });
+});
+
+describe("zapOutEstimatedAmount", () => {
+  it("quotes liquidity plus the vault-retained fee", () => {
+    // 1,000 position tokens + 90% of 100 fee tokens = 1,090.
+    expect(zapOutEstimatedAmount(new BN(1_000), new BN(100)).toString()).toBe("1090");
+  });
+
+  it("keeps small and empty source amounts exact", () => {
+    expect(zapOutEstimatedAmount(new BN(1), new BN(0)).toString()).toBe("1");
+    expect(zapOutEstimatedAmount(new BN(0), new BN(0)).toString()).toBe("0");
   });
 });
 

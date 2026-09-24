@@ -43,6 +43,7 @@ export function ManagePosition({
 }) {
   const { tokenX: x, tokenY: y, range } = p;
   const wide = range.upperBinId - range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH;
+  const hasDepositMint = x.mint === v.depositMint || y.mint === v.depositMint;
   const { send, pending } = useSendTransaction();
   const [reviewing, setReviewing] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -158,12 +159,13 @@ export function ManagePosition({
       <Button
         className="w-full"
         loading={pending}
-        disabled={!operational || wide}
+        disabled={!operational || wide || !hasDepositMint}
         onClick={() => setZapping(true)}
       >
         Zap out to {v.depositSymbol}
       </Button>
       {wide && <p className="text-[12px] text-muted">For wide positions, remove liquidity and claim fees, then close the empty position. Swap returned non-deposit tokens separately.</p>}
+      {!hasDepositMint && <p className="text-[12px] text-muted">Atomic zap out requires this pool to include {v.depositSymbol}.</p>}
 
       <Button
         variant="secondary"
@@ -188,7 +190,7 @@ export function ManagePosition({
           })
         }
       >
-        All liquidity is removed, fees are claimed, and every non-{v.depositSymbol} pool token in the vault is swapped to {v.depositSymbol}. The wallet may request more than one approval because each swap is quoted only after the preceding transaction confirms. Rent from the closed position, strategy, and unused token accounts is returned to your wallet; creating a missing treasury token account can still cost rent.
+        In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-{v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Rent from the closed position is returned to your wallet; creating missing treasury or Jupiter strategy accounts can still cost rent.
       </ConfirmDialog>
 
       <ConfirmDialog

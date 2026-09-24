@@ -4,7 +4,13 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { ComputeBudgetProgram, Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import {
+  type AddressLookupTableAccount,
+  ComputeBudgetProgram,
+  Keypair,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { DlmmShape, PoolInfo } from "@/lib/types";
@@ -22,10 +28,17 @@ import {
   type StrategyTypeValue,
 } from "../dlmm-pool";
 import { getConfigPda, getStrategyPda } from "../pda";
-import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, MEMO_PROGRAM_ID, getConnection, getProgram } from "../program";
+import {
+  DLMM_EVENT_AUTHORITY,
+  DLMM_PROGRAM_ID,
+  MEMO_PROGRAM_ID,
+  getConnection,
+  getProgram,
+} from "../program";
 import { getMultipleAccounts } from "../rpc";
 import { getTokenInfos } from "../tokens";
 import type { VaultCtx } from "./context";
+import { jupiterInitializeIx, jupiterTokenLedgerSwapIx } from "./jupiter";
 import { closeStrategyIx } from "./vault";
 
 type P = Program<HedgeVault>;
@@ -348,8 +361,86 @@ export async function dlmmClosePositionIx(
   return (await buildDlmmClosePosition(program, ctx, authority, position, treasuryAuthority)).ixs;
 }
 
-/** Close instructions plus the pool mints needed by the post-confirmation zap swap. */
-export const dlmmZapOutIxs = buildDlmmClosePosition;
+const TREASURY_CLAIM_FEE_BPS = new BN(1_000);
+const BPS = new BN(10_000);
+
+/**
+ * Quote input for the position liquidity plus the 90% of unclaimed fees retained by the vault.
+ * Jupiter's token ledger determines the executed amount later from the actual balance increase.
+ */
+export function zapOutEstimatedAmount(positionAmount: BN, pendingFee: BN) {
+  const retainedFee = pendingFee.sub(pendingFee.mul(TREASURY_CLAIM_FEE_BPS).div(BPS));
+  return positionAmount.add(retainedFee);
+}
+
+/**
+ * Uses only existing Hedge Vault instructions: remove, claim/treasury transfer, Jupiter swap, and
+ * close. Jupiter's top-level token-ledger instruction snapshots the vault source ATA before remove
+ * and claim, so the swap consumes only tokens produced inside this transaction, not idle funds.
+ */
+export async function dlmmZapOutIxs(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  treasuryAuthority: PublicKey,
+  slippageBps: number,
+) {
+  const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
+    ctx.key,
+    position,
+    authority,
+  );
+  const depositIsX = dlmm.tokenX.publicKey.equals(ctx.depositMint);
+  const depositIsY = dlmm.tokenY.publicKey.equals(ctx.depositMint);
+  if (!depositIsX && !depositIsY)
+    throw new ApiError(400, "Validation", "atomic zap out requires the vault deposit mint to be one side of the DLMM pair");
+
+  const removeIx = await program.methods
+    .meteoraDlmmRemoveLiquidity({ bpsToRemove: 10_000, remainingAccountsInfo })
+    .accounts({ ...accounts, authority, memoProgram: MEMO_PROGRAM_ID })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+  const claimIx = await program.methods
+    .meteoraDlmmClaimFee(remainingAccountsInfo)
+    .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+
+  const positionData = (await dlmm.getPosition(position)).positionData;
+  const swapXToY = depositIsY;
+  const sourceMint = swapXToY ? dlmm.tokenX.publicKey : dlmm.tokenY.publicKey;
+  const positionAmount = swapXToY
+    ? positionData.totalXAmountExcludeTransferFee
+    : positionData.totalYAmountExcludeTransferFee;
+  const pendingFee = swapXToY ? positionData.feeXExcludeTransferFee : positionData.feeYExcludeTransferFee;
+  const estimatedAmount = zapOutEstimatedAmount(positionAmount, pendingFee);
+
+  const swapIxs: TransactionInstruction[] = [];
+  let lookupTables: AddressLookupTableAccount[] = [];
+  if (!estimatedAmount.isZero()) {
+    const jupiterStrategy = getStrategyPda(ctx.key, sourceMint);
+    const strategyExists = (await getConnection().getAccountInfo(jupiterStrategy)) !== null;
+    if (!strategyExists) swapIxs.push(await jupiterInitializeIx(program, ctx, authority, sourceMint));
+    const swap = await jupiterTokenLedgerSwapIx(
+      program,
+      ctx,
+      authority,
+      sourceMint,
+      ctx.depositMint,
+      estimatedAmount,
+      slippageBps,
+    );
+    // Snapshot before remove/claim; execute the swap after those instructions increase the ATA.
+    swapIxs.push(swap.tokenLedgerInstruction, removeIx, claimIx, swap.ix);
+    lookupTables = swap.lookupTables;
+  } else {
+    swapIxs.push(removeIx, claimIx);
+  }
+
+  const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy);
+  return { ixs: [...createAtaIxs, ...swapIxs, closeIx], lookupTables };
+}
 
 export async function dlmmClaimFeeIx(
   program: P,

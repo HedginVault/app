@@ -22,9 +22,13 @@ type P = Program<HedgeVault>;
 const BASE_URL = `${JUPITER_HOST}/swap/v1`;
 
 const ROUTE = [229, 23, 203, 151, 122, 227, 173, 42];
+const ROUTE_WITH_TOKEN_LEDGER = [150, 86, 71, 116, 167, 93, 14, 104];
 const EXACT_OUT_ROUTE = [208, 51, 239, 151, 123, 43, 237, 92];
 const SHARED_ACCOUNTS_ROUTE = [193, 32, 155, 51, 65, 214, 156, 129];
 const SHARED_ACCOUNTS_EXACT_OUT_ROUTE = [176, 209, 105, 168, 154, 125, 69, 62];
+const SHARED_ACCOUNTS_ROUTE_WITH_TOKEN_LEDGER = [230, 121, 143, 80, 119, 159, 106, 170];
+const SET_TOKEN_LEDGER = [228, 85, 185, 112, 78, 79, 77, 2];
+const JUPITER_PROGRAM_ID = new PublicKey("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
 
 const headers = jupiterHeaders;
 
@@ -95,6 +99,7 @@ export function extractRemainingAccounts(swapInstruction: TransactionInstruction
   const keys = swapInstruction.keys;
   const is = (d: number[]) => d.every((v, i) => v === discriminator[i]);
   if (is(ROUTE)) return keys.slice(9);
+  if (is(ROUTE_WITH_TOKEN_LEDGER)) return [keys[7], ...keys.slice(10)];
   if (is(EXACT_OUT_ROUTE)) return keys.slice(11);
   if (is(SHARED_ACCOUNTS_ROUTE) || is(SHARED_ACCOUNTS_EXACT_OUT_ROUTE))
     return [keys[1], keys[4], keys[5], ...keys.slice(13)];
@@ -107,9 +112,14 @@ export async function getJupiterSwap(
   amount: bigint,
   slippageBps: number,
   vault: PublicKey,
+  useTokenLedger = false,
 ) {
   const { raw } = await getQuote(inputMint, outputMint, amount, slippageBps);
-  const outputTokenProgram = await getTokenProgram(outputMint);
+  const [inputTokenProgram, outputTokenProgram] = await Promise.all([
+    getTokenProgram(inputMint),
+    getTokenProgram(outputMint),
+  ]);
+  const sourceTokenAccount = getAssociatedTokenAddressSync(inputMint, vault, true, inputTokenProgram);
   const res = await fetch(`${BASE_URL}/swap-instructions`, {
     method: "POST",
     headers: headers(),
@@ -127,18 +137,20 @@ export async function getJupiterSwap(
       useSharedAccounts: false,
       wrapAndUnwrapSol: false,
       dynamicSlippage: false,
+      useTokenLedger,
     }),
   });
   if (!res.ok) throw new ApiError(502, "JupiterSwapFailed", `Jupiter swap-instructions failed: ${await res.text()}`);
-  const { swapInstruction, setupInstructions = [], cleanupInstruction, addressLookupTableAddresses } = (await res.json()) as {
+  const { swapInstruction, tokenLedgerInstruction, setupInstructions = [], cleanupInstruction, addressLookupTableAddresses } = (await res.json()) as {
     swapInstruction: JupiterInstruction;
+    tokenLedgerInstruction?: JupiterInstruction | null;
     setupInstructions?: JupiterInstruction[];
     cleanupInstruction?: JupiterInstruction | null;
     addressLookupTableAddresses: string[];
   };
   const instruction = deserializeInstruction(swapInstruction);
   const discriminator = Array.from(instruction.data.subarray(0, 8));
-  const shared = [SHARED_ACCOUNTS_ROUTE, SHARED_ACCOUNTS_EXACT_OUT_ROUTE].some((candidate) =>
+  const shared = [SHARED_ACCOUNTS_ROUTE, SHARED_ACCOUNTS_EXACT_OUT_ROUTE, SHARED_ACCOUNTS_ROUTE_WITH_TOKEN_LEDGER].some((candidate) =>
     candidate.every((value, index) => value === discriminator[index]),
   );
   if (shared || setupInstructions.length > 0 || cleanupInstruction) {
@@ -148,10 +160,30 @@ export async function getJupiterSwap(
       "Jupiter returned a route that requires user-level accounts instead of a direct vault CPI",
     );
   }
+  const ledgerInstruction = tokenLedgerInstruction ? deserializeInstruction(tokenLedgerInstruction) : null;
+  if (useTokenLedger) {
+    const isLedgerRoute = ROUTE_WITH_TOKEN_LEDGER.every((value, index) => value === discriminator[index]);
+    const isSetLedger = SET_TOKEN_LEDGER.every((value, index) => value === ledgerInstruction?.data[index]);
+    if (
+      !isLedgerRoute ||
+      !ledgerInstruction ||
+      !ledgerInstruction.programId.equals(JUPITER_PROGRAM_ID) ||
+      !isSetLedger ||
+      ledgerInstruction.keys.length !== 2 ||
+      ledgerInstruction.keys.some((account) => account.isSigner) ||
+      !ledgerInstruction.keys[1].pubkey.equals(sourceTokenAccount) ||
+      !instruction.keys[7].pubkey.equals(ledgerInstruction.keys[0].pubkey)
+    ) {
+      throw new ApiError(502, "JupiterInvalidTokenLedger", "Jupiter returned an invalid token-ledger route");
+    }
+  } else if (ledgerInstruction) {
+    throw new ApiError(502, "JupiterUnexpectedTokenLedger", "Jupiter returned an unexpected token-ledger instruction");
+  }
   return {
     swapData: instruction.data,
     remainingAccounts: extractRemainingAccounts(instruction),
     lookupTables: await getLookupTables(addressLookupTableAddresses),
+    tokenLedgerInstruction: ledgerInstruction,
   };
 }
 
@@ -193,4 +225,45 @@ export async function jupiterSwapIx(
     .remainingAccounts(remainingAccounts)
     .instruction();
   return { ix, lookupTables };
+}
+
+/**
+ * Captures the vault source balance before earlier transaction instructions add tokens. Jupiter's
+ * ledger route then swaps only that in-transaction increase, preserving every idle source token.
+ */
+export async function jupiterTokenLedgerSwapIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  sourceMint: PublicKey,
+  destinationMint: PublicKey,
+  quotedInputAmount: BN,
+  slippageBps: number,
+) {
+  const targetMint = sourceMint.equals(ctx.depositMint) ? destinationMint : sourceMint;
+  const { swapData, remainingAccounts, lookupTables, tokenLedgerInstruction } = await getJupiterSwap(
+    sourceMint,
+    destinationMint,
+    BigInt(quotedInputAmount.toString()),
+    slippageBps,
+    ctx.key,
+    true,
+  );
+  if (!tokenLedgerInstruction)
+    throw new ApiError(502, "JupiterInvalidTokenLedger", "Jupiter did not return a token-ledger instruction");
+  const ix = await program.methods
+    .jupiterSwap(swapData, quotedInputAmount, slippageBps)
+    .accounts({
+      authority,
+      config: getConfigPda(),
+      vault: ctx.key,
+      strategy: getStrategyPda(ctx.key, targetMint),
+      sourceMint,
+      destinationMint,
+      sourceTokenProgram: await getTokenProgram(sourceMint),
+      destinationTokenProgram: await getTokenProgram(destinationMint),
+    })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+  return { ix, tokenLedgerInstruction, lookupTables };
 }

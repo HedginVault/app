@@ -1,3 +1,4 @@
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/server/errors";
@@ -28,6 +29,8 @@ const ctx = {
 const keys = (ix: { keys: { pubkey: PublicKey }[] }) => ix.keys.map((k) => k.pubkey.toBase58());
 
 const ROUTE = [229, 23, 203, 151, 122, 227, 173, 42];
+const ROUTE_WITH_TOKEN_LEDGER = [150, 86, 71, 116, 167, 93, 14, 104];
+const SET_TOKEN_LEDGER = [228, 85, 185, 112, 78, 79, 77, 2];
 const SHARED_ACCOUNTS_ROUTE = [193, 32, 155, 51, 65, 214, 156, 129];
 const JUPITER_PROGRAM = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 const SOL = new PublicKey("So11111111111111111111111111111111111111112");
@@ -96,6 +99,11 @@ describe("extractRemainingAccounts", () => {
   it("drops the first 9 accounts of a ROUTE instruction", () => {
     const ix = fakeSwapIx(ROUTE, 14);
     expect(extractRemainingAccounts(ix)).toEqual(ix.keys.slice(9));
+  });
+
+  it("keeps the token ledger before the AMM accounts of a ledger route", () => {
+    const ix = fakeSwapIx(ROUTE_WITH_TOKEN_LEDGER, 15);
+    expect(extractRemainingAccounts(ix)).toEqual([ix.keys[7], ...ix.keys.slice(10)]);
   });
 
   it("reorders a SHARED_ACCOUNTS_ROUTE instruction to [1, 4, 5, ...13:]", () => {
@@ -200,5 +208,46 @@ describe("getJupiterSwap CPI route", () => {
     await expect(getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key)).rejects.toMatchObject({
       code: "JupiterUnsupportedCpiRoute",
     });
+  });
+
+  it("validates and returns a token ledger that snapshots the vault source ATA", async () => {
+    const ledger = pk(77);
+    const sourceAta = getAssociatedTokenAddressSync(SOL, ctx.key, true, TOKEN_PROGRAM);
+    const ledgerSwap = swapInstruction(ROUTE_WITH_TOKEN_LEDGER);
+    ledgerSwap.accounts = Array.from({ length: 10 }, (_, index) => ({
+      pubkey: (index === 1 ? ctx.key : index === 2 ? sourceAta : index === 7 ? ledger : pk(index + 20)).toBase58(),
+      isSigner: index === 1,
+      isWritable: index === 2 || index === 3,
+    }));
+    const tokenLedgerInstruction = {
+      programId: JUPITER_PROGRAM,
+      accounts: [
+        { pubkey: ledger.toBase58(), isSigner: false, isWritable: true },
+        { pubkey: sourceAta.toBase58(), isSigner: false, isWritable: false },
+      ],
+      data: Buffer.from(SET_TOKEN_LEDGER).toString("base64"),
+    };
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response(quote))
+      .mockResolvedValueOnce(
+        response({
+          swapInstruction: ledgerSwap,
+          tokenLedgerInstruction,
+          setupInstructions: [],
+          cleanupInstruction: null,
+          addressLookupTableAddresses: [],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+
+    const result = await getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key, true);
+
+    expect(result.tokenLedgerInstruction?.keys.map((account) => account.pubkey.toBase58())).toEqual([
+      ledger.toBase58(),
+      sourceAta.toBase58(),
+    ]);
+    const request = JSON.parse(String((fetch.mock.calls[1][1] as RequestInit).body));
+    expect(request.useTokenLedger).toBe(true);
   });
 });

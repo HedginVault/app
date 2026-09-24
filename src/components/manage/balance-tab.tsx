@@ -70,7 +70,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const zapPosition = (position: string, pair: string) =>
     setConfirming({
       title: `Zap ${pair} to ${v.depositSymbol}`,
-      body: `All liquidity is removed, fees are claimed, and non-${v.depositSymbol} pool tokens in the vault are swapped to ${v.depositSymbol}. This can require multiple wallet approvals because swaps are quoted after the close confirms. Closed-account rent is returned; a missing treasury token account can still cost rent.`,
+      body: `In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Closed-position rent is returned; missing treasury or Jupiter strategy accounts can still cost rent.`,
       label: `Zap out to ${v.depositSymbol}`,
       run: () =>
         void send({
@@ -124,6 +124,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
       ];
     const pair = `${p.tokenX.symbol}-${p.tokenY.symbol}`;
     const wide = p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH;
+    const hasDepositMint = p.tokenX.mint === v.depositMint || p.tokenY.mint === v.depositMint;
     const hasFees = BigInt(p.feeX) > 0n || BigInt(p.feeY) > 0n;
     return [
       { label: "Add liquidity", primary: true, onSelect: () => prefill({ panel: "lp", position: p.position, mode: "add" }) },
@@ -142,10 +143,14 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
       {
         label: `Zap out to ${v.depositSymbol}`,
         primary: true,
-        disabled: !operational || pending || wide,
+        disabled: !operational || pending || wide || !hasDepositMint,
         reason: wide
           ? "Remove liquidity and claim fees in ranges before closing"
-          : "Vault not operational",
+          : !hasDepositMint
+            ? `Pool must include ${v.depositSymbol}`
+            : !operational
+              ? "Vault not operational"
+              : undefined,
         onSelect: () => zapPosition(p.position, pair),
       },
       {

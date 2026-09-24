@@ -143,7 +143,7 @@ the first is checked by relay preflight immediately before it is sent. Every bui
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/remove` | `position`, `bpsToRemove`; wide positions return a range transaction batch | vault authority |
 | `/api/tx/dlmm/claim-fee` | `position`; wide positions return a range transaction batch | vault authority |
-| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; available for positions up to 70 bins; removes all liquidity, claims fees, closes the DLMM position, then swaps only the non-deposit tokens returned by that position into the vault deposit mint (pre-existing idle balances are preserved) | vault authority |
+| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; available for positions up to 70 bins whose pair includes the deposit mint; atomically snapshots the source balance, removes liquidity, claims and transfers fees, swaps only the detected increase through the existing Jupiter instruction, then closes the position (pre-existing idle balances are preserved) | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
 
 ### API — send and confirm

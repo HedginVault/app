@@ -23,3 +23,9 @@ export function formatSignedUsd(raw: string | bigint): string {
 }
 
 export const formatLeverage = (leverage: number | null) => (leverage === null ? "—" : `${leverage.toFixed(2)}x`);
+
+/** Tailwind text color for a signed USDC amount: positive, negative, zero. */
+export const signTone = (raw: string | bigint) => {
+  const n = BigInt(raw);
+  return n > 0n ? "text-sky-400" : n < 0n ? "text-red-400" : "text-muted";
+};

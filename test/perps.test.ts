@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLeverage, formatSignedUsd, perpTotals, usdc } from "@/lib/perps";
+import { formatLeverage, formatSignedUsd, perpTotals, signTone, usdc } from "@/lib/perps";
 
 const pos = (unrealizedPnl: string, accruedFunding: string, notional: string) => ({
   assetId: 0, symbol: "SOL", side: "long" as const, size: "1", entryPrice: "1", markPrice: "1", notional, unrealizedPnl, accruedFunding,
@@ -20,5 +20,14 @@ describe("perps helpers", () => {
     expect(formatSignedUsd("0")).toBe("$0.00");
     expect(formatLeverage(1.5234)).toBe("1.52x");
     expect(formatLeverage(null)).toBe("—");
+  });
+
+  it("gives a text tone for a signed amount, from a string or a bigint", () => {
+    expect(signTone("100")).toBe("text-sky-400");
+    expect(signTone("-100")).toBe("text-red-400");
+    expect(signTone("0")).toBe("text-muted");
+    expect(signTone(100n)).toBe("text-sky-400");
+    expect(signTone(-100n)).toBe("text-red-400");
+    expect(signTone(0n)).toBe("text-muted");
   });
 });

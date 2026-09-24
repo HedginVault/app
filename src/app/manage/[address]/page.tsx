@@ -7,6 +7,7 @@ import { HistoryTab } from "@/components/holdings/history-tab";
 import { BalanceTab } from "@/components/manage/balance-tab";
 import { ManagerGuard } from "@/components/manage/guard";
 import { MarketsTab } from "@/components/manage/markets-tab";
+import { PerpsTab } from "@/components/manage/perps-tab";
 import { QuickSwap } from "@/components/manage/quick-swap";
 import { RequestsBar } from "@/components/manage/requests-bar";
 import { RequestsTab } from "@/components/manage/requests-tab";
@@ -14,7 +15,6 @@ import { SettingsTab } from "@/components/manage/settings-tab";
 import { Page } from "@/components/shell/page";
 import { Address } from "@/components/ui/address";
 import { ErrorState } from "@/components/ui/error-state";
-import { Card, CardBody } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -150,11 +150,7 @@ function ManageTabs({ v, owner }: { v: VaultDetail; owner: string }) {
       {(tab === "swap" || tab === "liquidity") && (
         <MarketsTab key={tab} v={v} owner={owner} panel={tab === "swap" ? "swap" : "lp"} onSwitch={(s) => go(s.panel === "swap" ? "swap" : "liquidity", s)} />
       )}
-      {tab === "perps" && (
-        <Card>
-          <CardBody className="py-12 text-center text-sm text-muted">Perps are coming soon. Details TBD.</CardBody>
-        </Card>
-      )}
+      {tab === "perps" && <PerpsTab v={v} />}
       {tab === "history" && <HistoryTab address={v.address} />}
       {tab === "requests" && <RequestsTab v={v} owner={owner} />}
       {tab === "settings" && <SettingsTab v={v} owner={owner} />}

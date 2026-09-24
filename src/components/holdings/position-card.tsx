@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { PairLogo, TokenLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
 import { formatPercent, formatPrice, formatRelative, formatShare, formatUsd, usdValue } from "@/lib/format";
-import { formatLeverage, formatSignedUsd, perpTotals, usdc } from "@/lib/perps";
+import { formatLeverage, formatSignedUsd, perpTotals, signTone, usdc } from "@/lib/perps";
 import type { PositionView, TokenInfo } from "@/lib/types";
 import { BinChart } from "./bin-chart";
 
@@ -93,7 +93,6 @@ export function PositionCard({
 
   if (p.kind === "perp") {
     const totals = perpTotals(p);
-    const tone = (raw: bigint) => (raw > 0n ? "text-sky-400" : raw < 0n ? "text-red-400" : "text-muted");
     return (
       <div className="space-y-3 px-6 py-4">
         <div className="flex flex-wrap items-start gap-3">
@@ -106,7 +105,7 @@ export function PositionCard({
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[12px] text-muted">
               <span>Collateral {formatUsd(usdc(p.collateral))}</span>
               <span>Leverage {formatLeverage(p.leverage)}</span>
-              <span className={tone(totals.unrealizedPnl)}>uPnL {formatSignedUsd(totals.unrealizedPnl)}</span>
+              <span className={signTone(totals.unrealizedPnl)}>uPnL {formatSignedUsd(totals.unrealizedPnl)}</span>
               {p.lastActionTs > 0 && <span>Last action {formatRelative(p.lastActionTs)}</span>}
             </div>
           </div>
@@ -122,7 +121,7 @@ export function PositionCard({
                 <span className="font-medium">{q.symbol}</span>
                 <Badge tone={q.side === "long" ? "accent" : "danger"}>{q.side === "long" ? "Long" : "Short"}</Badge>
                 <span className="text-muted">{q.size}</span>
-                <span className={tone(BigInt(q.unrealizedPnl))}>uPnL {formatSignedUsd(q.unrealizedPnl)}</span>
+                <span className={signTone(q.unrealizedPnl)}>uPnL {formatSignedUsd(q.unrealizedPnl)}</span>
               </li>
             ))}
           </ul>

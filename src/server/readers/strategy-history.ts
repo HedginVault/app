@@ -9,7 +9,7 @@ import { getTokenInfos } from "../tokens";
 interface HistoryRow {
   strategy_address: string;
   strategy_id: number | null;
-  strategy_type: "jupiter" | "dlmm" | null;
+  strategy_type: "jupiter" | "dlmm" | "phoenix" | null;
   protocol_account: string | null;
   opened_ts: string | null;
   closed_ts: string;

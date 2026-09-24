@@ -74,7 +74,7 @@ describe("buildHoldingsView", () => {
     const base = buildHoldingsView(vault(), [dlmm(100), jupiter(100)]);
     const broken: UnreadableStrategyView = {
       type: "unreadable", address: "strat-bad", id: 2, createdTs: 1, lastActionTs: 4,
-      position: "pos-bad", reason: "Position read failed",
+      protocol: "dlmm", position: "pos-bad", reason: "Position read failed",
     };
     const h = buildHoldingsView(vault(), [broken, dlmm(100), jupiter(100)]);
 

@@ -121,6 +121,7 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
         ...money(value),
       };
     }
+    if (s.type === "phoenix") throw new Error("phoenix holdings: implemented in the next commit");
     return {
       kind: "lp",
       strategy: s.address,

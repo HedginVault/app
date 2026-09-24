@@ -10,6 +10,7 @@ import { decodeTokenAmount, getMultipleAccounts } from "../rpc";
 import { getMintInfos, getTokenInfos } from "../tokens";
 import { binPrice } from "../tx/dlmm";
 import { ts } from "./decode";
+import { phoenixViewsFor } from "./phoenix";
 import { fetchVaultAccount } from "./vaults";
 
 const TTL = 15_000;
@@ -26,7 +27,8 @@ type PositionAccount = Awaited<ReturnType<ReturnType<typeof getProgram>["account
 /**
  * 1 RPC for the vault + 1 RPC for strategies + 1 batched read of Jupiter target ATAs
  * + 1 batched read of DLMM positions + 1 batched read of lbPair active ids
- * + one SDK `getPosition` per DLMM position (bin arrays).
+ * + one SDK `getPosition` per DLMM position (bin arrays)
+ * + 2 RPC for Phoenix (global config, then asset map + canonical ATA + traders at one slot).
  * Every uncached pool in the batch is hydrated by a single `DLMM.createMultiple` (~4 batched RPC
  * for the whole batch); warm pools cost nothing. Token metadata and prices come from their own
  * caches. A DLMM position that cannot be read (account gone, pool unavailable, SDK read failure)
@@ -42,6 +44,7 @@ export const readStrategies = (vault: string) =>
 
     const jupiter = rows.filter((r) => "jupiterSwap" in r.account.strategyType);
     const dlmm = rows.filter((r) => "meteoraDlmm" in r.account.strategyType);
+    const phoenix = rows.filter((r) => "phoenixPerp" in r.account.strategyType);
     const base = (r: (typeof rows)[number]): Base => ({
       address: r.publicKey.toBase58(),
       id: r.account.id,
@@ -49,7 +52,7 @@ export const readStrategies = (vault: string) =>
       lastActionTs: ts(r.account.lastActionTs),
     });
 
-    const [jupiterViews, dlmmViews] = await Promise.all([
+    const [jupiterViews, dlmmViews, phoenixViews] = await Promise.all([
       jupiterViewsFor(
         key,
         jupiter.map((r) => ({
@@ -64,8 +67,15 @@ export const readStrategies = (vault: string) =>
           position: (r.account.strategyType as { meteoraDlmm: { position: PublicKey } }).meteoraDlmm.position,
         })),
       ),
+      phoenixViewsFor(
+        key,
+        phoenix.map((r) => ({
+          base: base(r),
+          trader: (r.account.strategyType as { phoenixPerp: { traderAccount: PublicKey } }).phoenixPerp.traderAccount,
+        })),
+      ),
     ]);
-    return [...jupiterViews, ...dlmmViews].sort((a, b) => a.id - b.id);
+    return [...jupiterViews, ...dlmmViews, ...phoenixViews].sort((a, b) => a.id - b.id);
   });
 
 async function jupiterViewsFor(
@@ -111,6 +121,7 @@ async function dlmmViewsFor(
   const unreadable = (item: { base: Base; position: PublicKey }, reason: string): UnreadableStrategyView => ({
     ...item.base,
     type: "unreadable",
+    protocol: "dlmm",
     position: item.position.toBase58(),
     reason,
   });

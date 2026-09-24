@@ -154,14 +154,48 @@ export interface DlmmStrategyView extends StrategyBase {
   pnlPct: number | null;
 }
 
-/** A DLMM strategy whose position could not be read; reported instead of dropped. */
+/** One open Phoenix perp position. Prices are USDC decimal strings; amounts are USDC atoms. */
+export interface PhoenixPerpPositionView {
+  assetId: number;
+  /** Market symbol, or `Asset #<id>` when Phoenix's market list is unavailable. */
+  symbol: string;
+  side: "long" | "short";
+  /** Whole base units, always positive. */
+  size: string;
+  entryPrice: string;
+  markPrice: string;
+  notional: string;
+  unrealizedPnl: string;
+  accruedFunding: string;
+}
+
+/** The vault's Phoenix cross-margin account. Amounts are USDC atoms (one quote lot each). */
+export interface PhoenixStrategyView extends StrategyBase {
+  type: "phoenix";
+  traderAccount: string;
+  canonicalMint: string;
+  collateral: string;
+  /** Collateral + uPnL + unsettled funding, clamped at 0; what the keeper books into NAV. */
+  equity: string;
+  /** Canonical-mint tokens a queued withdrawal delivered to the vault, not yet unwrapped. */
+  canonicalBalance: string;
+  /** Total notional / equity; null when equity is 0. */
+  leverage: number | null;
+  positions: PhoenixPerpPositionView[];
+}
+
+export type StrategyProtocol = "dlmm" | "phoenix";
+
+/** A strategy whose protocol account could not be read; reported instead of dropped. */
 export interface UnreadableStrategyView extends StrategyBase {
   type: "unreadable";
+  protocol: StrategyProtocol;
+  /** The protocol account: DLMM position or Phoenix trader. */
   position: string;
   reason: string;
 }
 
-export type StrategyView = JupiterStrategyView | DlmmStrategyView | UnreadableStrategyView;
+export type StrategyView = JupiterStrategyView | DlmmStrategyView | PhoenixStrategyView | UnreadableStrategyView;
 
 export interface ManagerView {
   isManager: boolean;
@@ -330,7 +364,7 @@ export interface NavHistoryPoint {
 export interface StrategyHistoryItem {
   strategy: string;
   id: number | null;
-  type: "jupiter" | "dlmm" | null;
+  type: "jupiter" | "dlmm" | "phoenix" | null;
   protocolAccount: string | null;
   openedTs: number | null;
   closedTs: number;

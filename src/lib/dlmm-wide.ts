@@ -1,6 +1,9 @@
 import type { DlmmShape } from "./types";
 
-export const DLMM_MAX_ADD_BINS_PER_TX = 26;
+/** Upper bound attempted for one deposit; packet size and simulation can reduce it. */
+export const DLMM_MAX_ADD_BINS_PER_TX = 91;
+/** Keep the existing remove and claim chunk size independent of deposit tuning. */
+export const DLMM_MAX_EXIT_BINS_PER_TX = 26;
 
 /** Split a requested range into contiguous inclusive chunks for Meteora liquidity CPIs. */
 export function nextBinChunk(cursorBinId: number, upperBinId: number, maxBins = DLMM_MAX_ADD_BINS_PER_TX) {

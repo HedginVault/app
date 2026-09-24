@@ -52,10 +52,12 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         }),
     });
 
-  const closePosition = (position: string, pair: string) =>
+  const closePosition = (position: string, pair: string, wide: boolean) =>
     setConfirming({
       title: `Close ${pair} position`,
-      body: "All liquidity is removed and fees claimed, then the position is closed. Rent returns to your wallet.",
+      body: wide
+        ? "This empty position is closed and its rent returns to your wallet. Swap any returned non-deposit tokens separately."
+        : "All liquidity is removed and fees claimed, then the position is closed. Rent returns to your wallet.",
       label: "Close position",
       run: () =>
         void send({
@@ -121,6 +123,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         },
       ];
     const pair = `${p.tokenX.symbol}-${p.tokenY.symbol}`;
+    const wide = p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH;
     const hasFees = BigInt(p.feeX) > 0n || BigInt(p.feeY) > 0n;
     return [
       { label: "Add liquidity", primary: true, onSelect: () => prefill({ panel: "lp", position: p.position, mode: "add" }) },
@@ -139,17 +142,17 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
       {
         label: `Zap out to ${v.depositSymbol}`,
         primary: true,
-        disabled: !operational || pending || p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH,
-        reason: p.range.upperBinId - p.range.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH
+        disabled: !operational || pending || wide,
+        reason: wide
           ? "Remove liquidity and claim fees in ranges before closing"
           : "Vault not operational",
         onSelect: () => zapPosition(p.position, pair),
       },
       {
         label: "Close position",
-        disabled: !operational || pending,
-        reason: "Vault not operational",
-        onSelect: () => closePosition(p.position, pair),
+        disabled: !operational || pending || (wide && !p.closable),
+        reason: !operational ? "Vault not operational" : wide && !p.closable ? "Remove liquidity and claim fees first" : undefined,
+        onSelect: () => closePosition(p.position, pair, wide),
       },
     ];
   };

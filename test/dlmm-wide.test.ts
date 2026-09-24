@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { amountForBinChunk, nextBinChunk } from "@/lib/dlmm-wide";
 
 describe("wide DLMM range funding", () => {
+  it("covers 149 bins in two 91-capped deposit instructions", () => {
+    const first = nextBinChunk(0, 148);
+    const second = nextBinChunk(first.upperBinId + 1, 148);
+    expect(first).toEqual({ lowerBinId: 0, upperBinId: 90 });
+    expect(second).toEqual({ lowerBinId: 91, upperBinId: 148 });
+  });
+
   it("chunks an inclusive 1400-bin range without gaps", () => {
     const chunks = [];
     for (let cursor = -700; cursor <= 699;) {
@@ -9,7 +16,7 @@ describe("wide DLMM range funding", () => {
       chunks.push(chunk);
       cursor = chunk.upperBinId + 1;
     }
-    expect(chunks[0]).toEqual({ lowerBinId: -700, upperBinId: -675 });
+    expect(chunks[0]).toEqual({ lowerBinId: -700, upperBinId: -610 });
     expect(chunks.at(-1)?.upperBinId).toBe(699);
     expect(chunks.reduce((sum, c) => sum + c.upperBinId - c.lowerBinId + 1, 0)).toBe(1400);
   });

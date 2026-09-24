@@ -10,7 +10,7 @@ import { usePool, usePositionRent } from "@/hooks/queries";
 import { useSendTransaction } from "@/hooks/use-send-transaction";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH, DLMM_MAX_RESIZE_LENGTH } from "@/lib/constants";
+import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
 import {
   binIdToPrice,
   distribution,
@@ -333,7 +333,7 @@ function ConfigurePosition({
         ? undefined
         : ["Create position", "Add liquidity"],
       build: async () => {
-        const built = await api.build<BuiltStep & { position: string }>("dlmm/open", {
+        const built = await api.build<(BuiltStep & { position?: string }) | (BuiltStep & { position?: string })[]>("dlmm/open", {
           payer: owner,
           vault: v.address,
           lbPair: pool.lbPair,
@@ -344,7 +344,7 @@ function ConfigurePosition({
           shape,
           maxActiveBinSlippage: ACTIVE_BIN_SLIPPAGE,
         });
-        position = built.position;
+        position = (Array.isArray(built) ? built[0] : built).position;
         return built;
       },
       onSuccess: () => {
@@ -584,8 +584,8 @@ function ConfigurePosition({
           "Your wallet pays position rent. Network fees and any new bin arrays cost extra.",
           `Fails if the active bin moves more than ${ACTIVE_BIN_SLIPPAGE} bins before it lands.`,
           shownRange.upperBinId - shownRange.lowerBinId > DLMM_INITIAL_POSITION_WIDTH
-            ? `This range needs at least ${1 + Math.ceil((shownRange.upperBinId - shownRange.lowerBinId - DLMM_INITIAL_POSITION_WIDTH) / DLMM_MAX_RESIZE_LENGTH) + Math.ceil((shownRange.upperBinId - shownRange.lowerBinId) / DLMM_MAX_ADD_BINS_PER_TX)} wallet approvals to extend and fund. Some pools need more.`
-            : "If creating and funding the position does not fit one transaction, your wallet asks for a second signature.",
+            ? `This range needs at least ${1 + Math.ceil((shownRange.upperBinId - shownRange.lowerBinId) / DLMM_MAX_ADD_BINS_PER_TX)} transactions to create and fund. A compatible wallet approves the complete batch once.`
+            : "If creating and funding needs two transactions, a compatible wallet approves both in one batch.",
         ]}
       >
         {shownRange.upperBinId - shownRange.lowerBinId > DLMM_INITIAL_POSITION_WIDTH && progress && (

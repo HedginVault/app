@@ -4,7 +4,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import BN from "bn.js";
 import type { HedgeVault } from "@/idl/hedge_vault";
 import type { DlmmShape, PoolInfo } from "@/lib/types";
@@ -270,7 +270,12 @@ export async function missingBinArrayIxs(
   const keys = indexes.map((i) => deriveBinArray(dlmm.pubkey, i, DLMM_PROGRAM_ID)[0]);
   const infos = await getMultipleAccounts(getConnection(), keys);
   const missing = indexes.filter((_, i) => !infos[i]);
-  return missing.length ? dlmm.initializeBinArrays(missing, funder) : [];
+  if (!missing.length) return [];
+  // The SDK prepends its own compute-budget instruction. `assemble` owns the final limit and price,
+  // so carrying the SDK instruction forward would create duplicate compute-budget instructions.
+  return (await dlmm.initializeBinArrays(missing, funder)).filter(
+    (ix) => !ix.programId.equals(ComputeBudgetProgram.programId),
+  );
 }
 
 export async function dlmmRemoveLiquidityIx(

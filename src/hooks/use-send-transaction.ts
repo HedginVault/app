@@ -2,10 +2,10 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { VersionedTransaction } from "@solana/web3.js";
-import { useRef, useState } from "react";
+import { createElement, useRef, useState } from "react";
 import { toast } from "sonner";
+import { TxToast, type TxToastProps } from "@/components/ui/tx-toast";
 import { api, ApiRequestError } from "@/lib/api";
-import { explorerUrl } from "@/lib/constants";
 import { runSteps, StepsError, type StepProgress } from "@/lib/tx-steps";
 import type { BuiltStep } from "@/lib/types";
 import { useInvalidateVault } from "./queries";
@@ -68,7 +68,7 @@ async function waitForConfirmation(signature: string, blockhash: string) {
 
 /** Build on the server, sign in the wallet, send and confirm through the server, then refresh the vault's queries. */
 export function useSendTransaction() {
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey, signTransaction, signAllTransactions } = useWallet();
   const invalidate = useInvalidateVault();
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
@@ -87,43 +87,124 @@ export function useSendTransaction() {
       return null;
     }
     const payer = publicKey.toBase58();
-    const id = toast.loading(`${label}: preparing`);
+    const id = `tx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const confirmed: string[] = [];
+    const show = (p: Pick<TxToastProps, "title" | "subtitle" | "tone" | "errorText">) =>
+      toast.custom(
+        () =>
+          createElement(TxToast, {
+            ...p,
+            signatures: p.tone === "loading" ? undefined : [...confirmed],
+            onClose: () => toast.dismiss(id),
+          }),
+        { id, duration: p.tone === "loading" ? Infinity : p.tone === "error" ? 12_000 : 8_000 },
+      );
+    const progress = (subtitle: string) => show({ title: label, subtitle, tone: "loading" });
     inFlight.current = true;
     setPending(true);
+    progress("Preparing transaction...");
     try {
       const signatures = await runSteps({
         first: build,
         buildNext: (next) => api.build(next.path, { ...next.body, payer }),
         onProgress,
+        executeBatch: async (batch, startIndex, report) => {
+          if (!signAllTransactions)
+            throw new Error("This wallet does not support approving multiple transactions together");
+          batch.forEach((_, offset) => report(startIndex + offset, "signing"));
+          progress(`Please approve ${batch.length} transactions in your wallet`);
+          const unsigned = batch.map((step) => VersionedTransaction.deserialize(decodeBase64(step.transaction)));
+          const signed = await signAllTransactions(unsigned);
+          if (signed.length !== batch.length)
+            throw new Error("Wallet returned an incomplete signed transaction batch");
+
+          const batchConfirmed: string[] = [];
+          try {
+            if (batch.every((step) => step.sendConcurrently)) {
+              const submitted: Array<{ signature: string; blockhash: string; index: number }> = [];
+              let submissionError: unknown;
+              for (let offset = 0; offset < signed.length; offset++) {
+                const transaction = signed[offset];
+                const index = startIndex + offset;
+                report(index, "sending");
+                progress(`Submitting transaction ${offset + 1} of ${signed.length}...`);
+                try {
+                  const { signature } = await api.send(encodeBase64(transaction.serialize()));
+                  submitted.push({ signature, blockhash: transaction.message.recentBlockhash, index });
+                } catch (error) {
+                  submissionError = error;
+                  report(index, "failed");
+                  break;
+                }
+              }
+              for (const item of submitted) report(item.index, "confirming");
+              progress(`Waiting for ${submitted.length} transactions to confirm...`);
+              const results = await Promise.allSettled(
+                submitted.map((item) => waitForConfirmation(item.signature, item.blockhash)),
+              );
+              let confirmationError: unknown;
+              results.forEach((result, offset) => {
+                const item = submitted[offset];
+                if (result.status === "fulfilled") {
+                  confirmed.push(item.signature);
+                  batchConfirmed.push(item.signature);
+                } else {
+                  confirmationError ??= result.reason;
+                  report(item.index, "failed");
+                }
+              });
+              if (submissionError || confirmationError)
+                throw new StepsError(submissionError ?? confirmationError, batchConfirmed);
+              return batchConfirmed;
+            }
+
+            for (let offset = 0; offset < signed.length; offset++) {
+              const transaction = signed[offset];
+              const index = startIndex + offset;
+              const name = stepLabels?.[index] ?? `Transaction ${index + 1}`;
+              report(index, "sending");
+              progress(`${name}: submitting transaction...`);
+              const { signature } = await api.send(encodeBase64(transaction.serialize()));
+              report(index, "confirming");
+              progress(`${name}: waiting for confirmation...`);
+              await waitForConfirmation(signature, transaction.message.recentBlockhash);
+              confirmed.push(signature);
+              batchConfirmed.push(signature);
+            }
+            return batchConfirmed;
+          } catch (error) {
+            if (error instanceof StepsError) throw error;
+            report(startIndex + batchConfirmed.length, "failed");
+            throw new StepsError(error, batchConfirmed);
+          }
+        },
         execute: async (b, index, report) => {
-          const step = stepLabels?.[index]
-            ? ` — ${stepLabels[index]}`
-            : index > 0 || b.next
-              ? ` (step ${index + 1})`
-              : "";
+          const multi = (stepLabels?.length ?? 0) > 1 || index > 0 || !!b.next;
+          const name = stepLabels?.[index] ?? (multi ? `Transaction ${index + 1}` : "");
+          const at = (action: string) => (name ? `${name}: ${action}` : action);
           report("signing");
-          toast.loading(`${label}${step}: approve in wallet`, { id });
+          progress(at("please approve in your wallet"));
           const signed = await signTransaction(VersionedTransaction.deserialize(decodeBase64(b.transaction)));
           report("sending");
-          toast.loading(`${label}${step}: sending`, { id });
+          progress(at("submitting transaction..."));
           const { signature } = await api.send(encodeBase64(signed.serialize()));
           report("confirming");
-          toast.loading(`${label}${step}: confirming`, { id, description: signature });
+          progress(at("waiting for confirmation..."));
           await waitForConfirmation(signature, signed.message.recentBlockhash);
+          confirmed.push(signature);
+          if (b.next) progress("Preparing next transaction...");
           return signature;
         },
       });
       if (signatures.length === 0) {
-        toast.info(`${label}: nothing to do`, { id });
+        toast.dismiss(id);
+        toast.info(`${label}: nothing to do`);
         return [];
       }
-      toast.success(`${label}: confirmed`, {
-        id,
-        description: signatures.length === 1 ? signatures[0] : `${signatures.length} transactions`,
-        action: {
-          label: "Explorer",
-          onClick: () => window.open(explorerUrl("tx", signatures[signatures.length - 1]), "_blank"),
-        },
+      show({
+        title: `${label} confirmed`,
+        subtitle: signatures.length === 1 ? "Transaction confirmed" : `${signatures.length} transactions confirmed`,
+        tone: "success",
       });
       invalidate(vault);
       onSuccess?.(signatures);
@@ -141,9 +222,12 @@ export function useSendTransaction() {
       }
       const message = cause instanceof Error ? cause.message : String(cause);
       const logs = cause instanceof ApiRequestError ? cause.logs : undefined;
-      const progress = partial ? `${done.length} confirmed before the failure` : "";
-      const description = [progress, message, logs ? logs.slice(-6).join("\n") : ""].filter(Boolean).join("\n\n");
-      toast.error(`${label}: failed`, { id, description, duration: 12_000 });
+      show({
+        title: `${label} failed`,
+        subtitle: partial ? `${done.length} confirmed before the failure` : undefined,
+        tone: "error",
+        errorText: [message, logs ? logs.slice(-6).join("\n") : ""].filter(Boolean).join("\n\n"),
+      });
       return partial ? done : null;
     } finally {
       inFlight.current = false;

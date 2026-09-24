@@ -14,7 +14,7 @@ Two rules shape the whole codebase:
   in `src/lib/types.ts`; route handlers in `src/app/api/` just validate input and return JSON.
 - **Every write is built on the server, signed in the browser, and sent by the server.**
   `POST /api/tx/*` assembles a v0 transaction, **simulates it**, and returns it unsigned in base64.
-  The server holds no keys. The wallet only signs (`signTransaction`, never `sendTransaction`); the
+  The server holds no keys. The wallet signs (`signTransaction` or `signAllTransactions`, never `sendTransaction`); the
   signed bytes go to `POST /api/tx/send`, and the client polls `GET /api/tx/status` until the
   signature is confirmed. A failed simulation, preflight or on-chain execution comes back with the
   decoded Anchor error code and the program logs.
@@ -110,15 +110,16 @@ the app builds instructions against a stale program interface.
 ### API — transaction builders (POST)
 
 Each returns `BuiltTransaction` (`{ transaction: base64, simulation: { unitsConsumed } }`), or an
-array of them for `resolve-batch`. All take `payer` and, except for vault creation, `vault`. Two
+array when all transactions can be prepared together. All take `payer` and, except for vault creation, `vault`. Two
 routes return more than the transaction: `vault/initialize` returns `BuiltTransaction & { vault }`
 (the PDA the client navigates to) and `dlmm/initialize` returns
 `BuiltTransaction & { position, lowerBinId, upperBinId }` (the generated position key and the range
-the position account will actually store). A builder that cannot fit its work in one transaction
-returns the first transaction plus `next: { path, body }` (`BuiltStep`); the client builds it after
-the first confirms. Builders add a bounded recent-market priority fee, simulate before fetching the
-final blockhash, and size the paid compute limit from observed usage. Every builder is rate limited
-per IP.
+the position account will actually store). Compatible wallets approve a prepared transaction array
+in one batch request; the client relays dependent transactions in order and submits independent
+range transactions together before confirming them. A flow
+whose next transaction depends on confirmed state returns `next: { path, body }` (`BuiltStep`). The
+first transaction is simulated before signing. A later transaction that depends on state created by
+the first is checked by relay preflight immediately before it is sent. Every builder is rate limited per IP.
 
 | Path | Body beyond `payer`/`vault` | Who may call |
 | --- | --- | --- |
@@ -136,12 +137,12 @@ per IP.
 | `/api/tx/jupiter/initialize` | `targetMint` | vault authority |
 | `/api/tx/jupiter/swap` | `sourceMint`, `destinationMint`, `amount`, `slippageBps`; initializes the Jupiter strategy for the target mint when missing (`initializesStrategy`); requests a direct non-shared Jupiter route so the vault PDA remains the CPI signer | vault authority |
 | `/api/tx/dlmm/initialize` | `lbPair`, and either `width` or `lowerBinId`/`upperBinId` (at most 70 initial bins) | vault authority |
-| `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 1,400 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage`; wide positions return confirmed extension and chunked funding steps | vault authority |
+| `/api/tx/dlmm/open` | `lbPair`, `lowerBinId`, `upperBinId` (exclusive, ≤ 1,400 bins), `amountX`, `amountY`, `shape`, `maxActiveBinSlippage`; split positions return a resize and funding transaction batch | vault authority |
 | `/api/tx/dlmm/extend` | Confirmed follow-up step that grows a position by at most 91 bins; repeats until the requested upper bin is reached | vault authority |
-| `/api/tx/dlmm/add-range` | Confirmed follow-up step that funds a wide position in transaction-sized bin ranges | vault authority |
+| `/api/tx/dlmm/add-range` | Funds a wide position in a batch of transaction-sized bin ranges | vault authority |
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
-| `/api/tx/dlmm/remove` | `position`, `bpsToRemove`; wide positions return confirmed range steps | vault authority |
-| `/api/tx/dlmm/claim-fee` | `position`; wide positions return confirmed range steps | vault authority |
+| `/api/tx/dlmm/remove` | `position`, `bpsToRemove`; wide positions return a range transaction batch | vault authority |
+| `/api/tx/dlmm/claim-fee` | `position`; wide positions return a range transaction batch | vault authority |
 | `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; available for positions up to 70 bins; removes all liquidity, claims fees, closes the DLMM position, then swaps only the non-deposit tokens returned by that position into the vault deposit mint (pre-existing idle balances are preserved) | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
 

@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH } from "@/lib/constants";
+import { DLMM_INITIAL_POSITION_WIDTH, DLMM_MAX_POSITION_WIDTH, DLMM_MAX_RESIZE_LENGTH } from "@/lib/constants";
 import { getActiveBinIds, getPool } from "@/server/dlmm-pool";
 import { ApiError } from "@/server/errors";
 import { getProgram } from "@/server/program";
@@ -9,17 +9,17 @@ import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
 import {
   dlmmAddLiquidityForRangeIx,
+  dlmmExtendPositionIx,
   dlmmInitializePositionIx,
   missingBinArrayIxs,
   onChainUpper,
 } from "@/server/tx/dlmm";
-import { addNextStep } from "@/server/tx/next-steps";
 import { dlmmOpenBody } from "@/server/tx/schemas";
 import { fitsInTransaction } from "@/server/tx/size";
+import { buildWideAddPlan } from "@/server/tx/wide-add";
 
 /**
- * Opens a position: the initial 70 bins are created first; wider ranges are extended and funded
- * in confirmed follow-up transactions.
+ * Opens a position and prepares resize and funding transactions as one wallet-signable batch.
  * `upperBinId` is exclusive, as in `dlmm/initialize`.
  */
 export const POST = handlePost(
@@ -49,25 +49,49 @@ export const POST = handlePost(
         program, ctx, authority, lbPair, b.lowerBinId, initialUpperExclusive,
       );
       const positionAddress = position.publicKey.toBase58();
-      return {
-        ...(await assemble(authority, [ix], { signers: [position] })),
-        position: positionAddress,
+      const instructionGroups = [[ix]];
+      let createdUpper = onChainUpper(initialUpperExclusive);
+      while (createdUpper < upper) {
+        const binsToAdd = Math.min(DLMM_MAX_RESIZE_LENGTH, upper - createdUpper);
+        const resize = await dlmmExtendPositionIx(program, ctx, authority, position.publicKey, lbPair, binsToAdd);
+        const current = instructionGroups.at(-1)!;
+        if (fitsInTransaction(authority, [...current, resize])) current.push(resize);
+        else instructionGroups.push([resize]);
+        createdUpper += binsToAdd;
+      }
+      const resizeTransactions = [];
+      for (let index = 0; index < instructionGroups.length; index++) {
+        resizeTransactions.push(await assemble(authority, instructionGroups[index], {
+          signers: index === 0 ? [position] : [],
+          deferSimulation: index > 0,
+        }));
+      }
+      const fundingTransactions = await buildWideAddPlan({
+        authority,
+        ctx,
+        position: position.publicKey,
+        program,
+        dlmm,
         lowerBinId: b.lowerBinId,
-        upperBinId: onChainUpper(initialUpperExclusive),
-        next: {
-          path: "dlmm/extend",
-          body: {
-            vault: b.vault,
-            position: positionAddress,
-            targetUpperBinId: upper,
-            amountX: b.amountX,
-            amountY: b.amountY,
-            shape: b.shape,
-            maxActiveBinSlippage: b.maxActiveBinSlippage,
-            activeBinId,
-          },
+        upperBinId: upper,
+        cursorBinId: b.lowerBinId,
+        activeBinId,
+        amountXBaseUnits: BigInt(b.amountX),
+        amountYBaseUnits: BigInt(b.amountY),
+        shape: b.shape,
+        maxActiveBinSlippage: b.maxActiveBinSlippage,
+        deferFirstSimulation: true,
+      });
+      return [
+        {
+          ...resizeTransactions[0],
+          position: positionAddress,
+          lowerBinId: b.lowerBinId,
+          upperBinId: upper,
         },
-      };
+        ...resizeTransactions.slice(1),
+        ...fundingTransactions,
+      ];
     }
 
     const { ix: initIx, position } = await dlmmInitializePositionIx(program, ctx, authority, lbPair, b.lowerBinId, b.upperBinId);
@@ -80,10 +104,9 @@ export const POST = handlePost(
     const all = [...binArrays, initIx, ...add];
 
     if (fitsInTransaction(authority, all)) return { ...(await assemble(authority, all, { signers: [position] })), ...meta };
-    return {
-      ...(await assemble(authority, [...binArrays, initIx], { signers: [position] })),
-      ...meta,
-      next: addNextStep(b, meta.position),
-    };
+    return [
+      { ...(await assemble(authority, [...binArrays, initIx], { signers: [position] })), ...meta },
+      await assemble(authority, add, { deferSimulation: true }),
+    ];
   },
 );

@@ -163,13 +163,13 @@ export function ManagePosition({
       >
         Zap out to {v.depositSymbol}
       </Button>
-      {wide && <p className="text-[12px] text-muted">For wide positions, remove liquidity and claim fees first, then close the empty position.</p>}
+      {wide && <p className="text-[12px] text-muted">For wide positions, remove liquidity and claim fees, then close the empty position. Swap returned non-deposit tokens separately.</p>}
 
       <Button
         variant="secondary"
         className="w-full"
         loading={pending}
-        disabled={!operational}
+        disabled={!operational || (wide && !p.closable)}
         onClick={() => setClosing(true)}
       >
         Close position
@@ -245,7 +245,7 @@ export function ManagePosition({
         }
         notes={[
           ...(mode === "claim" ? ["10% of claimed fees goes to the protocol treasury."] : []),
-          ...(wide ? ["This wide position is processed in smaller ranges and needs several wallet approvals."] : []),
+          ...(wide ? ["This wide position is processed in smaller ranges and sent after one batch wallet approval."] : []),
         ]}
       />
     </div>

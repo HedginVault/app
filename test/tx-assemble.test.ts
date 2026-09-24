@@ -48,4 +48,29 @@ describe("assemble", () => {
       data: Buffer.from(compiled[1].data),
     }).microLamports).toBe(10_000n);
   });
+
+  it("defers simulation for a transaction that depends on earlier batch state", async () => {
+    const blockhash = new PublicKey(new Uint8Array(32).fill(8)).toBase58();
+    const simulateTransaction = vi.fn();
+    mocked.connection = {
+      getRecentPrioritizationFees: vi.fn(async () => []),
+      simulateTransaction,
+      getLatestBlockhash: vi.fn(async () => ({ blockhash, lastValidBlockHeight: 1 })),
+    };
+    const built = await assemble(
+      Keypair.generate().publicKey,
+      [new TransactionInstruction({ programId: Keypair.generate().publicKey, keys: [], data: Buffer.alloc(0) })],
+      { deferSimulation: true },
+    );
+    const tx = VersionedTransaction.deserialize(Buffer.from(built.transaction, "base64"));
+    const limit = tx.message.compiledInstructions[0];
+
+    expect(simulateTransaction).not.toHaveBeenCalled();
+    expect(built.simulation).toEqual({ unitsConsumed: 0, deferred: true });
+    expect(ComputeBudgetInstruction.decodeSetComputeUnitLimit({
+      programId: tx.message.staticAccountKeys[limit.programIdIndex],
+      keys: [],
+      data: Buffer.from(limit.data),
+    }).units).toBe(1_400_000);
+  });
 });

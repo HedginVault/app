@@ -38,6 +38,20 @@ describe("runSteps", () => {
     expect(buildNext).toHaveBeenCalledTimes(1);
   });
 
+  it("hands an already-built transaction array to one batch executor", async () => {
+    const execute = vi.fn(async () => "single");
+    const executeBatch = vi.fn(async (steps: BuiltStep[]) => steps.map((s) => `sig-${s.transaction}`));
+    const sigs = await runSteps({
+      first: async () => [step("a"), step("b"), step("c")],
+      buildNext: vi.fn(),
+      execute,
+      executeBatch,
+    });
+    expect(sigs).toEqual(["sig-a", "sig-b", "sig-c"]);
+    expect(executeBatch).toHaveBeenCalledTimes(1);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("reports progress and hands back confirmed signatures on failure", async () => {
     const progress: StepProgress[] = [];
     const execute = vi.fn(async (s: BuiltStep, _i: number, report: (x: "signing") => void) => {

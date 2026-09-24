@@ -214,7 +214,9 @@ export interface QuoteView {
 
 export interface BuiltTransaction {
   transaction: string;
-  simulation: { unitsConsumed: number };
+  simulation: { unitsConsumed: number; deferred?: boolean };
+  /** Transactions in this batch do not depend on each other's resulting state and may be submitted together. */
+  sendConcurrently?: boolean;
 }
 
 export interface SentTransaction {

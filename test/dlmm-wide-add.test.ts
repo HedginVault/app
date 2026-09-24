@@ -1,10 +1,15 @@
 import { PublicKey } from "@solana/web3.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/server/errors";
 
 const pk = (n: number) => new PublicKey(new Uint8Array(32).fill(n));
-const { add, fits } = vi.hoisted(() => ({
+const { add, fits, assemble } = vi.hoisted(() => ({
   add: vi.fn<(...args: unknown[]) => Promise<object[]>>(async () => [{}]),
   fits: vi.fn(() => true),
+  assemble: vi.fn(async (...args: [unknown, unknown[], { deferSimulation?: boolean }?]) => {
+    void args;
+    return { transaction: "unsigned", simulation: { unitsConsumed: 1 } };
+  }),
 }));
 vi.mock("@/server/tx/context", () => ({
   loadVaultCtx: vi.fn(async () => ({ key: pk(1) })),
@@ -24,9 +29,7 @@ vi.mock("@/server/tx/dlmm", () => ({
   dlmmAddLiquidityForRangeIx: add,
   missingBinArrayIxs: vi.fn(async () => []),
 }));
-vi.mock("@/server/tx/assemble", () => ({
-  assemble: vi.fn(async () => ({ transaction: "unsigned", simulation: { unitsConsumed: 1 } })),
-}));
+vi.mock("@/server/tx/assemble", () => ({ assemble }));
 vi.mock("@/server/tx/size", () => ({ fitsInTransaction: fits }));
 
 const body = {
@@ -36,22 +39,48 @@ const body = {
 };
 
 describe("wide position funding builder", () => {
-  beforeEach(() => { add.mockClear(); fits.mockReset(); fits.mockReturnValue(true); });
+  beforeEach(() => {
+    add.mockClear();
+    fits.mockReset();
+    fits.mockReturnValue(true);
+    assemble.mockReset();
+    assemble.mockResolvedValue({ transaction: "unsigned", simulation: { unitsConsumed: 1 } });
+  });
 
-  it("funds one chunk and carries the next cursor", async () => {
+  it("builds every funding chunk as one wallet-signable batch", async () => {
     const { buildWideAdd } = await import("@/server/tx/wide-add");
     const built = await buildWideAdd(body);
     expect(add.mock.calls[0]?.[5]).toBe(0);
-    expect(add.mock.calls[0]?.[6]).toBe(25);
-    expect(String(add.mock.calls[0]?.[7])).toBe("26");
-    expect(built.next).toMatchObject({ path: "dlmm/add-range", body: { cursorBinId: 26 } });
+    expect(add.mock.calls[0]?.[6]).toBe(90);
+    expect(String(add.mock.calls[0]?.[7])).toBe("91");
+    expect(add.mock.calls[1]?.[5]).toBe(91);
+    expect(add.mock.calls[1]?.[6]).toBe(99);
+    expect(String(add.mock.calls[1]?.[7])).toBe("9");
+    expect(built).toHaveLength(2);
+    expect(assemble.mock.calls[0]?.[2]).toMatchObject({ deferSimulation: false });
+    expect(assemble.mock.calls[1]?.[2]).toMatchObject({ deferSimulation: true });
   });
 
   it("reduces the bin chunk when the transaction packet is too large", async () => {
     fits.mockReturnValueOnce(false).mockReturnValue(true);
     const { buildWideAdd } = await import("@/server/tx/wide-add");
     const built = await buildWideAdd(body);
-    expect(add.mock.calls.map((call) => call[6])).toEqual([25, 12]);
-    expect(built.next).toMatchObject({ body: { cursorBinId: 13 } });
+    expect(add.mock.calls.map((call) => call[6])).toEqual([90, 69, 99]);
+    expect(built).toHaveLength(2);
+  });
+
+  it("retries a compute-limited chunk at 70 bins", async () => {
+    assemble.mockRejectedValueOnce(new ApiError(422, "SimulationFailed", "Simulation failed: ComputationalBudgetExceeded"));
+    const { buildWideAdd } = await import("@/server/tx/wide-add");
+    const built = await buildWideAdd(body);
+    expect(add.mock.calls.map((call) => call[6])).toEqual([90, 69, 99]);
+    expect(built).toHaveLength(2);
+  });
+
+  it("does not hide a liquidity program rejection by shrinking the chunk", async () => {
+    assemble.mockRejectedValueOnce(new ApiError(422, "InvalidStrategyParameters", "invalid strategy"));
+    const { buildWideAdd } = await import("@/server/tx/wide-add");
+    await expect(buildWideAdd(body)).rejects.toMatchObject({ code: "InvalidStrategyParameters" });
+    expect(add).toHaveBeenCalledTimes(1);
   });
 });

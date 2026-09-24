@@ -19,7 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <WalletProvider wallets={[]} autoConnect>
         <WalletModalProvider>
           {children}
-          <Toaster position="bottom-right" theme="dark" richColors closeButton />
+          <Toaster position="bottom-right" theme="dark" richColors closeButton expand visibleToasts={5} />
         </WalletModalProvider>
       </WalletProvider>
     </QueryClientProvider>

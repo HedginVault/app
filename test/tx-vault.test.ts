@@ -3,7 +3,8 @@ import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getManagerPda, getStrategyPda, getVaultPda } from "@/server/pda";
-import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, getProgram } from "@/server/program";
+import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, getConnection, getProgram, TOKEN_PROGRAM_ID } from "@/server/program";
+import { PHOENIX_GLOBAL_CONFIG, PHOENIX_PROGRAM_ID } from "@/server/phoenix";
 import type { VaultCtx } from "@/server/tx/context";
 import {
   claimManagerFeeIx,
@@ -105,6 +106,37 @@ describe("closeStrategyIx", () => {
   it("rejects a missing strategy account with 404", async () => {
     stub(null);
     await expect(closeStrategyIx(program, ctx, pk(5), pk(6))).rejects.toMatchObject({ status: 404 });
+  });
+
+  const globalConfig = (canonicalMint: PublicKey) => {
+    const data = Buffer.alloc(776);
+    Buffer.from([37, 146, 212, 210, 47, 136, 111, 20]).copy(data);
+    canonicalMint.toBuffer().copy(data, 296);
+    return { data, owner: PHOENIX_PROGRAM_ID, lamports: 1, executable: false };
+  };
+
+  it("passes the trader, global config, canonical ATA and token program for Phoenix", async () => {
+    stub({ vault: ctx.key, strategyType: { phoenixPerp: { traderAccount: pk(7) } } });
+    const canonicalMint = pk(8);
+    vi.spyOn(getConnection(), "getAccountInfo").mockResolvedValue(globalConfig(canonicalMint));
+    const ix = await closeStrategyIx(program, ctx, pk(5), pk(6));
+    expect(ix.keys.slice(-4)).toEqual([
+      { pubkey: pk(7), isWritable: false, isSigner: false },
+      { pubkey: PHOENIX_GLOBAL_CONFIG, isWritable: false, isSigner: false },
+      { pubkey: getAssociatedTokenAddressSync(canonicalMint, ctx.key, true, TOKEN_PROGRAM_ID), isWritable: true, isSigner: false },
+      { pubkey: TOKEN_PROGRAM_ID, isWritable: false, isSigner: false },
+    ]);
+  });
+
+  it("fails with 502 when the Phoenix global config cannot be read", async () => {
+    stub({ vault: ctx.key, strategyType: { phoenixPerp: { traderAccount: pk(7) } } });
+    vi.spyOn(getConnection(), "getAccountInfo").mockResolvedValue(null);
+    await expect(closeStrategyIx(program, ctx, pk(5), pk(6))).rejects.toMatchObject({ status: 502 });
+  });
+
+  it("rejects an unknown strategy type with 400 instead of treating it as Jupiter", async () => {
+    stub({ vault: ctx.key, strategyType: { somethingNew: { account: pk(7) } } });
+    await expect(closeStrategyIx(program, ctx, pk(5), pk(6))).rejects.toMatchObject({ status: 400 });
   });
 });
 

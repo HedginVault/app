@@ -6,8 +6,9 @@ import type { HedgeVault } from "@/idl/hedge_vault";
 import type { Status } from "@/lib/types";
 import { ApiError } from "../errors";
 import { getConfigPda, getManagerPda, getStrategyPda, getVaultPda } from "../pda";
-import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID } from "../program";
+import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, getConnection, TOKEN_PROGRAM_ID } from "../program";
 import { getTokenProgram } from "../tokens";
+import { PHOENIX_GLOBAL_CONFIG, parseGlobalConfig } from "../phoenix";
 import type { VaultCtx } from "./context";
 
 type P = Program<HedgeVault>;
@@ -97,7 +98,10 @@ export const vaultCloseIx = (program: P, ctx: VaultCtx, authority: PublicKey) =>
 const writable = (pubkey: PublicKey): AccountMeta => ({ pubkey, isWritable: true, isSigner: false });
 const readonly = (pubkey: PublicKey): AccountMeta => ({ pubkey, isWritable: false, isSigner: false });
 
-type StrategyType = { jupiterSwap: { targetMint: PublicKey } } | { meteoraDlmm: { position: PublicKey } };
+type StrategyType =
+  | { jupiterSwap: { targetMint: PublicKey } }
+  | { meteoraDlmm: { position: PublicKey } }
+  | { phoenixPerp: { traderAccount: PublicKey } };
 
 /**
  * Closes a strategy; the remaining accounts depend on the strategy type
@@ -118,13 +122,31 @@ export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: Publ
       readonly(DLMM_PROGRAM_ID),
       readonly(DLMM_EVENT_AUTHORITY),
     ];
-  } else {
+  } else if ("phoenixPerp" in strategyType) {
+    // The program closes the vault's canonical-mint ATA (SPL Token) if it exists; the mint comes from Phoenix.
+    const info = await getConnection().getAccountInfo(PHOENIX_GLOBAL_CONFIG);
+    if (!info) throw new ApiError(502, "PhoenixUnavailable", "Phoenix global config not found");
+    let canonicalMint: PublicKey;
+    try {
+      canonicalMint = parseGlobalConfig(info).canonicalMint;
+    } catch (e) {
+      throw new ApiError(502, "PhoenixUnavailable", (e as Error).message);
+    }
+    remainingAccounts = [
+      readonly(strategyType.phoenixPerp.traderAccount),
+      readonly(PHOENIX_GLOBAL_CONFIG),
+      writable(getAssociatedTokenAddressSync(canonicalMint, ctx.key, true, TOKEN_PROGRAM_ID)),
+      readonly(TOKEN_PROGRAM_ID),
+    ];
+  } else if ("jupiterSwap" in strategyType) {
     const mint = strategyType.jupiterSwap.targetMint;
     const tokenProgram = await getTokenProgram(mint);
     remainingAccounts = [
       writable(getAssociatedTokenAddressSync(mint, ctx.key, true, tokenProgram)),
       readonly(tokenProgram),
     ];
+  } else {
+    throw new ApiError(400, "Validation", "Unsupported strategy type");
   }
   return program.methods
     .vaultCloseStrategy()

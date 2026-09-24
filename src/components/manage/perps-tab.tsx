@@ -50,14 +50,14 @@ function PerpAccount({ p }: { p: PerpPositionView }) {
             <table className="hidden w-full text-[13px] tabular-nums sm:table">
               <thead className="text-[11px] text-muted">
                 <tr className="text-right [&>th:first-child]:text-left">
-                  <th className="pb-2 font-normal">Market</th>
-                  <th className="pb-2 font-normal">Side</th>
-                  <th className="pb-2 font-normal">Size</th>
-                  <th className="pb-2 font-normal">Entry</th>
-                  <th className="pb-2 font-normal">Mark</th>
-                  <th className="pb-2 font-normal">Notional</th>
-                  <th className="pb-2 font-normal">uPnL</th>
-                  <th className="pb-2 font-normal">Funding</th>
+                  <th scope="col" className="pb-2 font-normal">Market</th>
+                  <th scope="col" className="pb-2 font-normal">Side</th>
+                  <th scope="col" className="pb-2 font-normal">Size</th>
+                  <th scope="col" className="pb-2 font-normal">Entry</th>
+                  <th scope="col" className="pb-2 font-normal">Mark</th>
+                  <th scope="col" className="pb-2 font-normal">Notional</th>
+                  <th scope="col" className="pb-2 font-normal">uPnL</th>
+                  <th scope="col" className="pb-2 font-normal">Funding</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

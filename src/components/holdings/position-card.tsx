@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { PairLogo, TokenLogo } from "@/components/token/token-logo";
 import { TokenAmount } from "@/components/token/token-amount";
 import { formatPercent, formatPrice, formatRelative, formatShare, formatUsd, usdValue } from "@/lib/format";
+import { formatLeverage, formatSignedUsd, perpTotals, usdc } from "@/lib/perps";
 import type { PositionView, TokenInfo } from "@/lib/types";
 import { BinChart } from "./bin-chart";
 
@@ -76,7 +77,7 @@ export function PositionCard({
       <div className="flex flex-wrap items-center gap-3 px-6 py-4">
         <div className="min-w-0 flex-1 basis-40">
           <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-            DLMM position
+            {p.protocol === "phoenix" ? "Phoenix account" : "DLMM position"}
             <Badge tone="warning">Unreadable</Badge>
             <Address value={p.position} />
           </div>
@@ -90,7 +91,50 @@ export function PositionCard({
     );
   }
 
-  if (p.kind === "perp") return null;
+  if (p.kind === "perp") {
+    const totals = perpTotals(p);
+    const tone = (raw: bigint) => (raw > 0n ? "text-sky-400" : raw < 0n ? "text-red-400" : "text-muted");
+    return (
+      <div className="space-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="min-w-0 flex-1 basis-48">
+            <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              Phoenix Perps
+              <Badge>Cross margin</Badge>
+              <Address value={p.traderAccount} />
+            </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[12px] text-muted">
+              <span>Collateral {formatUsd(usdc(p.collateral))}</span>
+              <span>Leverage {formatLeverage(p.leverage)}</span>
+              <span className={tone(totals.unrealizedPnl)}>uPnL {formatSignedUsd(totals.unrealizedPnl)}</span>
+              {p.lastActionTs > 0 && <span>Last action {formatRelative(p.lastActionTs)}</span>}
+            </div>
+          </div>
+          <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
+            <ValueBlock usd={p.usd} shareBps={p.shareBps} />
+            {menu}
+          </div>
+        </div>
+        {p.positions.length > 0 ? (
+          <ul className="space-y-1 text-[12px] tabular-nums">
+            {p.positions.map((q) => (
+              <li key={q.assetId} className="flex flex-wrap items-center gap-x-2">
+                <span className="font-medium">{q.symbol}</span>
+                <Badge tone={q.side === "long" ? "accent" : "danger"}>{q.side === "long" ? "Long" : "Short"}</Badge>
+                <span className="text-muted">{q.size}</span>
+                <span className={tone(BigInt(q.unrealizedPnl))}>uPnL {formatSignedUsd(q.unrealizedPnl)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[12px] text-muted">No open positions.</p>
+        )}
+        {BigInt(p.canonicalBalance) > 0n && (
+          <p className="text-[12px] text-muted">{formatUsd(usdc(p.canonicalBalance))} withdrawn from Phoenix, awaiting unwrap.</p>
+        )}
+      </div>
+    );
+  }
 
   if (p.kind !== "lp") {
     return (

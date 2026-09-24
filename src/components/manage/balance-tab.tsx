@@ -91,7 +91,15 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const operational = isOperational(v);
   const actionsFor = (p: PositionView): MenuItem[] => {
     if (p.kind === "error") return [];
-    if (p.kind === "perp") return [];
+    if (p.kind === "perp")
+      return [
+        {
+          label: "Close strategy",
+          disabled: !operational || !p.closable || pending,
+          reason: !operational ? "Vault not operational" : "Close all positions and withdraw from Phoenix first",
+          onSelect: () => closeStrategy(p.strategy, "Phoenix"),
+        },
+      ];
     if (p.kind === "idle")
       return p.token.mint === v.depositMint
         ? [{ label: `Swap ${p.token.symbol}`, onSelect: () => prefill({ panel: "swap", from: v.depositMint }) }]

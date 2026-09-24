@@ -27,8 +27,10 @@ const positionLabel = (p: PositionView) =>
 const positionIcon = (p: PositionView): ReactNode =>
   p.kind === "lp" ? (
     <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
-  ) : p.kind === "error" || p.kind === "perp" ? (
+  ) : p.kind === "error" ? (
     <span className="size-5 shrink-0 rounded-full bg-warning-soft" />
+  ) : p.kind === "perp" ? (
+    <span className="size-5 shrink-0 rounded-full bg-accent-soft" />
   ) : (
     <TokenLogo token={p.token} size="sm" />
   );

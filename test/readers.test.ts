@@ -5,6 +5,7 @@ import { GET as managerGet } from "@/app/api/manager/[wallet]/route";
 import { clearCache, setCached } from "@/server/cache";
 import { getPool, getPools, splitCachedPools } from "@/server/dlmm-pool";
 import { decodeName, decodeStatus, toDepositRequestView, toVaultSummary, toWithdrawalRequestView } from "@/server/readers/decode";
+import { collectUnmanaged } from "@/server/readers/vaults";
 
 const bytes = (s: string) => Array.from(Buffer.from(s.padEnd(32, "\0")));
 const pk = (n: number) => new PublicKey(new Uint8Array(32).fill(n));
@@ -52,6 +53,20 @@ describe("decode helpers", () => {
     expect(toDepositRequestView(dep, 11n, 0n)).toMatchObject({ state: "resolvable", cancellable: true });
     const wd = { authority: pk(2), shares: new BN(3), epoch: new BN(10), createdTs: new BN(1) };
     expect(toWithdrawalRequestView(wd, 11n)).toMatchObject({ shares: "3", state: "resolvable", cancellable: false });
+  });
+});
+
+describe("collectUnmanaged", () => {
+  it("skips the deposit and share escrow mints and zero balances, summing the rest by mint", () => {
+    const [deposit, share, hype, dust] = ["deposit", "share", "hype", "dust"];
+    const owned = [
+      { mint: deposit, amount: 5n },
+      { mint: share, amount: 195_387n },
+      { mint: hype, amount: 7n },
+      { mint: hype, amount: 3n },
+      { mint: dust, amount: 0n },
+    ];
+    expect([...collectUnmanaged(owned, [deposit, share])]).toEqual([[hype, 10n]]);
   });
 });
 

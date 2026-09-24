@@ -72,6 +72,21 @@ export async function fetchVaultAccount(address: string) {
 }
 
 /**
+ * Sums the vault's owned token accounts by mint, skipping zero balances and `excluded` mints. The
+ * deposit escrow (deposit mint) and share escrow (share mint) are vault-owned too; their balances are
+ * already reported as `pendingDeposits` / `pendingWithdrawalShares`, not as idle holdings.
+ */
+export function collectUnmanaged(owned: { mint: string; amount: bigint }[], excluded: string[]): Map<string, bigint> {
+  const skip = new Set(excluded);
+  const out = new Map<string, bigint>();
+  for (const { mint, amount } of owned) {
+    if (skip.has(mint) || amount === 0n) continue;
+    out.set(mint, (out.get(mint) ?? 0n) + amount);
+  }
+  return out;
+}
+
+/**
  * 4 RPC: the vault, a batched read of the share mint and the vault's idle token account, and one
  * `getTokenAccountsByOwner` per token program to catch balances the vault holds outside any
  * strategy (airdrops, dust) — otherwise invisible since every other read targets a specific mint.
@@ -91,16 +106,12 @@ export const readVaultDetail = (address: string) =>
       readConfig(),
     ]);
     const depositMintKey = account.depositMint.toBase58();
-    const unmanaged = new Map<string, bigint>();
-    for (const { mint, amount } of [...owned[0], ...owned[1]]) {
-      if (mint === depositMintKey || amount === 0n) continue;
-      unmanaged.set(mint, (unmanaged.get(mint) ?? 0n) + amount);
-    }
+    const shareMint = getShareMintPda(key);
+    const unmanaged = collectUnmanaged([...owned[0], ...owned[1]], [depositMintKey, shareMint.toBase58()]);
     const [tokens, unmanagedTokens] = await Promise.all([
       getTokenInfos([account.depositMint]),
       getTokenInfos([...unmanaged.keys()].map((m) => new PublicKey(m))),
     ]);
-    const shareMint = getShareMintPda(key);
     const vaultTokenAccount = getAssociatedTokenAddressSync(account.depositMint, key, true, tokenProgram);
     const [shareMintInfo, idleInfo] = await getMultipleAccounts(connection, [shareMint, vaultTokenAccount]);
     const share = decodeMint(shareMintInfo);

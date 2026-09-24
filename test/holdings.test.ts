@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildHoldingsView, isEmptyPosition, positionKey } from "@/lib/holdings";
-import type { DlmmStrategyView, JupiterStrategyView, UnreadableStrategyView, VaultDetail } from "@/lib/types";
+import type { DlmmStrategyView, JupiterStrategyView, PhoenixStrategyView, UnreadableStrategyView, VaultDetail } from "@/lib/types";
 
 const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const SOL = "So11111111111111111111111111111111111111112";
@@ -37,6 +37,20 @@ const dlmm = (priceUsd: number | null): DlmmStrategyView => ({
   pendingFeeX: "100000000", pendingFeeY: "1000000", // 0.1 SOL, 1 USDC
   bins: [{ binId: 100, amountX: "1000000000", amountY: "50000000" }],
   pnlUsd: null, pnlPct: null,
+});
+
+const CANONICAL = "Canon1ca1Mint11111111111111111111111111111";
+
+const phoenix = (over: Partial<PhoenixStrategyView> = {}): PhoenixStrategyView => ({
+  type: "phoenix", address: "strat-px", id: 2, createdTs: 1, lastActionTs: 6,
+  traderAccount: "trader", canonicalMint: CANONICAL,
+  collateral: "300000000", equity: "320000000", canonicalBalance: "5000000", // 300, 320, 5 USDC
+  leverage: 1.5,
+  positions: [{
+    assetId: 0, symbol: "SOL", side: "long", size: "2", entryPrice: "100", markPrice: "110",
+    notional: "220000000", unrealizedPnl: "20000000", accruedFunding: "0",
+  }],
+  ...over,
 });
 
 describe("buildHoldingsView", () => {
@@ -82,7 +96,7 @@ describe("buildHoldingsView", () => {
     expect(h.unpriced).toEqual([]);
     expect(h.positions.map((p) => p.kind)).toEqual(["idle", "swap", "lp", "error"]);
     expect(h.positions.at(-1)).toEqual({
-      kind: "error", strategy: "strat-bad", position: "pos-bad", reason: "Position read failed",
+      kind: "error", strategy: "strat-bad", protocol: "dlmm", position: "pos-bad", reason: "Position read failed",
       value: null, usd: null, shareBps: null, lastActionTs: 4,
     });
     // It contributes nothing: every other value, share and the total are unchanged.
@@ -141,5 +155,49 @@ describe("buildHoldingsView", () => {
 
     const nonEmpty = buildHoldingsView(vault(), [dlmm(100), jupiter(100)]);
     expect(nonEmpty.positions.map(isEmptyPosition)).toEqual([false, false, false]);
+  });
+});
+
+describe("buildHoldingsView with Phoenix", () => {
+  it("books equity and the canonical balance at 1:1 in USDC, like the keeper", () => {
+    const h = buildHoldingsView(vault(), [phoenix()]);
+    // 1000 idle + 320 equity + 5 canonical
+    expect(h.totalValue).toBe("1325000000");
+    expect(h.partial).toBe(false);
+    const perp = h.positions.find((p) => p.kind === "perp")!;
+    expect(perp).toMatchObject({
+      kind: "perp", strategy: "strat-px", traderAccount: "trader", value: "325000000",
+      equity: "320000000", collateral: "300000000", canonicalBalance: "5000000", leverage: 1.5, closable: false,
+    });
+    expect(h.tokens.map((t) => [t.token.symbol, t.amount])).toEqual([["USDC", "1325000000"]]);
+  });
+
+  it("does not count the canonical-mint ATA again as an unmanaged holding", () => {
+    const canonical = { mint: CANONICAL, symbol: "eUSDC", decimals: 6, logo: null, priceUsd: 1 };
+    const h = buildHoldingsView(vault({ unmanagedHoldings: [{ token: canonical, amount: "5000000" }] }), [phoenix()]);
+    expect(h.totalValue).toBe("1325000000");
+    expect(h.positions.filter((p) => p.kind === "idle")).toHaveLength(1);
+  });
+
+  it("sorts perp after LP and before unreadable rows", () => {
+    const broken: UnreadableStrategyView = {
+      type: "unreadable", protocol: "phoenix", address: "strat-bad", id: 9, createdTs: 1, lastActionTs: 4,
+      position: "trader-bad", reason: "phoenix_stale_mark:0",
+    };
+    const h = buildHoldingsView(vault(), [broken, phoenix(), dlmm(100), jupiter(100)]);
+    expect(h.positions.map((p) => p.kind)).toEqual(["idle", "swap", "lp", "perp", "error"]);
+    expect(h.positions.at(-1)).toMatchObject({ kind: "error", protocol: "phoenix", position: "trader-bad" });
+  });
+
+  it("marks an empty account closable and keeps it visible", () => {
+    const h = buildHoldingsView(vault(), [phoenix({ equity: "0", collateral: "0", canonicalBalance: "0", leverage: null, positions: [] })]);
+    const perp = h.positions.find((p) => p.kind === "perp")!;
+    expect(perp).toMatchObject({ closable: true, value: "0" });
+    expect(isEmptyPosition(perp)).toBe(false);
+  });
+
+  it("is not closable while the canonical balance awaits unwrap", () => {
+    const h = buildHoldingsView(vault(), [phoenix({ equity: "0", collateral: "0", positions: [] })]);
+    expect(h.positions.find((p) => p.kind === "perp")).toMatchObject({ closable: false });
   });
 });

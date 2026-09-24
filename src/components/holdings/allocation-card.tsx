@@ -20,12 +20,14 @@ const positionLabel = (p: PositionView) =>
       ? `${p.token.symbol} · Jupiter`
       : p.kind === "lp"
         ? `${p.tokenX.symbol}-${p.tokenY.symbol} · DLMM`
-        : "Unreadable position";
+        : p.kind === "perp"
+          ? "Phoenix Perps"
+          : "Unreadable position";
 
 const positionIcon = (p: PositionView): ReactNode =>
   p.kind === "lp" ? (
     <PairLogo x={p.tokenX} y={p.tokenY} size="sm" />
-  ) : p.kind === "error" ? (
+  ) : p.kind === "error" || p.kind === "perp" ? (
     <span className="size-5 shrink-0 rounded-full bg-warning-soft" />
   ) : (
     <TokenLogo token={p.token} size="sm" />

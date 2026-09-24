@@ -91,6 +91,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
   const operational = isOperational(v);
   const actionsFor = (p: PositionView): MenuItem[] => {
     if (p.kind === "error") return [];
+    if (p.kind === "perp") return [];
     if (p.kind === "idle")
       return p.token.mint === v.depositMint
         ? [{ label: `Swap ${p.token.symbol}`, onSelect: () => prefill({ panel: "swap", from: v.depositMint }) }]

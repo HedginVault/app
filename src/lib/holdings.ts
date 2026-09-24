@@ -27,6 +27,8 @@ export const positionKey = (position: PositionView): string =>
  * True for a zero-balance idle/swap/lp row: nothing to swap, sell, or add to. The underlying swap
  * or LP strategy account may still be open on-chain (see `closable`) — this only hides the row from
  * the Positions list, it does not close the account or reclaim its rent.
+ * A perp row is never hidden: an empty Phoenix account is the row whose "Close strategy" action must
+ * stay reachable.
  */
 export const isEmptyPosition = (position: PositionView): boolean => {
   if (position.kind === "idle" || position.kind === "swap") return BigInt(position.amount) === 0n;
@@ -48,10 +50,12 @@ const byValueDesc = (a: { value: string | null }, b: { value: string | null }) =
 export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): HoldingsView {
   const deposit = depositTokenOf(v);
   const tokens = new Map<string, TokenInfo>([[deposit.mint, deposit]]);
-  // Jupiter strategies hold their target mint in the vault's own token account, so that mint also
-  // shows up in `unmanagedHoldings` (a raw scan of every token account the vault owns). Drop it
-  // there to avoid reporting the same on-chain balance as both an idle holding and a strategy holding.
-  const strategyMints = new Set(strategies.filter((s) => s.type === "jupiter").map((s) => s.targetMint));
+  // Jupiter target mints and Phoenix canonical mints are held in the vault's own token accounts, so
+  // they also show up in `unmanagedHoldings` (a raw scan of every token account the vault owns). Drop
+  // them there so the same on-chain balance is not reported as both idle and strategy holdings.
+  const strategyMints = new Set(
+    strategies.flatMap((s) => (s.type === "jupiter" ? [s.targetMint] : s.type === "phoenix" ? [s.canonicalMint] : [])),
+  );
   const unmanagedHoldings = v.unmanagedHoldings.filter((h) => !strategyMints.has(h.token.mint));
   const raw: RawHolding[] = [
     { kind: "idle", strategy: null, mint: deposit.mint, decimals: deposit.decimals, amount: BigInt(v.idleBalance) },
@@ -75,6 +79,16 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
         { kind: "dlmm_y", ...y, amount: BigInt(s.amountY) },
         { kind: "dlmm_fee_x", ...x, amount: BigInt(s.pendingFeeX) },
         { kind: "dlmm_fee_y", ...y, amount: BigInt(s.pendingFeeY) },
+      );
+    } else if (s.type === "phoenix") {
+      // Both are USDC at 1:1 (the canonical token is Ember-wrapped USDC), booked in the deposit mint as
+      // the keeper does; Phoenix strategies only exist in USDC vaults. The canonical ATA is per vault,
+      // so a second Phoenix strategy must not count it again.
+      const x = { mint: deposit.mint, decimals: deposit.decimals, strategy: s.address };
+      const firstPhoenix = strategies.find((t) => t.type === "phoenix") === s;
+      raw.push(
+        { kind: "phoenix_equity", ...x, amount: BigInt(s.equity) },
+        { kind: "phoenix_canonical", ...x, amount: firstPhoenix ? BigInt(s.canonicalBalance) : 0n },
       );
     }
   }
@@ -102,6 +116,7 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
       return {
         kind: "error",
         strategy: s.address,
+        protocol: s.protocol,
         position: s.position,
         reason: s.reason,
         value: null,
@@ -121,7 +136,21 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
         ...money(value),
       };
     }
-    if (s.type === "phoenix") throw new Error("phoenix holdings: implemented in the next commit");
+    if (s.type === "phoenix") {
+      return {
+        kind: "perp",
+        strategy: s.address,
+        traderAccount: s.traderAccount,
+        equity: s.equity,
+        collateral: s.collateral,
+        canonicalBalance: s.canonicalBalance,
+        leverage: s.leverage,
+        positions: s.positions,
+        lastActionTs: s.lastActionTs,
+        closable: s.positions.length === 0 && BigInt(s.equity) === 0n && BigInt(s.canonicalBalance) === 0n,
+        ...money(value),
+      };
+    }
     return {
       kind: "lp",
       strategy: s.address,
@@ -151,9 +180,9 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
       ...money(value),
     };
   });
-  // ponytail: idle, then spot, then LP, then unreadable; value-desc inside each group.
+  // ponytail: idle, then spot, then LP, then perps, then unreadable; value-desc inside each group.
   // Keeps the tall LP cards together instead of scattering them between one-line spot rows.
-  const groupRank = { swap: 0, lp: 1, error: 2 } as const;
+  const groupRank = { swap: 0, lp: 1, perp: 2, error: 3 } as const;
   others.sort((a, b) => groupRank[a.kind as keyof typeof groupRank] - groupRank[b.kind as keyof typeof groupRank] || byValueDesc(a, b));
 
   const byMint = new Map<string, ValuedHolding[]>();

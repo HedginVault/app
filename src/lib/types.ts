@@ -325,10 +325,26 @@ export interface LpPositionView extends Money {
   pnlPct: number | null;
 }
 
+/** The vault's Phoenix cross-margin account. Amounts are USDC atoms. */
+export interface PerpPositionView extends Money {
+  kind: "perp";
+  strategy: string;
+  traderAccount: string;
+  equity: string;
+  collateral: string;
+  canonicalBalance: string;
+  leverage: number | null;
+  positions: PhoenixPerpPositionView[];
+  lastActionTs: number;
+  /** No open positions, no equity and nothing awaiting unwrap: the strategy can be closed. */
+  closable: boolean;
+}
+
 /** A strategy whose position could not be read; it has no value. */
 export interface ErrorPositionView {
   kind: "error";
   strategy: string;
+  protocol: StrategyProtocol;
   position: string;
   reason: string;
   value: null;
@@ -337,7 +353,7 @@ export interface ErrorPositionView {
   lastActionTs: number;
 }
 
-export type PositionView = IdlePositionView | SwapPositionView | LpPositionView | ErrorPositionView;
+export type PositionView = IdlePositionView | SwapPositionView | LpPositionView | PerpPositionView | ErrorPositionView;
 
 export interface StrategyHistoryToken {
   mint: string;

@@ -90,6 +90,8 @@ export function PositionCard({
     );
   }
 
+  if (p.kind === "perp") return null;
+
   if (p.kind !== "lp") {
     return (
       <div className="flex flex-wrap items-center gap-3 px-6 py-4">

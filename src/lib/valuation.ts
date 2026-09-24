@@ -2,7 +2,7 @@
  * Port of the keeper's `computeValuation` (keeper/src/valuation/index.ts) for the live holdings view.
  * Same arithmetic; the one difference is that a missing price yields `value: null` instead of throwing.
  */
-export type HoldingKind = "idle" | "jupiter" | "dlmm_x" | "dlmm_y" | "dlmm_fee_x" | "dlmm_fee_y";
+export type HoldingKind = "idle" | "jupiter" | "dlmm_x" | "dlmm_y" | "dlmm_fee_x" | "dlmm_fee_y" | "phoenix_equity" | "phoenix_canonical";
 
 export interface RawHolding {
   kind: HoldingKind;

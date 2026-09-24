@@ -1,10 +1,11 @@
 import { PublicKey } from "@solana/web3.js";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, MAX_MARK_AGE_SLOTS, parseGlobalConfig,
-  PHOENIX_PROGRAM_ID, type PhoenixMarket, type PhoenixPosition, type PhoenixTraderState,
+  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, describePosition, getPhoenixMarketNames, MAX_MARK_AGE_SLOTS, parseGlobalConfig,
+  PHOENIX_PROGRAM_ID, scaleDecimal, type PhoenixMarket, type PhoenixPosition, type PhoenixTraderState,
 } from "@/server/phoenix";
+import { clearCache } from "@/server/cache";
 import { accountInfo, hawkeyeEquity, loadPhoenixFixture } from "./phoenix-fixture";
 
 const SLOT = 10_000n;
@@ -121,5 +122,79 @@ describe("mainnet fixture", () => {
     const markets = decodeMarkets(perpAssetMap, f.accounts.perpAssetMap);
     expect(t.collateral).toBe(f.hawkeye.collateral);
     expect(computeTraderEquity(t.collateral, t.positions, markets, BigInt(f.slot))).toBe(hawkeyeEquity(f.hawkeye));
+  });
+});
+
+describe("scaleDecimal", () => {
+  it.each([
+    [123n, 2, "1.23"],
+    [5n, 4, "0.0005"],
+    [-1500n, 3, "-1.5"],
+    [100n, 2, "1"],
+    [5n, -2, "500"],
+    [0n, 6, "0"],
+  ])("%s × 10^-%s = %s", (raw, decimals, out) => {
+    expect(scaleDecimal(raw, decimals)).toBe(out);
+  });
+});
+
+describe("describePosition", () => {
+  // Values from a real mainnet SOL long: tick size 100, 2 base lot decimals.
+  const sol = market(11_684n, 100n, 27_329n, SLOT, 2);
+  it("describes a long", () => {
+    expect(describePosition(position(0n, 3n, -3_421_500n, 24_203n), sol)).toEqual({
+      side: "long",
+      size: "0.03",
+      entryPrice: "114.05",
+      markPrice: "116.84",
+      notional: 3_505_200n,
+      unrealizedPnl: 83_700n,
+      accruedFunding: -9_378n,
+    });
+  });
+
+  // Values from a real mainnet BTC short: tick size 100, 4 base lot decimals.
+  it("describes a short with a positive size", () => {
+    const btc = market(85_428n, 100n, -127_914n, SLOT, 4);
+    expect(describePosition(position(1n, -1n, 8_102_800n, -122_482n), btc)).toEqual({
+      side: "short",
+      size: "0.0001",
+      entryPrice: "81028",
+      markPrice: "85428",
+      notional: 8_542_800n,
+      unrealizedPnl: -440_000n,
+      accruedFunding: -5_432n,
+    });
+  });
+
+  it("scales markets with negative base lot decimals", () => {
+    // PUMP-like: 1 base lot = 100 tokens
+    const pump = market(41_880n, 10n, 0n, SLOT, -2); // 41_880 ticks × 10 = 418_800 quote lots per base lot
+    const d = describePosition(position(26n, -1n, 439_730n), pump);
+    expect(d).toMatchObject({ side: "short", size: "100", markPrice: "0.004188", entryPrice: "0.0043973" });
+  });
+
+  it("agrees with computeTraderEquity", () => {
+    const p = position(0n, 3n, -3_421_500n, 24_203n);
+    const d = describePosition(p, sol);
+    expect(computeTraderEquity(1_000_000n, [p], new Map([[0n, sol]]), SLOT)).toBe(1_000_000n + d.unrealizedPnl + d.accruedFunding);
+  });
+});
+
+describe("getPhoenixMarketNames", () => {
+  beforeEach(clearCache);
+  afterEach(() => vi.restoreAllMocks());
+
+  it("maps asset ids to symbols", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify([{ symbol: "SOL", assetId: 0 }, { symbol: "BTC", assetId: 1 }])));
+    expect(await getPhoenixMarketNames()).toEqual(new Map([[0, "SOL"], [1, "BTC"]]));
+  });
+
+  it("returns an empty map on failure and retries on the next call", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("down", { status: 503 }));
+    expect(await getPhoenixMarketNames()).toEqual(new Map());
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify([{ symbol: "SOL", assetId: 0 }])));
+    expect(await getPhoenixMarketNames()).toEqual(new Map([[0, "SOL"]]));
   });
 });

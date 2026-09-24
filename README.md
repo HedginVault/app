@@ -143,7 +143,7 @@ the first is checked by relay preflight immediately before it is sent. Every bui
 | `/api/tx/dlmm/add` | `position`, `amountX`, `amountY`, `shape`, `maxActiveBinSlippage` | vault authority |
 | `/api/tx/dlmm/remove` | `position`, `bpsToRemove`; wide positions return a range transaction batch | vault authority |
 | `/api/tx/dlmm/claim-fee` | `position`; wide positions return a range transaction batch | vault authority |
-| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; available for positions up to 70 bins whose pair includes the deposit mint; atomically snapshots the source balance, removes liquidity, claims and transfers fees, swaps only the detected increase through the existing Jupiter instruction, then closes the position (pre-existing idle balances are preserved) | vault authority |
+| `/api/tx/dlmm/zap-out` | `position`, `slippageBps`; supports up to 1,400 bins whose pair includes the deposit mint; positions up to 70 bins exit atomically. Wider positions return one transaction array for batch signing: each range atomically snapshots, removes, claims and swaps only its balance increase, preserving idle balances. A missing Jupiter strategy is initialized once; independent ranges submit together after setup confirms, and the empty position closes only after all ranges confirm. All transactions receive a fresh blockhash after preparation. Optional `cursorBinId` resumes at a bin. Completed ranges remain completed if interrupted; restarting processes the remaining holdings | vault authority |
 | `/api/tx/strategy/close` | `strategy` | vault authority |
 
 ### API — send and confirm

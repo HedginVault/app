@@ -159,13 +159,13 @@ export function ManagePosition({
       <Button
         className="w-full"
         loading={pending}
-        disabled={!operational || wide || !hasDepositMint}
+        disabled={!operational || !hasDepositMint}
         onClick={() => setZapping(true)}
       >
         Zap out to {v.depositSymbol}
       </Button>
-      {wide && <p className="text-[12px] text-muted">For wide positions, remove liquidity and claim fees, then close the empty position. Swap returned non-deposit tokens separately.</p>}
-      {!hasDepositMint && <p className="text-[12px] text-muted">Atomic zap out requires this pool to include {v.depositSymbol}.</p>}
+      {wide && <p className="text-[12px] text-muted">Zap out supports up to 1,400 bins. Approve wide positions in one wallet batch.</p>}
+      {!hasDepositMint && <p className="text-[12px] text-muted">Zap out requires this pool to include {v.depositSymbol}.</p>}
 
       <Button
         variant="secondary"
@@ -190,7 +190,9 @@ export function ManagePosition({
           })
         }
       >
-        In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-{v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Rent from the closed position is returned to your wallet; creating missing treasury or Jupiter strategy accounts can still cost rent.
+        {wide
+          ? "Wide positions are processed in smaller transactions. Each step removes liquidity, claims fees, and swaps only the tokens returned by that range. Approve the full transaction batch once in your wallet. If interrupted, completed steps stay completed; run zap out again to finish the remaining bins. The empty position closes last and returns its rent."
+          : `In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Rent from the closed position is returned to your wallet; creating missing treasury or Jupiter strategy accounts can still cost rent.`}
       </ConfirmDialog>
 
       <ConfirmDialog

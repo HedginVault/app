@@ -81,3 +81,16 @@ export async function assemble(
     simulation: { unitsConsumed, ...(deferSimulation ? { deferred: true } : {}) },
   };
 }
+
+/** Refresh only wholly unsigned transactions, after a long batch preparation finishes. */
+export async function refreshUnsignedBatch(batch: BuiltTransaction[]): Promise<BuiltTransaction[]> {
+  const transactions = batch.map((step) => VersionedTransaction.deserialize(Buffer.from(step.transaction, "base64")));
+  if (transactions.some((tx) => tx.signatures.some((signature) => signature.some((byte) => byte !== 0))))
+    throw new Error("Cannot refresh a transaction that already has signatures");
+  const { blockhash } = await getConnection().getLatestBlockhash("confirmed");
+  return batch.map((step, index) => {
+    const transaction = transactions[index];
+    transaction.message.recentBlockhash = blockhash;
+    return { ...step, transaction: Buffer.from(transaction.serialize()).toString("base64") };
+  });
+}

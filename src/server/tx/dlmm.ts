@@ -17,6 +17,7 @@ import type { DlmmShape, PoolInfo } from "@/lib/types";
 import { ApiError } from "../errors";
 import { cached } from "../cache";
 import {
+  calculateTransferFeeExcludedAmount,
   deriveBinArray,
   getActiveBinIds,
   getBinArrayAccountMetasCoverage,
@@ -373,6 +374,22 @@ export function zapOutEstimatedAmount(positionAmount: BN, pendingFee: BN) {
   return positionAmount.add(retainedFee);
 }
 
+/** Quote only the bins being removed, using the SDK's integer base-unit amounts. */
+export function zapOutRangeAmounts(
+  bins: Awaited<ReturnType<DLMM["getPosition"]>>["positionData"]["positionBinData"],
+  range: { lowerBinId: number; upperBinId: number },
+  sourceIsX: boolean,
+) {
+  let positionAmount = new BN(0);
+  let pendingFee = new BN(0);
+  for (const bin of bins) {
+    if (bin.binId < range.lowerBinId || bin.binId > range.upperBinId) continue;
+    positionAmount = positionAmount.add(new BN(sourceIsX ? bin.positionXAmount : bin.positionYAmount));
+    pendingFee = pendingFee.add(new BN(sourceIsX ? bin.positionFeeXAmount : bin.positionFeeYAmount));
+  }
+  return { positionAmount, pendingFee };
+}
+
 /**
  * Uses only existing Hedge Vault instructions: remove, claim/treasury transfer, Jupiter swap, and
  * close. Jupiter's top-level token-ledger instruction snapshots the vault source ATA before remove
@@ -385,24 +402,31 @@ export async function dlmmZapOutIxs(
   position: PublicKey,
   treasuryAuthority: PublicKey,
   slippageBps: number,
+  range?: { lowerBinId: number; upperBinId: number },
+  jupiterStrategyInitialized = false,
 ) {
   const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
     ctx.key,
     position,
     authority,
+    range,
   );
   const depositIsX = dlmm.tokenX.publicKey.equals(ctx.depositMint);
   const depositIsY = dlmm.tokenY.publicKey.equals(ctx.depositMint);
   if (!depositIsX && !depositIsY)
     throw new ApiError(400, "Validation", "atomic zap out requires the vault deposit mint to be one side of the DLMM pair");
 
-  const removeIx = await program.methods
-    .meteoraDlmmRemoveLiquidity({ bpsToRemove: 10_000, remainingAccountsInfo })
+  const removeMethod = range
+    ? program.methods.meteoraDlmmRemoveLiquidityRange({ bpsToRemove: 10_000, remainingAccountsInfo }, range.lowerBinId, range.upperBinId)
+    : program.methods.meteoraDlmmRemoveLiquidity({ bpsToRemove: 10_000, remainingAccountsInfo });
+  const removeIx = await removeMethod
     .accounts({ ...accounts, authority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();
-  const claimIx = await program.methods
-    .meteoraDlmmClaimFee(remainingAccountsInfo)
+  const claimMethod = range
+    ? program.methods.meteoraDlmmClaimFeeRange(remainingAccountsInfo, range.lowerBinId, range.upperBinId)
+    : program.methods.meteoraDlmmClaimFee(remainingAccountsInfo);
+  const claimIx = await claimMethod
     .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();
@@ -414,14 +438,27 @@ export async function dlmmZapOutIxs(
     ? positionData.totalXAmountExcludeTransferFee
     : positionData.totalYAmountExcludeTransferFee;
   const pendingFee = swapXToY ? positionData.feeXExcludeTransferFee : positionData.feeYExcludeTransferFee;
-  const estimatedAmount = zapOutEstimatedAmount(positionAmount, pendingFee);
+  let estimatedAmount = zapOutEstimatedAmount(positionAmount, pendingFee);
+  if (range) {
+    const amounts = zapOutRangeAmounts(positionData.positionBinData, range, swapXToY);
+    const token = swapXToY ? dlmm.tokenX : dlmm.tokenY;
+    const { epoch } = await getConnection().getEpochInfo("confirmed");
+    estimatedAmount = zapOutEstimatedAmount(
+      calculateTransferFeeExcludedAmount(amounts.positionAmount, token.mint, epoch).amount,
+      calculateTransferFeeExcludedAmount(amounts.pendingFee, token.mint, epoch).amount,
+    );
+  }
 
   const swapIxs: TransactionInstruction[] = [];
   let lookupTables: AddressLookupTableAccount[] = [];
+  let initializesStrategy = false;
   if (!estimatedAmount.isZero()) {
     const jupiterStrategy = getStrategyPda(ctx.key, sourceMint);
-    const strategyExists = (await getConnection().getAccountInfo(jupiterStrategy)) !== null;
-    if (!strategyExists) swapIxs.push(await jupiterInitializeIx(program, ctx, authority, sourceMint));
+    const strategyExists = jupiterStrategyInitialized || (await getConnection().getAccountInfo(jupiterStrategy)) !== null;
+    if (!strategyExists) {
+      swapIxs.push(await jupiterInitializeIx(program, ctx, authority, sourceMint));
+      initializesStrategy = true;
+    }
     const swap = await jupiterTokenLedgerSwapIx(
       program,
       ctx,
@@ -438,8 +475,9 @@ export async function dlmmZapOutIxs(
     swapIxs.push(removeIx, claimIx);
   }
 
-  const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy);
-  return { ixs: [...createAtaIxs, ...swapIxs, closeIx], lookupTables };
+  // A wide position closes in the last batch transaction after every range has confirmed.
+  const closeIxs = range ? [] : [await closeStrategyIx(program, ctx, authority, accounts.strategy)];
+  return { ixs: [...createAtaIxs, ...swapIxs, ...closeIxs], lookupTables, initializesStrategy };
 }
 
 export async function dlmmClaimFeeIx(

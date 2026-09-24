@@ -6,7 +6,7 @@ import { createElement, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TxToast, type TxToastProps } from "@/components/ui/tx-toast";
 import { api, ApiRequestError } from "@/lib/api";
-import { runSteps, StepsError, type StepProgress } from "@/lib/tx-steps";
+import { executeSignedBatch, runSteps, StepsError, type StepProgress } from "@/lib/tx-steps";
 import type { BuiltStep } from "@/lib/types";
 import { useInvalidateVault } from "./queries";
 
@@ -118,65 +118,24 @@ export function useSendTransaction() {
           if (signed.length !== batch.length)
             throw new Error("Wallet returned an incomplete signed transaction batch");
 
-          const batchConfirmed: string[] = [];
-          try {
-            if (batch.every((step) => step.sendConcurrently)) {
-              const submitted: Array<{ signature: string; blockhash: string; index: number }> = [];
-              let submissionError: unknown;
-              for (let offset = 0; offset < signed.length; offset++) {
-                const transaction = signed[offset];
-                const index = startIndex + offset;
-                report(index, "sending");
-                progress(`Submitting transaction ${offset + 1} of ${signed.length}...`);
-                try {
-                  const { signature } = await api.send(encodeBase64(transaction.serialize()));
-                  submitted.push({ signature, blockhash: transaction.message.recentBlockhash, index });
-                } catch (error) {
-                  submissionError = error;
-                  report(index, "failed");
-                  break;
-                }
-              }
-              for (const item of submitted) report(item.index, "confirming");
-              progress(`Waiting for ${submitted.length} transactions to confirm...`);
-              const results = await Promise.allSettled(
-                submitted.map((item) => waitForConfirmation(item.signature, item.blockhash)),
-              );
-              let confirmationError: unknown;
-              results.forEach((result, offset) => {
-                const item = submitted[offset];
-                if (result.status === "fulfilled") {
-                  confirmed.push(item.signature);
-                  batchConfirmed.push(item.signature);
-                } else {
-                  confirmationError ??= result.reason;
-                  report(item.index, "failed");
-                }
-              });
-              if (submissionError || confirmationError)
-                throw new StepsError(submissionError ?? confirmationError, batchConfirmed);
-              return batchConfirmed;
-            }
-
-            for (let offset = 0; offset < signed.length; offset++) {
-              const transaction = signed[offset];
+          return executeSignedBatch({
+            signed,
+            steps: batch,
+            submit: async (transaction, offset) => {
               const index = startIndex + offset;
-              const name = stepLabels?.[index] ?? `Transaction ${index + 1}`;
+              const name = stepLabels?.[index] ?? `Transaction ${index + 1} of ${startIndex + signed.length}`;
               report(index, "sending");
               progress(`${name}: submitting transaction...`);
-              const { signature } = await api.send(encodeBase64(transaction.serialize()));
-              report(index, "confirming");
-              progress(`${name}: waiting for confirmation...`);
+              return (await api.send(encodeBase64(transaction.serialize()))).signature;
+            },
+            confirm: async (transaction, signature, offset) => {
+              report(startIndex + offset, "confirming");
+              progress("Waiting for transactions to confirm...");
               await waitForConfirmation(signature, transaction.message.recentBlockhash);
-              confirmed.push(signature);
-              batchConfirmed.push(signature);
-            }
-            return batchConfirmed;
-          } catch (error) {
-            if (error instanceof StepsError) throw error;
-            report(startIndex + batchConfirmed.length, "failed");
-            throw new StepsError(error, batchConfirmed);
-          }
+            },
+            onConfirmed: (signature) => { confirmed.push(signature); },
+            onFailed: (offset) => report(startIndex + offset, "failed"),
+          });
         },
         execute: async (b, index, report) => {
           const multi = (stepLabels?.length ?? 0) > 1 || index > 0 || !!b.next;

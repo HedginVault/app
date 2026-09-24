@@ -78,3 +78,62 @@ export async function runSteps({
     throw new StepsError(e, signatures);
   }
 }
+
+/**
+ * Executes one wallet-approved batch. Consecutive independent transactions share a confirmation
+ * barrier; setup and close transactions each wait for all preceding work to confirm.
+ */
+export async function executeSignedBatch<T>({
+  signed,
+  steps,
+  submit,
+  confirm,
+  onConfirmed,
+  onFailed,
+}: {
+  signed: T[];
+  steps: Pick<BuiltStep, "sendConcurrently">[];
+  submit: (transaction: T, index: number) => Promise<string>;
+  confirm: (transaction: T, signature: string, index: number) => Promise<void>;
+  onConfirmed: (signature: string) => void;
+  onFailed: (index: number) => void;
+}): Promise<string[]> {
+  if (signed.length !== steps.length) throw new Error("Wallet returned an incomplete signed transaction batch");
+  const confirmed: string[] = [];
+  let cursor = 0;
+  while (cursor < signed.length) {
+    let end = cursor + 1;
+    if (steps[cursor].sendConcurrently)
+      while (end < signed.length && steps[end].sendConcurrently) end++;
+    const submitted: Array<{ signature: string; index: number }> = [];
+    let failure: unknown;
+    let failed = false;
+    for (let index = cursor; index < end; index++) {
+      try {
+        submitted.push({ signature: await submit(signed[index], index), index });
+      } catch (error) {
+        failure = error;
+        failed = true;
+        onFailed(index);
+        break;
+      }
+    }
+    // Even if a later submission fails, resolve every submitted transaction before reporting
+    // partial completion. Never submit the next dependent group after an ambiguous outcome.
+    const results = await Promise.allSettled(submitted.map(({ signature, index }) => confirm(signed[index], signature, index)));
+    results.forEach((result, offset) => {
+      const { signature, index } = submitted[offset];
+      if (result.status === "fulfilled") {
+        confirmed.push(signature);
+        onConfirmed(signature);
+      } else {
+        if (!failed) failure = result.reason;
+        failed = true;
+        onFailed(index);
+      }
+    });
+    if (failed) throw new StepsError(failure, confirmed);
+    cursor = end;
+  }
+  return confirmed;
+}

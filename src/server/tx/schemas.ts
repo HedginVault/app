@@ -56,6 +56,7 @@ export const dlmmZapOutBody = z.object({
   payer: pubkey,
   vault: pubkey,
   position: pubkey,
+  cursorBinId: z.number().int().optional(),
   slippageBps: z.number().int().min(1).max(10_000),
 });
 

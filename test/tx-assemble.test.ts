@@ -6,7 +6,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { describe, expect, it, vi } from "vitest";
-import { assemble } from "@/server/tx/assemble";
+import { assemble, refreshUnsignedBatch } from "@/server/tx/assemble";
 
 const mocked = vi.hoisted(() => ({ connection: null as unknown }));
 vi.mock("@/server/program", () => ({ getConnection: () => mocked.connection }));
@@ -72,5 +72,44 @@ describe("assemble", () => {
       keys: [],
       data: Buffer.from(limit.data),
     }).units).toBe(1_400_000);
+  });
+});
+
+
+describe("refreshUnsignedBatch", () => {
+  it("refreshes the entire batch after preparation without changing instructions or ordering flags", async () => {
+    const oldHash = new PublicKey(new Uint8Array(32).fill(7)).toBase58();
+    const freshHash = new PublicKey(new Uint8Array(32).fill(8)).toBase58();
+    const getLatestBlockhash = vi.fn(async () => ({ blockhash: oldHash }));
+    mocked.connection = { getLatestBlockhash, getRecentPrioritizationFees: async () => [] };
+    const instruction = new TransactionInstruction({ programId: Keypair.generate().publicKey, keys: [], data: Buffer.from([1, 2, 3]) });
+    const a = await assemble(Keypair.generate().publicKey, [instruction], { deferSimulation: true });
+    const b = await assemble(Keypair.generate().publicKey, [instruction], { deferSimulation: true });
+    getLatestBlockhash.mockResolvedValue({ blockhash: freshHash });
+    getLatestBlockhash.mockClear();
+    const batch = [{ ...a, sendConcurrently: true }, b];
+    const refreshed = await refreshUnsignedBatch(batch);
+    expect(getLatestBlockhash).toHaveBeenCalledTimes(1);
+    for (let index = 0; index < batch.length; index++) {
+      const original = VersionedTransaction.deserialize(Buffer.from(batch[index].transaction, "base64"));
+      const actual = VersionedTransaction.deserialize(Buffer.from(refreshed[index].transaction, "base64"));
+      expect(actual.message.recentBlockhash).toBe(freshHash);
+      expect(original.message.recentBlockhash).toBe(oldHash);
+      expect(actual.message.compiledInstructions).toEqual(original.message.compiledInstructions);
+      expect(actual.message.staticAccountKeys).toEqual(original.message.staticAccountKeys);
+      expect(actual.signatures).toEqual(original.signatures);
+      expect(refreshed[index].sendConcurrently).toBe(batch[index].sendConcurrently);
+      expect(refreshed[index].simulation).toEqual(batch[index].simulation);
+    }
+  });
+
+  it("refuses to invalidate an existing signature", async () => {
+    const payer = Keypair.generate();
+    mocked.connection = {
+      getLatestBlockhash: async () => ({ blockhash: PublicKey.default.toBase58() }),
+      getRecentPrioritizationFees: async () => [],
+    };
+    const built = await assemble(payer.publicKey, [], { signers: [payer], deferSimulation: true });
+    await expect(refreshUnsignedBatch([built])).rejects.toThrow("already has signatures");
   });
 });

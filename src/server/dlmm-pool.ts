@@ -20,6 +20,7 @@ const DLMM = (sdk.default ?? (sdk as unknown as Sdk["default"])) as Sdk["default
  * `import ... from "@meteora-ag/dlmm"` at runtime: the ESM entry breaks the Next build.
  */
 export const {
+  calculateTransferFeeExcludedAmount,
   deriveBinArray,
   getBinArrayAccountMetasCoverage,
   getBinArrayIndexesCoverage,

@@ -67,10 +67,12 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         }),
     });
 
-  const zapPosition = (position: string, pair: string) =>
+  const zapPosition = (position: string, pair: string, wide: boolean) =>
     setConfirming({
       title: `Zap ${pair} to ${v.depositSymbol}`,
-      body: `In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Closed-position rent is returned; missing treasury or Jupiter strategy accounts can still cost rent.`,
+      body: wide
+        ? "Wide positions are processed in smaller transactions. Each step removes liquidity, claims fees, and swaps only the tokens returned by that range. Approve the full transaction batch once in your wallet. If interrupted, completed steps stay completed; run zap out again to finish the remaining bins. The empty position closes last and returns its rent."
+        : `In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Closed-position rent is returned; missing treasury or Jupiter strategy accounts can still cost rent.`,
       label: `Zap out to ${v.depositSymbol}`,
       run: () =>
         void send({
@@ -143,15 +145,13 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
       {
         label: `Zap out to ${v.depositSymbol}`,
         primary: true,
-        disabled: !operational || pending || wide || !hasDepositMint,
-        reason: wide
-          ? "Remove liquidity and claim fees in ranges before closing"
-          : !hasDepositMint
-            ? `Pool must include ${v.depositSymbol}`
-            : !operational
-              ? "Vault not operational"
-              : undefined,
-        onSelect: () => zapPosition(p.position, pair),
+        disabled: !operational || pending || !hasDepositMint,
+        reason: !hasDepositMint
+          ? `Pool must include ${v.depositSymbol}`
+          : !operational
+            ? "Vault not operational"
+            : undefined,
+        onSelect: () => zapPosition(p.position, pair, wide),
       },
       {
         label: "Close position",

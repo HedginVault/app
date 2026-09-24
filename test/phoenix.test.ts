@@ -201,11 +201,17 @@ describe("getPhoenixMarketNames", () => {
     expect(await getPhoenixMarketNames()).toEqual(new Map([[0, "SOL"], [1, "BTC"]]));
   });
 
-  it("returns an empty map on failure and retries on the next call", async () => {
+  it("returns an empty map on failure and negative-caches it until the cache is cleared", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("down", { status: 503 }));
     expect(await getPhoenixMarketNames()).toEqual(new Map());
+    // An immediate second call is served the negative cache; it must not hit the network again.
+    expect(await getPhoenixMarketNames()).toEqual(new Map());
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    clearCache();
     fetch.mockResolvedValueOnce(new Response(JSON.stringify([{ symbol: "SOL", assetId: 0 }])));
     expect(await getPhoenixMarketNames()).toEqual(new Map([[0, "SOL"]]));
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

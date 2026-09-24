@@ -1,7 +1,7 @@
 import "server-only";
 import { decodePerpAssetMap, decodeTrader } from "@ellipsis-labs/rise";
 import { PublicKey, type AccountInfo } from "@solana/web3.js";
-import { cached } from "./cache";
+import { cached, setCached } from "./cache";
 
 // Ported from hedgin_keeper/src/valuation/phoenix.ts; keep the two in step when either changes.
 
@@ -192,6 +192,9 @@ export function describePosition(p: PhoenixPosition, m: PhoenixMarket): PhoenixP
 
 const PHOENIX_API_URL = "https://perp-api.phoenix.trade";
 const MARKET_NAMES_TTL = 10 * 60_000;
+/** How long a failed fetch's empty map is served before the next call retries the API. */
+const MARKET_NAMES_FAILURE_TTL = 60_000;
+const MARKET_NAMES_CACHE_KEY = "phoenix:markets";
 
 async function fetchMarketNames(): Promise<Map<number, string>> {
   const res = await fetch(`${PHOENIX_API_URL}/v1/view/exchange/markets`, { signal: AbortSignal.timeout(5_000) });
@@ -200,12 +203,17 @@ async function fetchMarketNames(): Promise<Map<number, string>> {
   return new Map(rows.map((r) => [r.assetId, r.symbol]));
 }
 
-/** Symbols by asset id, for display only. A failure is not cached, and yields an empty map. */
+/**
+ * Symbols by asset id, for display only. A failure caches an empty map for a minute, so a hanging
+ * or down perp-api adds its timeout to one read instead of every uncached one.
+ */
 export async function getPhoenixMarketNames(): Promise<Map<number, string>> {
   try {
-    return await cached("phoenix:markets", MARKET_NAMES_TTL, fetchMarketNames);
+    return await cached(MARKET_NAMES_CACHE_KEY, MARKET_NAMES_TTL, fetchMarketNames);
   } catch (e) {
     console.warn(`[phoenix] market names unavailable: ${(e as Error).message}`);
-    return new Map();
+    const empty = new Map<number, string>();
+    setCached(MARKET_NAMES_CACHE_KEY, empty, MARKET_NAMES_FAILURE_TTL);
+    return empty;
   }
 }

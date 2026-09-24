@@ -16,5 +16,5 @@ export const DLMM_MAX_RESIZE_LENGTH = 91;
 
 export const explorerUrl = (kind: "address" | "tx", value: string) => {
   const suffix = CLUSTER === "mainnet-beta" ? "" : `?cluster=${CLUSTER}`;
-  return `https://explorer.solana.com/${kind}/${value}${suffix}`;
+  return `https://solscan.io/${kind === "address" ? "account" : "tx"}/${value}${suffix}`;
 };

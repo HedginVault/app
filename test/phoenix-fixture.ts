@@ -14,10 +14,17 @@ export const hawkeyeEquity = (m: HawkeyeMargin) => {
   return e > 0n ? e : 0n;
 };
 
+interface RawTrader {
+  trader: string;
+  slot: number;
+  hawkeye: Record<"collateral" | "unrealizedPnl" | "unsettledFunding", string>;
+  accounts: Record<"trader" | "perpAssetMap" | "globalConfig", Packed>;
+}
+
 /** Mainnet traders with the accounts Hawkeye ViewMargin saw and its answer (ported from hedgin_keeper). */
 export function loadPhoenixFixture() {
-  const raw = JSON.parse(readFileSync(new URL("./data/phoenix-mainnet.json", import.meta.url), "utf8"));
-  return raw.traders.map((t: any) => ({
+  const raw = JSON.parse(readFileSync(new URL("./data/phoenix-mainnet.json", import.meta.url), "utf8")) as { traders: RawTrader[] };
+  return raw.traders.map((t) => ({
     trader: new PublicKey(t.trader),
     slot: t.slot as number,
     hawkeye: {

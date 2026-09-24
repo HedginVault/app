@@ -50,6 +50,8 @@ export interface PhoenixTraderState {
   positions: PhoenixPosition[];
   nativeSolLamports: bigint;
   splineMarkets: number;
+  /** A `phoenix_withdraw_funds` queued and not yet delivered; mirrors the program's `withdraw_queue_node == 0` check. */
+  withdrawQueued: boolean;
 }
 
 const decodeError = (key: PublicKey) => new PhoenixReadError(`phoenix_decode:${key.toBase58()}`);
@@ -88,6 +90,8 @@ export function decodeTraderState(key: PublicKey, info: AccountInfo<Buffer>): Ph
     })),
     nativeSolLamports: BigInt(t.nativeSolCollateral),
     splineMarkets: t.numMarketsWithSplines,
+    // rise decodes the raw u32 as `getOptionalNonZeroU32Decoder()`: 0 -> null, else the node index.
+    withdrawQueued: t.withdrawQueueNode !== null,
   };
 }
 

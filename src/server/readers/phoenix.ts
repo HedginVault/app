@@ -73,6 +73,9 @@ export function toPhoenixView(i: PhoenixViewInput): PhoenixStrategyView | Unread
       canonicalBalance: i.canonicalBalance.toString(),
       leverage: equity > 0n ? Number(notional) / Number(equity) : null,
       positions,
+      // Mirrors `PhoenixTrader::is_empty`: raw collateral, every position entry (not just open ones),
+      // no queued withdrawal, and the canonical ATA the close instruction would also touch.
+      closable: i.state.collateral === 0n && i.state.positions.length === 0 && !i.state.withdrawQueued && i.canonicalBalance === 0n,
     };
   } catch (e) {
     return unreadable(i.base, i.trader, reasonOf(e));

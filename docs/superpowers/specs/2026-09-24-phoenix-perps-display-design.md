@@ -93,6 +93,7 @@ interface PhoenixStrategyView extends StrategyBase {
   canonicalBalance: string;    // canonical-mint base units in the vault's ATA
   leverage: number | null;
   positions: PhoenixPerpPositionView[];
+  closable: boolean;           // mirrors the program's close precondition: see below
 }
 ```
 
@@ -129,7 +130,11 @@ interface PhoenixStrategyView extends StrategyBase {
 - Drop the canonical mint from `unmanagedHoldings`, as Jupiter target mints are, so it is not counted twice.
 - No non-USDC fallback: `phoenix_initialize_strategy` requires `vault.deposit_mint == USDC_MINT`, so a
   Phoenix strategy only exists in a USDC vault.
-- Build `kind: "perp"` rows; `closable` = no positions, equity 0 and canonical balance 0.
+- Build `kind: "perp"` rows; `closable` comes straight from the Phoenix strategy view, which mirrors the
+  program's `PhoenixTrader::is_empty` check: raw `quote_lot_collateral == 0`, every position entry absent
+  (`position_count == 0`, not just the ones with a non-zero base lot the UI renders), no withdrawal queued
+  (`withdraw_queue_node == 0`, decoded by rise as `withdrawQueueNode === null`), and the canonical ATA the
+  close instruction also touches empty.
 - Sort order: idle → swap → lp → perp → error. `isEmptyPosition` never hides a perp row: an empty Phoenix
   account is exactly the row whose "Close strategy" action must stay reachable.
 

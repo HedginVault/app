@@ -182,6 +182,8 @@ export interface PhoenixStrategyView extends StrategyBase {
   /** Total notional / equity; null when equity is 0. */
   leverage: number | null;
   positions: PhoenixPerpPositionView[];
+  /** Mirrors the program's close precondition: zero collateral, zero positions, no queued withdrawal and no canonical balance awaiting unwrap. */
+  closable: boolean;
 }
 
 export type StrategyProtocol = "dlmm" | "phoenix";

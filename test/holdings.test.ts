@@ -46,6 +46,7 @@ const phoenix = (over: Partial<PhoenixStrategyView> = {}): PhoenixStrategyView =
   traderAccount: "trader", canonicalMint: CANONICAL,
   collateral: "300000000", equity: "320000000", canonicalBalance: "5000000", // 300, 320, 5 USDC
   leverage: 1.5,
+  closable: false,
   positions: [{
     assetId: 0, symbol: "SOL", side: "long", size: "2", entryPrice: "100", markPrice: "110",
     notional: "220000000", unrealizedPnl: "20000000", accruedFunding: "0",
@@ -190,14 +191,16 @@ describe("buildHoldingsView with Phoenix", () => {
   });
 
   it("marks an empty account closable and keeps it visible", () => {
-    const h = buildHoldingsView(vault(), [phoenix({ equity: "0", collateral: "0", canonicalBalance: "0", leverage: null, positions: [] })]);
+    const h = buildHoldingsView(vault(), [
+      phoenix({ equity: "0", collateral: "0", canonicalBalance: "0", leverage: null, positions: [], closable: true }),
+    ]);
     const perp = h.positions.find((p) => p.kind === "perp")!;
     expect(perp).toMatchObject({ closable: true, value: "0" });
     expect(isEmptyPosition(perp)).toBe(false);
   });
 
   it("is not closable while the canonical balance awaits unwrap", () => {
-    const h = buildHoldingsView(vault(), [phoenix({ equity: "0", collateral: "0", positions: [] })]);
+    const h = buildHoldingsView(vault(), [phoenix({ equity: "0", collateral: "0", positions: [], closable: false })]);
     expect(h.positions.find((p) => p.kind === "perp")).toMatchObject({ closable: false });
   });
 });

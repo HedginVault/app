@@ -147,7 +147,7 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
         leverage: s.leverage,
         positions: s.positions,
         lastActionTs: s.lastActionTs,
-        closable: s.positions.length === 0 && BigInt(s.equity) === 0n && BigInt(s.canonicalBalance) === 0n,
+        closable: s.closable,
         ...money(value),
       };
     }

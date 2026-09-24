@@ -1,3 +1,4 @@
+import { decodeTrader } from "@ellipsis-labs/rise";
 import { PublicKey } from "@solana/web3.js";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -62,7 +63,10 @@ describe("computeTraderEquity", () => {
 describe("checkTrader", () => {
   const vault = PublicKey.unique();
   const key = PublicKey.unique();
-  const ok: PhoenixTraderState = { authority: vault, pdaIndex: 0, subaccountIndex: 0, collateral: 0n, positions: [], nativeSolLamports: 0n, splineMarkets: 0 };
+  const ok: PhoenixTraderState = {
+    authority: vault, pdaIndex: 0, subaccountIndex: 0, collateral: 0n, positions: [],
+    nativeSolLamports: 0n, splineMarkets: 0, withdrawQueued: false,
+  };
 
   it("accepts the vault's cross-margin account", () => {
     expect(() => checkTrader(vault, key, ok)).not.toThrow();
@@ -122,6 +126,13 @@ describe("mainnet fixture", () => {
     const markets = decodeMarkets(perpAssetMap, f.accounts.perpAssetMap);
     expect(t.collateral).toBe(f.hawkeye.collateral);
     expect(computeTraderEquity(t.collateral, t.positions, markets, BigInt(f.slot))).toBe(hawkeyeEquity(f.hawkeye));
+  });
+
+  it.each(fixture.map((f) => [f.trader.toBase58(), f] as const))("withdrawQueued matches rise's decoded withdrawQueueNode for %s", (_, f) => {
+    const t = decodeTraderState(f.trader, f.accounts.trader);
+    const raw = decodeTrader(f.accounts.trader.data);
+    expect(typeof t.withdrawQueued).toBe("boolean");
+    expect(t.withdrawQueued).toBe(raw.withdrawQueueNode !== null);
   });
 });
 

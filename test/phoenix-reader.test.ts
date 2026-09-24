@@ -12,7 +12,7 @@ const sol: PhoenixMarket = { markTicks: 11_684n, markSlot: SLOT, tickSize: 100n,
 const state = (over: Partial<PhoenixTraderState> = {}): PhoenixTraderState => ({
   authority: vault, pdaIndex: 0, subaccountIndex: 0, collateral: 10_000_000n,
   positions: [{ assetId: 0n, baseLots: 3n, virtualQuoteLots: -3_421_500n, fundingSnapshot: 24_203n }],
-  nativeSolLamports: 0n, splineMarkets: 0, ...over,
+  nativeSolLamports: 0n, splineMarkets: 0, withdrawQueued: false, ...over,
 });
 const input = (over: Partial<Parameters<typeof toPhoenixView>[0]> = {}) => ({
   base, vault, trader, canonicalMint, canonicalBalance: 0n,
@@ -33,6 +33,7 @@ describe("toPhoenixView", () => {
       equity: String(10_000_000n + 83_700n - 9_378n),
       canonicalBalance: "42",
       leverage: 3_505_200 / Number(10_000_000n + 83_700n - 9_378n),
+      closable: false,
       positions: [{
         assetId: 0, symbol: "SOL", side: "long", size: "0.03", entryPrice: "114.05", markPrice: "116.84",
         notional: "3505200", unrealizedPnl: "83700", accruedFunding: "-9378",
@@ -51,6 +52,31 @@ describe("toPhoenixView", () => {
   it("has no leverage at zero equity", () => {
     const v = toPhoenixView(input({ state: state({ collateral: 0n, positions: [] }) }));
     expect(v).toMatchObject({ type: "phoenix", equity: "0", leverage: null, positions: [] });
+  });
+
+  describe("closable", () => {
+    const emptyState = state({ collateral: 0n, positions: [] });
+
+    it("is true for an empty account: no collateral, positions, queue or canonical balance", () => {
+      const v = toPhoenixView(input({ state: emptyState }));
+      expect(v).toMatchObject({ type: "phoenix", closable: true });
+    });
+
+    it("is false while a withdrawal is queued", () => {
+      const v = toPhoenixView(input({ state: { ...emptyState, withdrawQueued: true } }));
+      expect(v).toMatchObject({ type: "phoenix", closable: false });
+    });
+
+    it("is false with a zero-base-lot position entry, even though it renders no open positions", () => {
+      const flat = state({ collateral: 0n, positions: [{ assetId: 0n, baseLots: 0n, virtualQuoteLots: 0n, fundingSnapshot: 0n }] });
+      const v = toPhoenixView(input({ state: flat }));
+      expect(v).toMatchObject({ type: "phoenix", positions: [], closable: false });
+    });
+
+    it("is false while the canonical balance awaits unwrap", () => {
+      const v = toPhoenixView(input({ state: emptyState, canonicalBalance: 1n }));
+      expect(v).toMatchObject({ type: "phoenix", closable: false });
+    });
   });
 
   it.each([

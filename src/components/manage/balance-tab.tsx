@@ -96,7 +96,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
         {
           label: "Close strategy",
           disabled: !operational || !p.closable || pending,
-          reason: !operational ? "Vault not operational" : "Close all positions and withdraw from Phoenix first",
+          reason: !operational ? "Vault not operational" : "Close all positions, withdraw from Phoenix and wait for queued withdrawals first",
           onSelect: () => closeStrategy(p.strategy, "Phoenix"),
         },
       ];

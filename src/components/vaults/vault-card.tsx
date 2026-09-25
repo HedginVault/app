@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { VerifiedMark } from "@/components/token/token-trust";
+import { VERIFIED_VAULTS } from "@/lib/constants";
 import { formatBps, formatNav, formatTokenAmount } from "@/lib/format";
 import type { Status, VaultSummary } from "@/lib/types";
 
@@ -36,7 +38,10 @@ export function VaultCard({ v }: { v: VaultSummary }) {
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-serif text-2xl leading-tight">{v.name}</h3>
+          <h3 className="flex items-center gap-2 font-serif text-2xl leading-tight">
+            <span className="truncate">{v.name}</span>
+            {VERIFIED_VAULTS.has(v.address) && <VerifiedMark className="size-4" />}
+          </h3>
           <p className="truncate text-sm text-white/50">
             {v.metadata?.managerName ?? "Unregistered manager"}
           </p>

@@ -4,6 +4,9 @@ import idl from "@/idl/hedge_vault.json";
 export const CLUSTER = (process.env.NEXT_PUBLIC_CLUSTER ?? "mainnet-beta") as Cluster;
 export const PROGRAM_ID = process.env.NEXT_PUBLIC_PROGRAM_ID || idl.address;
 
+/** Vaults vetted by the Hedgin team; listed first under "Verified" on /vaults. */
+export const VERIFIED_VAULTS = new Set(["G2iSfoFcCBRUa1egLqGJPs5WibPZzafacebDU9qbhA3Y"]);
+
 export const MAX_BPS = 10_000;
 export const NAV_PRECISION = 1_000_000_000n;
 export const EPOCH_DURATION = 14_400;

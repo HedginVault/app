@@ -1,8 +1,27 @@
 "use client";
 
+import { VerifiedMark } from "@/components/token/token-trust";
 import { VaultCard } from "@/components/vaults/vault-card";
 import { useVaults } from "@/hooks/queries";
-import { CLUSTER } from "@/lib/constants";
+import { CLUSTER, VERIFIED_VAULTS } from "@/lib/constants";
+import type { VaultSummary } from "@/lib/types";
+
+function VaultSection({ title, vaults }: { title: React.ReactNode; vaults: VaultSummary[] }) {
+  if (vaults.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-5 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-white/60">
+        {title}
+        <span className="text-white/30">{vaults.length}</span>
+      </h2>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {vaults.map((v) => (
+          <VaultCard key={v.address} v={v} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function VaultsPage() {
   const vaults = useVaults();
@@ -46,10 +65,16 @@ export default function VaultsPage() {
               <p className="mt-2 text-white/50">No vaults found on {CLUSTER}.</p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {vaults.data.map((v) => (
-                <VaultCard key={v.address} v={v} />
-              ))}
+            <div className="space-y-14">
+              <VaultSection
+                title={
+                  <>
+                    <VerifiedMark /> Verified
+                  </>
+                }
+                vaults={vaults.data.filter((v) => VERIFIED_VAULTS.has(v.address))}
+              />
+              <VaultSection title="Others" vaults={vaults.data.filter((v) => !VERIFIED_VAULTS.has(v.address))} />
             </div>
           )}
         </div>

@@ -174,9 +174,9 @@ const ctaClass =
 export default function LandingPage() {
   return (
     <main className="flex flex-col bg-[#080c14] text-white">
-      {/* Hero — pulled up under the TopBar's reserved flow space (-mt-20 =
-          its 80px box) so the nav floats over the gradient */}
-      <section className="relative -mt-20 overflow-hidden bg-[linear-gradient(180deg,#080c14_0%,#0c3a5e_45%,#0d1a2b_85%,#080c14_100%)]">
+      {/* Hero — pulled up under the TopBar's reserved flow space (72px phone,
+          92px sm+) so the nav floats over the gradient */}
+      <section className="relative -mt-[72px] overflow-hidden sm:-mt-[92px] bg-[linear-gradient(180deg,#080c14_0%,#0c3a5e_45%,#0d1a2b_85%,#080c14_100%)]">
         {/* decorative watermark + glow */}
         <span
           aria-hidden="true"

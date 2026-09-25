@@ -7,8 +7,8 @@ import { CLUSTER } from "@/lib/constants";
 export default function VaultsPage() {
   const vaults = useVaults();
   return (
-    // -mt-20 pulls the page under the TopBar's flow space, same as the landing hero
-    <main className="relative -mt-20 flex-1 overflow-hidden bg-[linear-gradient(180deg,#0d1a2b_0%,#080c14_40%)] text-white">
+    // Pulls the page under the TopBar's flow space (72px phone, 92px sm+), same as the landing hero
+    <main className="relative -mt-[72px] flex-1 sm:-mt-[92px] overflow-hidden bg-[linear-gradient(180deg,#0d1a2b_0%,#080c14_40%)] text-white">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 -top-40 h-[32rem] w-[48rem] -translate-x-1/2 rounded-full bg-sky-400/10 blur-[120px]"

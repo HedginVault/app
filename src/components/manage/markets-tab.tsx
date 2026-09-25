@@ -132,7 +132,7 @@ export function MarketsTab({
                   {last != null ? `${quote}${formatPrice(last)}${quoteSuffix}` : "—"}
                 </span>
                 {change != null && (
-                  <span className={cn("text-sm tabular-nums", change >= 0 ? "text-sky-400" : "text-red-300")}>
+                  <span className={cn("text-sm tabular-nums", change >= 0 ? "text-emerald-400" : "text-red-300")}>
                     {change >= 0 ? "+" : ""}
                     {change.toFixed(2)}% {changeLabel}
                   </span>

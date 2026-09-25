@@ -44,10 +44,10 @@ function Row({
         {/* Cumulative depth, drawn from the right edge. */}
         <span
           aria-hidden
-          className={cn("absolute inset-y-0 right-0", side === "bid" ? "bg-sky-400/10" : "bg-red-400/10")}
+          className={cn("absolute inset-y-0 right-0", side === "bid" ? "bg-emerald-400/10" : "bg-red-400/10")}
           style={{ width: `${max > 0 ? (total / max) * 100 : 0}%` }}
         />
-        <span className={cn("relative text-left", side === "bid" ? "text-sky-400" : "text-red-400")}>{formatMarketPrice(price, decimals)}</span>
+        <span className={cn("relative text-left", side === "bid" ? "text-emerald-400" : "text-red-400")}>{formatMarketPrice(price, decimals)}</span>
         <span className="relative">{formatBaseSize(size, sizeDecimals, true)}</span>
         <span className="relative text-muted">{formatBaseSize(total, sizeDecimals, true)}</span>
       </button>
@@ -120,7 +120,7 @@ function Trades({ market }: { market: PhoenixMarketView }) {
       <ul className="max-h-[540px] overflow-y-auto">
         {fills.map((f) => (
           <li key={f.id} className="grid grid-cols-3 px-3 py-[3px] text-right text-[12px] tabular-nums">
-            <span className={cn("text-left", f.side === "buy" ? "text-sky-400" : "text-red-400")}>{formatMarketPrice(f.price, decimals)}</span>
+            <span className={cn("text-left", f.side === "buy" ? "text-emerald-400" : "text-red-400")}>{formatMarketPrice(f.price, decimals)}</span>
             <span>{formatBaseSize(f.size, market.baseLotsDecimals, true)}</span>
             <span className="text-muted">{new Date(f.time).toLocaleTimeString("en-US", { hour12: false })}</span>
           </li>

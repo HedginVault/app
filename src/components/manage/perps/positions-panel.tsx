@@ -68,7 +68,7 @@ function SideTag({ side }: { side: "long" | "short" }) {
     <span
       className={cn(
         "rounded px-1.5 py-0.5 text-[11px] font-medium",
-        side === "long" ? "bg-accent-soft text-sky-400" : "bg-danger-soft text-red-300",
+        side === "long" ? "bg-emerald-400/10 text-emerald-400" : "bg-danger-soft text-red-300",
       )}
     >
       {side === "long" ? "Long" : "Short"}
@@ -177,7 +177,7 @@ function CloseDialog({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Est. realized PnL</dt>
-            <dd className={pnl >= 0 ? "text-sky-400" : "text-red-400"}>
+            <dd className={pnl >= 0 ? "text-emerald-400" : "text-red-400"}>
               {pnl >= 0 ? "+" : "−"}
               {formatUsd(Math.abs(pnl))}
             </dd>
@@ -413,7 +413,7 @@ export function PositionsPanel({
                             extra={o.reduceOnly ? <span className="text-[11px] text-muted">reduce-only</span> : undefined}
                           />
                         </Td>
-                        <Td className={o.side === "long" ? "text-sky-400" : "text-red-400"}>{o.side === "long" ? "Buy" : "Sell"}</Td>
+                        <Td className={o.side === "long" ? "text-emerald-400" : "text-red-400"}>{o.side === "long" ? "Buy" : "Sell"}</Td>
                         <Td>${formatMarketPrice(Number(o.price), d)}</Td>
                         <Td>
                           {o.size} {o.symbol}
@@ -441,7 +441,7 @@ export function PositionsPanel({
                       <div className="min-w-0 space-y-1">
                         <MarketCell market={mk} symbol={o.symbol} onSelect={onSelectMarket} />
                         <div className="text-[12px]">
-                          <span className={o.side === "long" ? "text-sky-400" : "text-red-400"}>{o.side === "long" ? "Buy" : "Sell"}</span>{" "}
+                          <span className={o.side === "long" ? "text-emerald-400" : "text-red-400"}>{o.side === "long" ? "Buy" : "Sell"}</span>{" "}
                           {o.size} @ ${formatMarketPrice(Number(o.price), d)}
                           {o.reduceOnly && <span className="ml-1 text-muted">· reduce-only</span>}
                         </div>
@@ -501,13 +501,13 @@ export function PositionsPanel({
                           extra={t.kind !== "trade" ? <span className="text-[11px] capitalize text-amber-300">{t.kind}</span> : undefined}
                         />
                       </Td>
-                      <Td className={t.side === "buy" ? "text-sky-400" : "text-red-400"}>{t.side === "buy" ? "Buy" : "Sell"}</Td>
+                      <Td className={t.side === "buy" ? "text-emerald-400" : "text-red-400"}>{t.side === "buy" ? "Buy" : "Sell"}</Td>
                       <Td>${formatMarketPrice(t.price, mk ? priceDecimals(mk) : 2)}</Td>
                       <Td>
                         {formatBaseSize(t.size, mk?.baseLotsDecimals ?? 4)} {t.symbol}
                       </Td>
                       <Td className="text-muted">{formatUsd(t.fee)}</Td>
-                      <Td className={t.realizedPnl > 0 ? "text-sky-400" : t.realizedPnl < 0 ? "text-red-400" : "text-muted"}>
+                      <Td className={t.realizedPnl > 0 ? "text-emerald-400" : t.realizedPnl < 0 ? "text-red-400" : "text-muted"}>
                         {t.realizedPnl === 0 ? "—" : `${t.realizedPnl > 0 ? "+" : "−"}${formatUsd(Math.abs(t.realizedPnl))}`}
                       </Td>
                       <Td>

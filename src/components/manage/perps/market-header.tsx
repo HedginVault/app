@@ -36,7 +36,7 @@ function LivePrice({ value, decimals }: { value: number | undefined; decimals: n
     return () => clearTimeout(t);
   }, [value]);
   return (
-    <span className={cn("text-xl font-semibold tabular-nums transition-colors duration-300", tone === "up" && "text-sky-400", tone === "down" && "text-red-400")}>
+    <span className={cn("text-xl font-semibold tabular-nums transition-colors duration-300", tone === "up" && "text-emerald-400", tone === "down" && "text-red-400")}>
       {value === undefined ? "—" : `$${formatMarketPrice(value, decimals)}`}
     </span>
   );
@@ -157,7 +157,7 @@ function MarketPicker({
                   <span className="rounded bg-white/[0.06] px-1 text-[10px] text-white/70">{m.maxLeverage}x</span>
                 </span>
                 <span className="text-right">{s ? formatMarketPrice(s.markPrice, priceDecimals(m)) : "—"}</span>
-                <span className={cn("text-right", c === null ? "text-muted" : c >= 0 ? "text-sky-400" : "text-red-400")}>
+                <span className={cn("text-right", c === null ? "text-muted" : c >= 0 ? "text-emerald-400" : "text-red-400")}>
                   {c === null ? "—" : formatSignedPercent(c)}
                 </span>
                 <span className="hidden text-right text-muted sm:block">{s ? formatUsd(s.dayVolumeUsd, { compact: true }) : "—"}</span>
@@ -256,7 +256,7 @@ export function MarketHeader({
           <div className="grid w-full grid-cols-3 gap-x-4 gap-y-3 border-t border-border pt-3 sm:flex sm:w-auto sm:min-w-0 sm:flex-1 sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2 sm:border-0 sm:pt-0">
             <Metric label="Oracle">{s ? `$${formatMarketPrice(s.oraclePrice, decimals)}` : "—"}</Metric>
             <Metric label="24h change">
-              <span className={c === null ? "" : c >= 0 ? "text-sky-400" : "text-red-400"}>
+              <span className={c === null ? "" : c >= 0 ? "text-emerald-400" : "text-red-400"}>
                 {c === null ? (
                   "—"
                 ) : (
@@ -274,7 +274,7 @@ export function MarketHeader({
               label="Funding (1h)"
               title={s ? `${(s.fundingRate * 24 * 365).toFixed(2)}% annualized. Positive: longs pay shorts.` : undefined}
             >
-              <span className={s ? (s.fundingRate >= 0 ? "text-sky-400" : "text-red-400") : ""}>
+              <span className={s ? (s.fundingRate >= 0 ? "text-emerald-400" : "text-red-400") : ""}>
                 {s ? `${s.fundingRate.toFixed(4)}%` : "—"}
               </span>{" "}
               <FundingCountdown />

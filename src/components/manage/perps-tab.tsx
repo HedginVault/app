@@ -22,7 +22,7 @@ import type { ChartLine } from "./price-chart";
 const DEFAULT_MARKET = "SOL";
 const ENTRY = "rgba(255,255,255,0.7)";
 const LIQ = "#fbbf24";
-const BUY = "#38bdf8";
+const BUY = "#34d399";
 const SELL = "#f87171";
 
 /**

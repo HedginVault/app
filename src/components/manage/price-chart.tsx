@@ -22,7 +22,7 @@ import type { Candle, PriceRange } from "@/lib/types";
 /** Pixels of slack around a range line's y-position that still counts as grabbing it. */
 const HIT_PX = 6;
 
-const UP = "#38bdf8";
+const UP = "#34d399";
 const DOWN = "#f87171";
 const RANGE = "#f97316";
 const OTHER_FILL = "rgba(56,189,248,0.12)";
@@ -264,7 +264,7 @@ export function PriceChart({
       candles.map((k) => ({
         time: k.time as UTCTimestamp,
         value: k.volume,
-        color: k.close >= k.open ? "rgba(56,189,248,0.25)" : "rgba(248,113,113,0.25)",
+        color: k.close >= k.open ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)",
       })),
     );
     const first = candles[0];

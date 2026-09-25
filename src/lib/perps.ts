@@ -30,7 +30,7 @@ export function formatSignedUsdValue(n: number): string {
 /** Tone for a USD number, neutral when it rounds to $0.00. */
 export const signToneValue = (n: number) => {
   const cents = Math.round(n * 100);
-  return cents > 0 ? "text-sky-400" : cents < 0 ? "text-red-400" : "text-muted";
+  return cents > 0 ? "text-emerald-400" : cents < 0 ? "text-red-400" : "text-muted";
 };
 
 export const formatLeverage = (leverage: number | null) => (leverage === null ? "—" : `${leverage.toFixed(2)}x`);
@@ -39,7 +39,7 @@ export const formatLeverage = (leverage: number | null) => (leverage === null ? 
 export const signTone = (raw: string | bigint) => {
   // Matches `formatSignedUsd`: anything that displays as $0.00 reads as neutral.
   const n = Math.round(usdc(raw) * 100);
-  return n > 0 ? "text-sky-400" : n < 0 ? "text-red-400" : "text-muted";
+  return n > 0 ? "text-emerald-400" : n < 0 ? "text-red-400" : "text-muted";
 };
 
 /** The smallest order size step of a market, as a decimal string: 10^-baseLotsDecimals. */

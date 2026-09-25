@@ -23,10 +23,10 @@ describe("perps helpers", () => {
   });
 
   it("gives a text tone for a signed amount, from a string or a bigint", () => {
-    expect(signTone("10000")).toBe("text-sky-400");
+    expect(signTone("10000")).toBe("text-emerald-400");
     expect(signTone("-10000")).toBe("text-red-400");
     expect(signTone("0")).toBe("text-muted");
-    expect(signTone(10_000n)).toBe("text-sky-400");
+    expect(signTone(10_000n)).toBe("text-emerald-400");
     expect(signTone(-10_000n)).toBe("text-red-400");
     // sub-cent amounts display as $0.00, so they read as neutral too
     expect(signTone(100n)).toBe("text-muted");

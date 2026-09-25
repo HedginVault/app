@@ -226,7 +226,7 @@ export function OrderTicket({
       },
     });
 
-  const tone = side === "long" ? "sky" : "red";
+  const tone = side === "long" ? "green" : "red";
   return (
     <Card>
       <div className="space-y-4 p-4">
@@ -243,7 +243,7 @@ export function OrderTicket({
               onClick={() => setSide(s)}
               className={cn(
                 "h-10 rounded-lg text-[14px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-sky-400",
-                side === s ? (s === "long" ? "bg-sky-400 text-accent-foreground" : "bg-red-400 text-white") : "text-muted hover:text-foreground",
+                side === s ? (s === "long" ? "bg-emerald-400 text-accent-foreground" : "bg-red-400 text-white") : "text-muted hover:text-foreground",
               )}
             >
               {s === "long" ? "Long" : "Short"}
@@ -437,7 +437,7 @@ export function OrderTicket({
           onClick={() => setReviewing(true)}
           className={cn(
             "h-12 w-full rounded-xl text-[15px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-white/40",
-            tone === "sky" ? "bg-sky-400 text-accent-foreground hover:bg-sky-300" : "bg-red-400 text-white hover:bg-red-300",
+            tone === "green" ? "bg-emerald-400 text-accent-foreground hover:bg-emerald-300" : "bg-red-400 text-white hover:bg-red-300",
           )}
         >
           {cta}

@@ -32,6 +32,12 @@ const JUPITER_PROGRAM_ID = new PublicKey("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNy
 
 const headers = jupiterHeaders;
 
+/**
+ * Caps the accounts a route may use. Every route runs as a CPI beside the vault's own accounts, and
+ * zap out adds DLMM remove and claim instructions, so an uncapped route can overflow the packet.
+ */
+export const JUPITER_MAX_ACCOUNTS = 30;
+
 interface QuoteResponse {
   inAmount: string;
   outAmount: string;
@@ -46,7 +52,7 @@ export async function getQuote(
   slippageBps: number,
 ): Promise<{ raw: QuoteResponse; view: QuoteView }> {
   const res = await fetch(
-    `${BASE_URL}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}&swapMode=ExactIn&onlyDirectRoutes=true`,
+    `${BASE_URL}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}&swapMode=ExactIn&onlyDirectRoutes=true&maxAccounts=${JUPITER_MAX_ACCOUNTS}`,
     { headers: headers() },
   );
   if (!res.ok) throw new ApiError(502, "JupiterQuoteFailed", `Jupiter quote failed: ${await res.text()}`);

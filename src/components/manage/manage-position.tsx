@@ -192,7 +192,7 @@ export function ManagePosition({
       >
         {wide
           ? "Wide positions are processed in smaller transactions. Each step removes liquidity, claims fees, and swaps only the tokens returned by that range. Approve the full transaction batch once in your wallet. If interrupted, completed steps stay completed; run zap out again to finish the remaining bins. The empty position closes last and returns its rent."
-          : `In one atomic transaction, all liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter. If the swap fails, the position stays open. Rent from the closed position is returned to your wallet; creating missing treasury or Jupiter strategy accounts can still cost rent.`}
+          : `All liquidity is removed, fees are claimed, and only the non-${v.depositSymbol} balance added by this position is swapped through Jupiter, atomically in one transaction, so a failed swap leaves the position open. If the Jupiter route is too large for one transaction, you approve three together instead: remove and swap liquidity, claim and swap fees, then close. Rent from the closed position is returned to your wallet; creating missing treasury or Jupiter strategy accounts can still cost rent.`}
       </ConfirmDialog>
 
       <ConfirmDialog

@@ -9,7 +9,8 @@ import { readConfig } from "@/server/readers/vaults";
 import { handlePost } from "@/server/route";
 import { assemble, refreshUnsignedBatch } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
-import { dlmmZapOutIxs } from "@/server/tx/dlmm";
+import { dlmmZapOutIxs, dlmmZapOutSplitIxs } from "@/server/tx/dlmm";
+import { getProtocolLookupTables } from "@/server/tx/lookup-table";
 import { dlmmZapOutBody } from "@/server/tx/schemas";
 import { fitsInTransaction } from "@/server/tx/size";
 import { closeStrategyIx } from "@/server/tx/vault";
@@ -30,6 +31,8 @@ export const POST = handlePost(dlmmZapOutBody, async (b) => {
     throw new ApiError(400, "Validation", "cursor must be inside the position");
   const config = await readConfig();
   const slippageBps = Math.min(b.slippageBps, config.maxSlippageBps);
+  const treasuryAuthority = new PublicKey(config.treasuryAuthority);
+  const protocolTables = await getProtocolLookupTables();
   if (width > DLMM_INITIAL_POSITION_WIDTH || b.cursorBinId !== undefined) {
     const built: BuiltTransaction[] = [];
     let lowerBinId = cursorBinId;
@@ -39,10 +42,12 @@ export const POST = handlePost(dlmmZapOutBody, async (b) => {
       while (true) {
         const range = nextBinChunk(lowerBinId, account.upperBinId, maxBins);
         const attemptedBins = range.upperBinId - range.lowerBinId + 1;
-        const { ixs, lookupTables, initializesStrategy } = await dlmmZapOutIxs(
-          getProgram(), ctx, authority, position, new PublicKey(config.treasuryAuthority), slippageBps,
+        const zap = await dlmmZapOutIxs(
+          getProgram(), ctx, authority, position, treasuryAuthority, slippageBps,
           range, jupiterStrategyInitialized,
         );
+        const { ixs, initializesStrategy } = zap;
+        const lookupTables = [...zap.lookupTables, ...protocolTables];
         if (fitsInTransaction(authority, ixs, lookupTables)) {
           try {
             const transaction = await assemble(authority, ixs, {
@@ -74,15 +79,25 @@ export const POST = handlePost(dlmmZapOutBody, async (b) => {
     return refreshUnsignedBatch(built);
   }
 
-  const { ixs, lookupTables } = await dlmmZapOutIxs(
-    getProgram(),
-    ctx,
-    authority,
-    position,
-    new PublicKey(config.treasuryAuthority),
-    slippageBps,
-  );
-  if (!fitsInTransaction(authority, ixs, lookupTables))
-    throw new ApiError(422, "TransactionTooLarge", "Atomic zap out does not fit in a Solana transaction");
-  return assemble(authority, ixs, { lookupTables });
+  const zap = await dlmmZapOutIxs(getProgram(), ctx, authority, position, treasuryAuthority, slippageBps);
+  const lookupTables = [...zap.lookupTables, ...protocolTables];
+  if (fitsInTransaction(authority, zap.ixs, lookupTables)) return assemble(authority, zap.ixs, { lookupTables });
+
+  // Too large for one transaction, usually a long Jupiter route: remove+swap, claim+swap, close,
+  // approved together in one wallet prompt and sent in order.
+  const steps = await dlmmZapOutSplitIxs(getProgram(), ctx, authority, position, treasuryAuthority, slippageBps);
+  const built: BuiltTransaction[] = [];
+  let jupiterStrategyInitialized = false;
+  for (const [index, step] of steps.entries()) {
+    const stepTables = [...step.lookupTables, ...protocolTables];
+    if (!fitsInTransaction(authority, step.ixs, stepTables))
+      throw new ApiError(422, "TransactionTooLarge", "Zap out does not fit in Solana transactions, even split in three");
+    built.push(await assemble(authority, step.ixs, {
+      lookupTables: stepTables,
+      // The first step may create the Jupiter strategy, and the close needs an empty position.
+      deferSimulation: index === steps.length - 1 || jupiterStrategyInitialized,
+    }));
+    jupiterStrategyInitialized ||= step.initializesStrategy;
+  }
+  return refreshUnsignedBatch(built);
 });

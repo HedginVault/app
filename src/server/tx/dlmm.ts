@@ -390,20 +390,16 @@ export function zapOutRangeAmounts(
   return { positionAmount, pendingFee };
 }
 
-/**
- * Uses only existing Hedge Vault instructions: remove, claim/treasury transfer, Jupiter swap, and
- * close. Jupiter's top-level token-ledger instruction snapshots the vault source ATA before remove
- * and claim, so the swap consumes only tokens produced inside this transaction, not idle funds.
- */
-export async function dlmmZapOutIxs(
+type BinRange = { lowerBinId: number; upperBinId: number };
+
+/** Remove and claim instructions for a zap, plus the source-token amounts each returns to the vault. */
+async function zapOutParts(
   program: P,
   ctx: VaultCtx,
   authority: PublicKey,
   position: PublicKey,
   treasuryAuthority: PublicKey,
-  slippageBps: number,
-  range?: { lowerBinId: number; upperBinId: number },
-  jupiterStrategyInitialized = false,
+  range?: BinRange,
 ) {
   const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
     ctx.key,
@@ -434,50 +430,122 @@ export async function dlmmZapOutIxs(
   const positionData = (await dlmm.getPosition(position)).positionData;
   const swapXToY = depositIsY;
   const sourceMint = swapXToY ? dlmm.tokenX.publicKey : dlmm.tokenY.publicKey;
-  const positionAmount = swapXToY
+  let positionAmount = swapXToY
     ? positionData.totalXAmountExcludeTransferFee
     : positionData.totalYAmountExcludeTransferFee;
-  const pendingFee = swapXToY ? positionData.feeXExcludeTransferFee : positionData.feeYExcludeTransferFee;
-  let estimatedAmount = zapOutEstimatedAmount(positionAmount, pendingFee);
+  let pendingFee = swapXToY ? positionData.feeXExcludeTransferFee : positionData.feeYExcludeTransferFee;
   if (range) {
     const amounts = zapOutRangeAmounts(positionData.positionBinData, range, swapXToY);
     const token = swapXToY ? dlmm.tokenX : dlmm.tokenY;
     const { epoch } = await getConnection().getEpochInfo("confirmed");
-    estimatedAmount = zapOutEstimatedAmount(
-      calculateTransferFeeExcludedAmount(amounts.positionAmount, token.mint, epoch).amount,
-      calculateTransferFeeExcludedAmount(amounts.pendingFee, token.mint, epoch).amount,
-    );
+    positionAmount = calculateTransferFeeExcludedAmount(amounts.positionAmount, token.mint, epoch).amount;
+    pendingFee = calculateTransferFeeExcludedAmount(amounts.pendingFee, token.mint, epoch).amount;
   }
+  return { accounts, createAtaIxs, removeIx, claimIx, sourceMint, positionAmount, pendingFee };
+}
 
-  const swapIxs: TransactionInstruction[] = [];
-  let lookupTables: AddressLookupTableAccount[] = [];
-  let initializesStrategy = false;
-  if (!estimatedAmount.isZero()) {
-    const jupiterStrategy = getStrategyPda(ctx.key, sourceMint);
-    const strategyExists = jupiterStrategyInitialized || (await getConnection().getAccountInfo(jupiterStrategy)) !== null;
-    if (!strategyExists) {
-      swapIxs.push(await jupiterInitializeIx(program, ctx, authority, sourceMint));
-      initializesStrategy = true;
-    }
-    const swap = await jupiterTokenLedgerSwapIx(
-      program,
-      ctx,
-      authority,
-      sourceMint,
-      ctx.depositMint,
-      estimatedAmount,
-      slippageBps,
-    );
-    // Snapshot before remove/claim; execute the swap after those instructions increase the ATA.
-    swapIxs.push(swap.tokenLedgerInstruction, removeIx, claimIx, swap.ix);
-    lookupTables = swap.lookupTables;
-  } else {
-    swapIxs.push(removeIx, claimIx);
-  }
+/**
+ * Wraps `produce`, instructions that pay source tokens into the vault, with Jupiter's token ledger:
+ * the ledger snapshots the vault source ATA before them and the swap spends only the increase, never
+ * idle funds. The ledger account is shared across Jupiter users, so both halves stay in one transaction.
+ */
+async function ledgerSwapAround(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  sourceMint: PublicKey,
+  amount: BN,
+  slippageBps: number,
+  strategyExists: boolean,
+  produce: TransactionInstruction[],
+) {
+  if (amount.isZero())
+    return { ixs: produce, lookupTables: [] as AddressLookupTableAccount[], initializesStrategy: false };
+  const initIxs = strategyExists ? [] : [await jupiterInitializeIx(program, ctx, authority, sourceMint)];
+  const swap = await jupiterTokenLedgerSwapIx(program, ctx, authority, sourceMint, ctx.depositMint, amount, slippageBps);
+  return {
+    ixs: [...initIxs, swap.tokenLedgerInstruction, ...produce, swap.ix],
+    lookupTables: swap.lookupTables,
+    initializesStrategy: !strategyExists,
+  };
+}
 
+const jupiterStrategyExists = async (ctx: VaultCtx, sourceMint: PublicKey) =>
+  (await getConnection().getAccountInfo(getStrategyPda(ctx.key, sourceMint))) !== null;
+
+/**
+ * Uses only existing Hedge Vault instructions: remove, claim/treasury transfer, Jupiter swap, and
+ * close. Jupiter's top-level token-ledger instruction snapshots the vault source ATA before remove
+ * and claim, so the swap consumes only tokens produced inside this transaction, not idle funds.
+ */
+export async function dlmmZapOutIxs(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  treasuryAuthority: PublicKey,
+  slippageBps: number,
+  range?: BinRange,
+  jupiterStrategyInitialized = false,
+) {
+  const parts = await zapOutParts(program, ctx, authority, position, treasuryAuthority, range);
+  const estimatedAmount = zapOutEstimatedAmount(parts.positionAmount, parts.pendingFee);
+  const strategyExists =
+    estimatedAmount.isZero() || jupiterStrategyInitialized || (await jupiterStrategyExists(ctx, parts.sourceMint));
+  const swap = await ledgerSwapAround(
+    program, ctx, authority, parts.sourceMint, estimatedAmount, slippageBps, strategyExists,
+    [parts.removeIx, parts.claimIx],
+  );
   // A wide position closes in the last batch transaction after every range has confirmed.
-  const closeIxs = range ? [] : [await closeStrategyIx(program, ctx, authority, accounts.strategy)];
-  return { ixs: [...createAtaIxs, ...swapIxs, ...closeIxs], lookupTables, initializesStrategy };
+  const closeIxs = range ? [] : [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy)];
+  return {
+    ixs: [...parts.createAtaIxs, ...swap.ixs, ...closeIxs],
+    lookupTables: swap.lookupTables,
+    initializesStrategy: swap.initializesStrategy,
+  };
+}
+
+/**
+ * The same zap as three transactions for when the atomic one does not fit: remove liquidity and swap
+ * it, claim fees and swap them, then close the strategy. Each swap shares its transaction with the
+ * instruction that funded it, so all three can be built now and approved in one wallet prompt.
+ */
+export async function dlmmZapOutSplitIxs(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  position: PublicKey,
+  treasuryAuthority: PublicKey,
+  slippageBps: number,
+) {
+  const parts = await zapOutParts(program, ctx, authority, position, treasuryAuthority);
+  const liquidityAmount = zapOutEstimatedAmount(parts.positionAmount, new BN(0));
+  const feeAmount = zapOutEstimatedAmount(new BN(0), parts.pendingFee);
+  const strategyExists =
+    (liquidityAmount.isZero() && feeAmount.isZero()) || (await jupiterStrategyExists(ctx, parts.sourceMint));
+  const remove = await ledgerSwapAround(
+    program, ctx, authority, parts.sourceMint, liquidityAmount, slippageBps, strategyExists, [parts.removeIx],
+  );
+  let claim;
+  try {
+    claim = await ledgerSwapAround(
+      program, ctx, authority, parts.sourceMint, feeAmount, slippageBps,
+      strategyExists || remove.initializesStrategy, [parts.claimIx],
+    );
+  } catch (error) {
+    // Jupiter has no route for dust. Claim anyway; the fee stays in the vault as an idle balance.
+    if (!(error instanceof ApiError && error.code === "JupiterQuoteFailed")) throw error;
+    claim = { ixs: [parts.claimIx], lookupTables: [] as AddressLookupTableAccount[], initializesStrategy: false };
+  }
+  return [
+    { ...remove, ixs: [...parts.createAtaIxs, ...remove.ixs] },
+    claim,
+    {
+      ixs: [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy)],
+      lookupTables: [] as AddressLookupTableAccount[],
+      initializesStrategy: false,
+    },
+  ];
 }
 
 export async function dlmmClaimFeeIx(

@@ -164,6 +164,7 @@ describe("getJupiterSwap CPI route", () => {
     await getJupiterSwap(SOL, USDC, 1000n, 50, ctx.key);
 
     expect(String(fetch.mock.calls[0][0])).toContain("onlyDirectRoutes=true");
+    expect(String(fetch.mock.calls[0][0])).toContain("maxAccounts=30");
     const request = JSON.parse(String((fetch.mock.calls[1][1] as RequestInit).body));
     expect(request).toMatchObject({
       userPublicKey: ctx.key.toBase58(),

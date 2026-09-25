@@ -5,4 +5,5 @@ metadata:
 data:
   # Keep this synchronized with the Docker build argument in the workflow.
   NEXT_PUBLIC_CLUSTER: "mainnet-beta"
-
+  # Protocol address lookup table; create or top up with scripts/protocol-lookup-table.mjs.
+  PROTOCOL_LOOKUP_TABLE: "HVV37KozcaJh7qGJAEJksMNDxvBURMdyMuRtnZpSnP2x"

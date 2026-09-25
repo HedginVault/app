@@ -4,7 +4,8 @@ import BN from "bn.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getProgram } from "@/server/program";
 import { loadVaultCtx } from "@/server/tx/context";
-import { dlmmZapOutIxs, zapOutRangeAmounts } from "@/server/tx/dlmm";
+import { ApiError } from "@/server/errors";
+import { dlmmZapOutIxs, dlmmZapOutSplitIxs, zapOutRangeAmounts } from "@/server/tx/dlmm";
 
 function pk(n: number) { return new PublicKey(new Uint8Array(32).fill(n)); }
 const ix = (n: number) => new TransactionInstruction({ programId: pk(n), keys: [], data: Buffer.alloc(0) });
@@ -19,7 +20,10 @@ vi.mock("@/server/program", () => ({
   RPC_URL: "", TOKEN_PROGRAM_ID, PROGRAM_ID: pk(33), DLMM_PROGRAM_ID: pk(30), DLMM_EVENT_AUTHORITY: pk(31), MEMO_PROGRAM_ID: pk(32),
   getProgram: () => ({
     account: { positionV2: { fetch: async () => ({ lbPair: pk(7), lowerBinId: -700, upperBinId: 699 }) } },
-    methods: { meteoraDlmmRemoveLiquidityRange: mocks.remove, meteoraDlmmClaimFeeRange: mocks.claim },
+    methods: {
+      meteoraDlmmRemoveLiquidityRange: mocks.remove, meteoraDlmmClaimFeeRange: mocks.claim,
+      meteoraDlmmRemoveLiquidity: mocks.remove, meteoraDlmmClaimFee: mocks.claim,
+    },
   }),
   getConnection: () => ({ getAccountInfo: mocks.strategy, getEpochInfo: async () => ({ epoch: 123 }) }),
 }));
@@ -112,5 +116,37 @@ describe("range zap instruction safety", () => {
     const amounts = zapOutRangeAmounts([bin(-10, "9007199254740993", "0", "1"), bin(15, "2", "0", "3"), bin(16, "100", "0")], range, true);
     expect(amounts.positionAmount.toString()).toBe("9007199254740995");
     expect(amounts.pendingFee.toString()).toBe("4");
+  });
+});
+
+describe("split zap out", () => {
+  const split = async () =>
+    dlmmZapOutSplitIxs(getProgram(), await loadVaultCtx(pk(1).toBase58()), pk(5), pk(8), pk(9), 50);
+  const programs = (ixs: TransactionInstruction[]) => ixs.map((instruction) => instruction.programId);
+  beforeEach(() => mocks.close.mockResolvedValue(ix(15)));
+
+  it("keeps each swap in the transaction that funds it and closes last", async () => {
+    const [remove, claim, close] = await split();
+    expect(programs(remove.ixs.slice(2))).toEqual([pk(10), pk(13), pk(11), pk(14)]);
+    expect(programs(claim.ixs)).toEqual([pk(13), pk(12), pk(14)]);
+    expect(programs(close.ixs)).toEqual([pk(15)]);
+    expect([remove.initializesStrategy, claim.initializesStrategy]).toEqual([true, false]);
+    // Liquidity, then the 90% of fees the vault keeps.
+    expect(mocks.swap.mock.calls.map((call) => call[5].toString())).toEqual(["9999999", "900"]);
+  });
+
+  it("claims without a swap when Jupiter has no route for the fee", async () => {
+    mocks.swap
+      .mockResolvedValueOnce({ tokenLedgerInstruction: ix(13), ix: ix(14), lookupTables: [] })
+      .mockRejectedValueOnce(new ApiError(502, "JupiterQuoteFailed", "no route"));
+    const [, claim] = await split();
+    expect(programs(claim.ixs)).toEqual([pk(12)]);
+  });
+
+  it("surfaces other Jupiter failures", async () => {
+    mocks.swap
+      .mockResolvedValueOnce({ tokenLedgerInstruction: ix(13), ix: ix(14), lookupTables: [] })
+      .mockRejectedValueOnce(new ApiError(502, "JupiterInvalidTokenLedger", "bad ledger"));
+    await expect(split()).rejects.toMatchObject({ code: "JupiterInvalidTokenLedger" });
   });
 });

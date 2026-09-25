@@ -2,6 +2,7 @@ import "server-only";
 import { decodePerpAssetMap, decodeTrader } from "@ellipsis-labs/rise";
 import { PublicKey, type AccountInfo, type AccountMeta } from "@solana/web3.js";
 import { cached, setCached } from "./cache";
+import type { PhoenixMarketCategory } from "@/lib/types";
 
 // Ported from hedgin_keeper/src/valuation/phoenix.ts; keep the two in step when either changes.
 
@@ -245,6 +246,7 @@ export interface PhoenixMarketMeta {
   /** Tradable only from an isolated subaccount; the vault's cross-margin trader cannot open these. */
   isolatedOnly: boolean;
   name: string;
+  category: PhoenixMarketCategory;
   logoUri: string | null;
   /** Brand color from Phoenix's market metadata, e.g. "#9945FF". */
   color: string | null;
@@ -264,9 +266,19 @@ interface RawMarket {
   makerFee: number;
   marketStatus: string;
   isolatedOnly: boolean;
-  metadata?: { name?: string; logoUri?: string | null; displayColor?: string | null } | null;
+  metadata?: { name?: string; logoUri?: string | null; displayColor?: string | null; calendar?: { id?: string } | null } | null;
   leverageTiers?: { maxLeverage: number }[];
   riskFactors?: { maintenanceBps?: number };
+}
+
+/**
+ * Asset class from the market's trading-hours calendar ("cme_commodities", "us_equities_extended");
+ * crypto markets trade around the clock and carry none. Pure.
+ */
+export function marketCategory(calendarId: string | null | undefined): PhoenixMarketCategory {
+  if (calendarId?.includes("commodit")) return "commodities";
+  if (calendarId?.includes("equit")) return "equities";
+  return "crypto";
 }
 
 async function fetchMarkets(): Promise<PhoenixMarketMeta[]> {
@@ -284,6 +296,7 @@ async function fetchMarkets(): Promise<PhoenixMarketMeta[]> {
     marketStatus: r.marketStatus,
     isolatedOnly: r.isolatedOnly,
     name: r.metadata?.name ?? r.symbol,
+    category: marketCategory(r.metadata?.calendar?.id),
     logoUri: r.metadata?.logoUri ?? null,
     color: r.metadata?.displayColor ?? null,
     maxLeverage: r.leverageTiers?.[0]?.maxLeverage ?? 1,

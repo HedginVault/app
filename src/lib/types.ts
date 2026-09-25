@@ -189,10 +189,13 @@ export interface PhoenixStrategyView extends StrategyBase {
 }
 
 /** A Phoenix perp market the manager can trade from the vault's cross-margin account. */
+export type PhoenixMarketCategory = "crypto" | "commodities" | "equities";
+
 export interface PhoenixMarketView {
   symbol: string;
   /** e.g. "Solana". */
   name: string;
+  category: PhoenixMarketCategory;
   logoUri: string | null;
   color: string | null;
   maxLeverage: number;

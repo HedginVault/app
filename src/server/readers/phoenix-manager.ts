@@ -67,6 +67,7 @@ export function toMarketViews(metas: PhoenixMarketMeta[], marks: Map<bigint, Pho
       return {
         symbol: m.symbol,
         name: m.name,
+        category: m.category,
         logoUri: m.logoUri,
         color: m.color,
         maxLeverage: m.maxLeverage,

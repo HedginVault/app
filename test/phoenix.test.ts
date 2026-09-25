@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, describePosition, getPhoenixMarketNames, MAX_MARK_AGE_SLOTS, parseGlobalConfig,
+  checkTrader, computeTraderEquity, decodeMarkets, decodeTraderState, describePosition, getPhoenixMarketNames, marketCategory, MAX_MARK_AGE_SLOTS, parseGlobalConfig,
   PHOENIX_PROGRAM_ID, scaleDecimal, type PhoenixMarket, type PhoenixPosition, type PhoenixTraderState,
 } from "@/server/phoenix";
 import { clearCache } from "@/server/cache";
@@ -213,5 +213,14 @@ describe("getPhoenixMarketNames", () => {
     fetch.mockResolvedValueOnce(new Response(JSON.stringify([{ symbol: "SOL", assetId: 0 }])));
     expect(await getPhoenixMarketNames()).toEqual(new Map([[0, "SOL"]]));
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("marketCategory", () => {
+  it("classifies markets by their trading-hours calendar", () => {
+    expect(marketCategory("cme_commodities")).toBe("commodities");
+    expect(marketCategory("us_equities_extended")).toBe("equities");
+    expect(marketCategory(undefined)).toBe("crypto");
+    expect(marketCategory(null)).toBe("crypto");
   });
 });

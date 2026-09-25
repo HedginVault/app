@@ -265,7 +265,7 @@ describe("manager view helpers", () => {
   const meta = (symbol: string, assetId: number, extra = {}) => ({
     symbol, assetId, marketPubkey: pk(assetId + 40).toBase58(), tickSize: 100, baseLotsDecimals: 2,
     takerFee: 0.00035, makerFee: 0.00005, marketStatus: "active", isolatedOnly: false,
-    name: symbol, logoUri: null, color: null, maxLeverage: 25, maintenanceFactor: 0.5, ...extra,
+    name: symbol, category: "crypto" as const, logoUri: null, color: null, maxLeverage: 25, maintenanceFactor: 0.5, ...extra,
   });
 
   it("lists active cross-margin markets with their mark in USD", () => {

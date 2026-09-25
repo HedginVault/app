@@ -8,7 +8,7 @@ import { useSocketStatus, type MarketStats } from "@/hooks/use-phoenix-live";
 import { cn } from "@/lib/cn";
 import { formatUsd } from "@/lib/format";
 import { formatCountdown, formatMarketPrice, formatSignedPercent, fundingCountdown, priceDecimals } from "@/lib/perps";
-import type { PhoenixMarketView } from "@/lib/types";
+import type { PhoenixMarketCategory, PhoenixMarketView } from "@/lib/types";
 
 const change = (s: MarketStats | undefined) => (s && s.prevDayMarkPrice > 0 ? s.markPrice / s.prevDayMarkPrice - 1 : null);
 
@@ -51,6 +51,15 @@ function FundingCountdown() {
   return <span className="text-muted">{formatCountdown(fundingCountdown(now))}</span>;
 }
 
+type Category = "all" | PhoenixMarketCategory;
+
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "crypto", label: "Crypto" },
+  { id: "commodities", label: "Commodities" },
+  { id: "equities", label: "Equities" },
+];
+
 function MarketPicker({
   markets,
   stats,
@@ -62,24 +71,33 @@ function MarketPicker({
   onSelect: (symbol: string) => void;
   onClose: () => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<Category>("all");
   const [active, setActive] = useState(0);
   const list = useRef<HTMLUListElement>(null);
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return markets
-      .filter((m) => !q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))
-      .sort((a, b) => (stats.get(b.symbol)?.dayVolumeUsd ?? 0) - (stats.get(a.symbol)?.dayVolumeUsd ?? 0));
-  }, [markets, stats, query]);
+  const rows = useMemo(
+    () =>
+      markets
+        .filter((m) => category === "all" || m.category === category)
+        .sort((a, b) => (stats.get(b.symbol)?.dayVolumeUsd ?? 0) - (stats.get(a.symbol)?.dayVolumeUsd ?? 0)),
+    [markets, stats, category],
+  );
   const clamped = Math.min(active, Math.max(0, rows.length - 1));
 
   useEffect(() => {
     list.current?.children[clamped]?.scrollIntoView({ block: "nearest" });
   }, [clamped]);
 
+  const pick = (c: Category) => {
+    setCategory(c);
+    setActive(0);
+  };
+
   const onKey = (e: KeyboardEvent) => {
+    const at = CATEGORIES.findIndex((c) => c.id === category);
     if (e.key === "ArrowDown") setActive(Math.min(rows.length - 1, clamped + 1));
     else if (e.key === "ArrowUp") setActive(Math.max(0, clamped - 1));
+    else if (e.key === "ArrowRight") pick(CATEGORIES[(at + 1) % CATEGORIES.length].id);
+    else if (e.key === "ArrowLeft") pick(CATEGORIES[(at + CATEGORIES.length - 1) % CATEGORIES.length].id);
     else if (e.key === "Enter" && rows[clamped]) onSelect(rows[clamped].symbol);
     else if (e.key === "Escape") onClose();
     else return;
@@ -88,19 +106,24 @@ function MarketPicker({
 
   return (
     <div className="w-[min(calc(100vw-4rem),560px)]" onKeyDown={onKey}>
-      <input
-        autoFocus
-        type="search"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setActive(0);
-        }}
-        placeholder="Search markets"
-        aria-label="Search markets"
-        aria-controls="perp-market-list"
-        className="h-10 w-full rounded-lg border border-border bg-white/[0.03] px-3 text-sm placeholder:text-white/40 focus:border-accent focus:outline-none"
-      />
+      <div role="group" aria-label="Market category" className="flex gap-1 overflow-x-auto">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            autoFocus={c.id === category}
+            aria-pressed={c.id === category}
+            aria-controls="perp-market-list"
+            onClick={() => pick(c.id)}
+            className={cn(
+              "h-8 shrink-0 rounded-lg px-3 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-sky-400",
+              c.id === category ? "bg-accent-soft text-sky-400" : "text-muted hover:bg-white/[0.05] hover:text-white",
+            )}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
       <div className="mt-2 grid grid-cols-[minmax(0,1fr)_84px_64px] px-2 pb-1 text-[11px] text-muted sm:grid-cols-[minmax(0,1fr)_96px_72px_88px]">
         <span>Market</span>
         <span className="text-right">Price</span>
@@ -108,7 +131,11 @@ function MarketPicker({
         <span className="hidden text-right sm:block">Volume</span>
       </div>
       <ul id="perp-market-list" ref={list} role="listbox" aria-label="Markets" className="max-h-96 overflow-y-auto">
-        {rows.length === 0 && <li className="px-2 py-6 text-center text-[13px] text-muted">No market matches “{query}”</li>}
+        {rows.length === 0 && (
+          <li className="px-2 py-6 text-center text-[13px] text-muted">
+            No {CATEGORIES.find((c) => c.id === category)?.label.toLowerCase()} markets are tradable on cross margin right now
+          </li>
+        )}
         {rows.map((m, i) => {
           const s = stats.get(m.symbol);
           const c = change(s);

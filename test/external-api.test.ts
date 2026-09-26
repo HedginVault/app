@@ -80,7 +80,9 @@ describe("manager key and tickets", () => {
   it("rejects changed or expired tickets", () => {
     const issued = ticketFor(transaction());
     expect(verifyTicket(issued, "build").vault).toBe(vault);
-    expect(() => verifyTicket(`${issued.slice(0, -1)}a`, "build")).toThrow();
+    // Flip the MAC's first char: the last one has unused padding bits, so swapping it can decode to the same MAC.
+    const [body, mac] = issued.split(".");
+    expect(() => verifyTicket(`${body}.${mac[0] === "A" ? "B" : "A"}${mac.slice(1)}`, "build")).toThrow();
     const expired = signTicket({ ...verifyTicket(issued, "build"), expires: Date.now() - 1 });
     expect(() => verifyTicket(expired, "build")).toThrow();
   });

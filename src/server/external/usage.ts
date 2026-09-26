@@ -14,6 +14,7 @@ function logFailure(e: unknown): void {
 /**
  * Counts one request per (key, minute, action, outcome). Fire-and-forget on a write-only role: a slow or
  * failing usage DB must never delay or fail a bot request. Counts are operational, not a billing ledger.
+ * ponytail: no retention job for `api_key_usage`; a scheduled delete of old minute buckets is the upgrade path.
  * ponytail: one upsert per request; batch in memory if a key ever runs near the 120/min limit at scale.
  */
 export function recordUsage(keyId: string, action: string, outcome: string): void {

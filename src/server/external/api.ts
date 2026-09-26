@@ -15,19 +15,15 @@ import { loadVaultCtx } from "@/server/tx/context";
 import { authenticate, assertAction, type Principal } from "./auth";
 import { signTicket, verifyTicket } from "./ticket";
 import { recordUsage } from "./usage";
+import { BUILD_ACTIONS, type BuildAction, usageAction } from "./usage-action";
 
-const BUILD_ACTIONS = [
-  "jupiter/swap", "dlmm/open", "dlmm/add", "dlmm/add-range", "dlmm/extend",
-  "dlmm/remove", "dlmm/claim-fee", "dlmm/zap-out", "dlmm/zap-out/swap", "strategy/close",
-] as const;
-type BuildAction = typeof BUILD_ACTIONS[number];
 const MAX_BODY = 16_384;
 const MAX_TX_BYTES = 1232;
 const KEY_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 function audit(principal: Principal, action: string, outcome: string, vault?: string, signature?: string): void {
   console.info("[manager-api]", JSON.stringify({ keyId: principal.id, manager: principal.manager, action, outcome, vault, signature }));
-  recordUsage(principal.id, action, outcome);
+  recordUsage(principal.id, usageAction(action), outcome);
 }
 
 function failure(error: unknown): Response {

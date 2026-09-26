@@ -213,7 +213,7 @@ export function DepositVisual() {
             <path d="M10 2.5l6 2.5v4.5c0 4-2.8 6.9-6 8-3.2-1.1-6-4-6-8V5l6-2.5z" strokeLinejoin="round" />
             <path d="M7.5 10l1.8 1.8L12.8 8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Managed by a vetted pro
+          Managed by a vetted manager
         </span>
         <span className="text-white/35">Illustrative example</span>
       </div>

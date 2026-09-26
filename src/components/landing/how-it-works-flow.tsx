@@ -71,7 +71,7 @@ export function HowItWorksFlow() {
           <ChartIcon />
         </span>
         <h3 className="mt-5 font-serif text-2xl">The manager</h3>
-        <p className="mt-2 text-white/60">A vetted pro provides liquidity, swaps and hedges with the vault&apos;s funds.</p>
+        <p className="mt-2 text-white/60">A vetted manager provides liquidity, swaps and hedges with the vault&apos;s funds.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {venues.map(({ name, Icon }) => (
             <span

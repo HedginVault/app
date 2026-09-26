@@ -39,7 +39,7 @@ export default function VaultsPage() {
         </h1>
         <p className="mt-4 max-w-xl text-white/60 md:text-lg">
           Choose one, deposit, and get a share token back. Its value is posted
-          on-chain every day.
+          on-chain every 4 hours.
         </p>
 
         <div className="mt-12">

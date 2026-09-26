@@ -96,3 +96,11 @@ body {
 body {
   overflow-x: clip;
 }
+
+/* landing: manager-action callouts pop in on the deposit chart */
+@keyframes callout-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+}

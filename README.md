@@ -51,6 +51,8 @@ defaults to `mainnet-beta`.
 | `JUPITER_API_KEY` | server | no | Sent as `x-api-key`. Raises the rate limit on token metadata, prices and swap instructions. |
 | `METEORA_DLMM_API_HOST` | server | no | Meteora DLMM pool search API base. Defaults to `https://dlmm.datapi.meteora.ag`. |
 | `DATABASE_URL` | **server only** | for closed-position and NAV history | Read-only access to the keeper's indexed strategy-history and nav_history tables. Never exposed to the browser. |
+| `MANAGER_API_KEYS` | **server only** | for partner bot access | JSON array of manager API key digests and scopes; see [`docs/manager-api.md`](docs/manager-api.md). Empty disables access. |
+| `MANAGER_API_TICKET_SECRET` | **server only** | for partner bot access | Shared secret of at least 32 bytes for exact-build tickets and status receipts. |
 
 ## IDL
 
@@ -153,6 +155,10 @@ the first is checked by relay preflight immediately before it is sent. Every bui
 | `POST /api/tx/send` | Body `{ transaction }`: the wallet-signed transaction in base64. Relays it through `RPC_URL` with preflight and returns `{ signature }`. Only forwards transactions that invoke the hedge_vault program and carry a fee-payer signature; a preflight failure is a `422` with the decoded error. Shares the per-IP builder rate limit. |
 | `GET /api/tx/status?signature=&blockhash=` | `{ status: "pending" \| "confirmed" \| "expired" }`, or `{ status: "failed", code, message, logs }`. Before returning `expired`, the server verifies the blockhash can no longer land and searches transaction history for the signature. Uncached, with its own per-IP rate limit bucket. |
 
+### External manager bot API
+
+`/api/external/v1/*` provides authenticated manager-scoped reads, Jupiter and DLMM builders, an exact-build signed transaction relay, and status polling. Bots use a bearer API key for HTTP access and sign locally with the vault's current on-chain authority key. See [`docs/manager-api.md`](docs/manager-api.md) for endpoints, bodies, signing, retries, key provisioning, and limits. API keys do not grant on-chain authority.
+
 Manager-only routes call `assertAuthority` before assembling anything; the UI guard is convenience,
 the server check plus the program's `validate_authority()` check in each handler is the enforcement.
 
@@ -211,6 +217,7 @@ One-time cluster setup (not managed by the workflow):
 
 - `ghcr-pull` in `hedgevault-prod` — image pull credentials for GHCR.
 - `app-secrets` in `hedgevault-prod` — `RPC_URL`, `DATABASE_URL`, and, when used, `JUPITER_API_KEY`.
+  Partner bot access also requires `MANAGER_API_KEYS` and `MANAGER_API_TICKET_SECRET` here.
   Never put these values in the ConfigMap, image, or a `NEXT_PUBLIC_*` variable.
 
 `NEXT_PUBLIC_CLUSTER` is intentionally set to `mainnet-beta` in both the image build and

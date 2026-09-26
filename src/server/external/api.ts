@@ -14,6 +14,7 @@ import { getTransactionStatus, sendSignedTransaction } from "@/server/tx/send";
 import { loadVaultCtx } from "@/server/tx/context";
 import { authenticate, assertAction, type Principal } from "./auth";
 import { signTicket, verifyTicket } from "./ticket";
+import { recordUsage } from "./usage";
 
 const BUILD_ACTIONS = [
   "jupiter/swap", "dlmm/open", "dlmm/add", "dlmm/add-range", "dlmm/extend",
@@ -26,6 +27,7 @@ const KEY_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 function audit(principal: Principal, action: string, outcome: string, vault?: string, signature?: string): void {
   console.info("[manager-api]", JSON.stringify({ keyId: principal.id, manager: principal.manager, action, outcome, vault, signature }));
+  recordUsage(principal.id, action, outcome);
 }
 
 function failure(error: unknown): Response {

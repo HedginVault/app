@@ -51,9 +51,9 @@ export async function externalRoute(req: Request, path: string[], method: "GET" 
   const rawAction = path.join("/");
   const action = rawAction.length <= 80 && /^[a-z0-9/.-]+$/.test(rawAction) ? rawAction : "invalid";
   try {
-    rateLimit(`external:ip:${clientIp(req)}`, 60, 60_000);
+    rateLimit(`external:ip:${clientIp(req)}`, [{ capacity: 60, windowMs: 60_000 }]);
     principal = authenticate(req);
-    rateLimit(`external:key:${principal.id}`, 120, 60_000);
+    rateLimit(`external:key:${principal.id}`, [{ capacity: 120, windowMs: 60_000 }]);
     const data = method === "GET" ? await read(principal, action, req) : await write(principal, action, req);
     audit(principal, action, "ok", "vault" in data && typeof data.vault === "string" ? data.vault : undefined);
     return Response.json(data, { headers: { "cache-control": "no-store" } });

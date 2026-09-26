@@ -62,4 +62,35 @@ describe("authenticate with the key store", () => {
     expect((await authenticate(req())).id).toBe("bot-1");
     expect(mocks.findKey).not.toHaveBeenCalled();
   });
+  it.each([
+    ["invalid manager", { manager: "not-a-key" }],
+    ["empty actions", { actions: [] }],
+    ["short digest", { digest: "abc" }],
+    ["unknown-shape vaults", { vaults: [42] }],
+  ])("fails closed with 503 on a malformed DB row (%s), ignoring env, logging only the id", async (_n, bad) => {
+    process.env.MANAGER_API_KEYS = JSON.stringify([{ id: "bot-1", digest, manager, actions: ["read"] }]);
+    mocks.findKey.mockResolvedValue(row(bad));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(authenticate(req())).rejects.toMatchObject({ status: 503 });
+    const logged = warn.mock.calls.flat().join(" ");
+    expect(logged).toContain("bot-1");
+    expect(logged).not.toContain(digest);
+    expect(logged).not.toContain(manager);
+    warn.mockRestore();
+  });
+  it("logs a sanitized line when the lookup throws", async () => {
+    const url = "postgres://user:hunter2@db.internal/keys";
+    process.env.API_KEYS_DATABASE_URL = url;
+    mocks.findKey.mockRejectedValue(Object.assign(new Error(`connect failed ${url}`), { code: "ECONNREFUSED" }));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(authenticate(req())).rejects.toMatchObject({ status: 503 });
+    const logged = warn.mock.calls.flat().join(" ");
+    expect(logged).toContain("[manager-api]");
+    expect(logged).toContain("lookup_failed");
+    expect(logged).toContain("ECONNREFUSED");
+    expect(logged).not.toContain("hunter2");
+    expect(logged).not.toContain(digest);
+    warn.mockRestore();
+    delete process.env.API_KEYS_DATABASE_URL;
+  });
 });

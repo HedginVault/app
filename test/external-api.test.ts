@@ -28,6 +28,8 @@ const apiSecret = "s".repeat(48);
 const authorization = `Bearer hv1_partner_${apiSecret}`;
 const originalKeys = process.env.MANAGER_API_KEYS;
 const originalSecret = process.env.MANAGER_API_TICKET_SECRET;
+const dbUrlVars = ["API_KEYS_DATABASE_URL", "API_KEY_USAGE_DATABASE_URL"] as const;
+const originalDbUrls = dbUrlVars.map((name) => process.env[name]);
 
 function transaction(payer = manager, instructionData = 1, signed = false): string {
   const message = new TransactionMessage({ payerKey: payer.publicKey, recentBlockhash: blockhash,
@@ -53,6 +55,8 @@ function request(path: string, method = "GET", data?: unknown, key = authorizati
 }
 
 beforeEach(() => {
+  // Never let a developer's shell point these tests at a real database.
+  for (const name of dbUrlVars) delete process.env[name];
   resetRateLimits();
   mocks.authority = manager.publicKey.toBase58();
   mocks.send.mockReset();
@@ -63,6 +67,11 @@ beforeEach(() => {
     manager: manager.publicKey.toBase58(), vaults: [vault], actions: ["read", "send", "jupiter/swap"] }]);
 });
 afterEach(() => {
+  dbUrlVars.forEach((name, i) => {
+    const original = originalDbUrls[i];
+    if (original === undefined) delete process.env[name];
+    else process.env[name] = original;
+  });
   if (originalKeys === undefined) delete process.env.MANAGER_API_KEYS;
   else process.env.MANAGER_API_KEYS = originalKeys;
   if (originalSecret === undefined) delete process.env.MANAGER_API_TICKET_SECRET;

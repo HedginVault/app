@@ -13,7 +13,11 @@ export const keyStoreConfigured = (): boolean => Boolean(process.env.API_KEYS_DA
 export async function findKey(id: string): Promise<KeyRow | null> {
   const url = process.env.API_KEYS_DATABASE_URL?.trim();
   if (!url) throw new Error("API_KEYS_DATABASE_URL is not set");
-  pool ??= new Pool({ connectionString: url, max: 3, statement_timeout: 3_000, connectionTimeoutMillis: 3_000 });
+  if (!pool) {
+    pool = new Pool({ connectionString: url, max: 3, statement_timeout: 3_000, query_timeout: 3_000, connectionTimeoutMillis: 3_000 });
+    // An idle-client error (e.g. DB restart) would otherwise be an uncaught exception. Name only: messages can carry credentials.
+    pool.on("error", (e) => console.warn("[key-store] idle client error", e.name));
+  }
   const r = await pool.query(
     "select id, digest, manager, vaults, actions, expires_at, revoked_at from api_keys where id = $1", [id]);
   const x = r.rows[0];

@@ -30,6 +30,9 @@ export function NavChart({ address, depositSymbol }: { address: string; depositS
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       crosshair: { horzLine: { labelBackgroundColor: "#0f151f" }, vertLine: { labelBackgroundColor: "#0f151f" } },
+      // The chart sits mid-page: let the wheel and vertical swipes scroll the page instead of zooming/panning.
+      handleScroll: { mouseWheel: false, vertTouchDrag: false },
+      handleScale: { mouseWheel: false },
     });
     chart.current = c;
     return () => {

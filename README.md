@@ -51,6 +51,8 @@ defaults to `mainnet-beta`.
 | `JUPITER_API_KEY` | server | no | Sent as `x-api-key`. Raises the rate limit on token metadata, prices and swap instructions. |
 | `METEORA_DLMM_API_HOST` | server | no | Meteora DLMM pool search API base. Defaults to `https://dlmm.datapi.meteora.ag`. |
 | `DATABASE_URL` | **server only** | for closed-position and NAV history | Read-only access to the keeper's indexed strategy-history and nav_history tables. Never exposed to the browser. |
+| `API_KEYS_DATABASE_URL` | **server only** | no | Preferred SELECT-only connection to the admin dashboard's `api_keys` table. Falls back to `DATABASE_URL` only when that role can also read `api_keys`. |
+| `API_KEY_USAGE_DATABASE_URL` | **server only** | no | Separate usage-counter connection with SELECT/INSERT/UPDATE access to `api_key_usage`; usage recording is fire-and-forget. |
 | `MANAGER_API_KEYS` | **server only** | for partner bot access | JSON array of manager API key digests and scopes; see [`docs/manager-api.md`](docs/manager-api.md). Empty disables access. |
 | `MANAGER_API_TICKET_SECRET` | **server only** | for partner bot access | Shared secret of at least 32 bytes for exact-build tickets and status receipts. |
 
@@ -217,7 +219,9 @@ One-time cluster setup (not managed by the workflow):
 
 - `ghcr-pull` in `hedgevault-prod` — image pull credentials for GHCR.
 - `app-secrets` in `hedgevault-prod` — `RPC_URL`, `DATABASE_URL`, and, when used, `JUPITER_API_KEY`.
-  Partner bot access also requires `MANAGER_API_KEYS` and `MANAGER_API_TICKET_SECRET` here.
+  Partner bot access uses `API_KEYS_DATABASE_URL` when provided, otherwise `DATABASE_URL` must also
+  have SELECT access to `api_keys`; configure `API_KEY_USAGE_DATABASE_URL` for usage counters and
+  `MANAGER_API_TICKET_SECRET` for transaction tickets. `MANAGER_API_KEYS` remains an optional fallback.
   Never put these values in the ConfigMap, image, or a `NEXT_PUBLIC_*` variable.
 
 `NEXT_PUBLIC_CLUSTER` is intentionally set to `mainnet-beta` in both the image build and

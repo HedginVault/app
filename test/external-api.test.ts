@@ -70,12 +70,12 @@ afterEach(() => {
 });
 
 describe("manager key and tickets", () => {
-  it("rejects missing, wrong and revoked keys", () => {
-    expect(() => authenticate(request("vaults", "GET", undefined, ""))).toThrow();
-    expect(() => authenticate(request("vaults", "GET", undefined, `Bearer hv1_partner_${"a".repeat(48)}`))).toThrow();
+  it("rejects missing, wrong and revoked keys", async () => {
+    await expect(authenticate(request("vaults", "GET", undefined, ""))).rejects.toThrow();
+    await expect(authenticate(request("vaults", "GET", undefined, `Bearer hv1_partner_${"a".repeat(48)}`))).rejects.toThrow();
     process.env.MANAGER_API_KEYS = JSON.stringify([{ id: "partner", digest: createHash("sha256").update(apiSecret).digest("hex"),
       manager: manager.publicKey.toBase58(), actions: ["read"], revoked: true }]);
-    expect(() => authenticate(request("vaults"))).toThrow();
+    await expect(authenticate(request("vaults"))).rejects.toThrow();
   });
   it("rejects changed or expired tickets", () => {
     const issued = ticketFor(transaction());

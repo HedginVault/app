@@ -6,14 +6,25 @@ V1 supports Jupiter swaps and the app's existing Meteora DLMM actions. The app h
 
 ## Provisioning and rotation
 
-Set two server-only variables in the app deployment secret:
+Keys are created, scoped, edited, and revoked in the admin dashboard (`admin-dashboard/`). The app reads them from Postgres. Set these server-only variables in the app deployment secret:
 
-- `MANAGER_API_KEYS`: JSON array of records with `id`, `digest`, `manager`, optional `vaults`, `actions`, `expiresAt`, and `revoked`. `digest` is the lowercase hex SHA-256 digest of the random key secret. `manager` is the Solana public key that currently controls the vault. `vaults` is an optional array of vault public keys. If omitted, all current vaults of that manager are in scope.
+- `API_KEYS_DATABASE_URL`: connection string for the key database, using a SELECT-only role on the key table. The app never writes key records.
+- `API_KEY_USAGE_DATABASE_URL`: connection string for a role that may only insert or update usage counters. Recording usage is fire-and-forget and never changes an API response.
 - `MANAGER_API_TICKET_SECRET`: a distinct random secret of at least 32 bytes used to authenticate build tickets and status receipts. Keep it stable across app replicas and rollouts until outstanding receipts expire.
+- `MANAGER_API_KEYS` (fallback only, see below): JSON array of records with `id`, `digest`, `manager`, optional `vaults`, `actions`, `expiresAt`, and `revoked`.
 
-Generate a 32-byte or longer random secret outside the repository, compute its SHA-256 digest, and provision the plaintext only to the partner. The HTTP header is `Authorization: Bearer hv1_<id>_<secret>`. The allowed `actions` are `read`, `send`, and exact builder names from the table below. Include `send` when the bot should relay through this service. Do not place plaintext keys, the ticket secret, or manager keypairs in Git, logs, URLs, or browser variables.
+Each key record has an `id`, a `digest` (the lowercase hex SHA-256 digest of the random key secret), a `manager` (the Solana public key that currently controls the vault), optional `vaults` (an array of vault public keys; if omitted, all current vaults of that manager are in scope), `actions`, and an optional expiry. The HTTP header is `Authorization: Bearer hv1_<id>_<secret>`. The allowed `actions` are `read`, `send`, and exact builder names from the table below. Include `send` when the bot should relay through this service. The dashboard shows the full key once at creation and stores only the digest. Do not place plaintext keys, the ticket secret, or manager keypairs in Git, logs, URLs, or browser variables.
 
-To rotate a key, add a new record and give the new key to the partner, then mark the old record `revoked: true` and deploy the configuration. A revoked key cannot build, send, or poll through this service. Revoking an API key does **not** revoke a Solana manager key; the manager must rotate vault authority on chain if that signer is compromised. Ticket secret rotation invalidates outstanding build tickets and status receipts.
+How the app resolves a key:
+
+- A key found in the database is authoritative. The database row wins over any `MANAGER_API_KEYS` entry with the same id.
+- The app caches key lookups in process for about 5 seconds. Revoking or editing a key in the dashboard therefore takes effect within about 5 seconds.
+- If the database is unreachable, or a stored row fails validation, the API returns 503. It never falls back to `MANAGER_API_KEYS` for an id that exists in the database, and it never fails open.
+- `MANAGER_API_KEYS` is only a fallback for ids that are absent from the database. It is scheduled for removal one release after the existing keys have been imported into the database.
+
+Key format: keys created by the dashboard use a lowercase id without underscores and a 64-character hex secret. The header parser accepts `[a-zA-Z0-9_-]{1,48}` for the id and `[a-zA-Z0-9_-]{32,128}` for the secret, and the id part is matched greedily. It therefore splits at the last `_` that still leaves at least 32 secret characters, not at the first `_`. A secret that contains `_` can be split in the wrong place and the key will then fail with 401. Hand-made keys should use ids without `_` and secrets without `_` or `-` (plain hex is safest).
+
+To rotate a key, create a new key in the dashboard and give it to the partner, then revoke the old key. A revoked key cannot build, send, or poll through this service. An API key does not replace on-chain authority: it only lets the bot call this HTTP API, and every transaction still needs the manager's Solana signature. Revoking an API key does **not** revoke a Solana manager key; the manager must rotate vault authority on chain if that signer is compromised. Ticket secret rotation invalidates outstanding build tickets and status receipts.
 
 ## Reads
 

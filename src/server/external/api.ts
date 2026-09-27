@@ -14,18 +14,16 @@ import { getTransactionStatus, sendSignedTransaction } from "@/server/tx/send";
 import { loadVaultCtx } from "@/server/tx/context";
 import { authenticate, assertAction, type Principal } from "./auth";
 import { signTicket, verifyTicket } from "./ticket";
+import { recordUsage } from "./usage";
+import { BUILD_ACTIONS, type BuildAction, usageAction } from "./usage-action";
 
-const BUILD_ACTIONS = [
-  "jupiter/swap", "dlmm/open", "dlmm/add", "dlmm/add-range", "dlmm/extend",
-  "dlmm/remove", "dlmm/claim-fee", "dlmm/zap-out", "dlmm/zap-out/swap", "strategy/close",
-] as const;
-type BuildAction = typeof BUILD_ACTIONS[number];
 const MAX_BODY = 16_384;
 const MAX_TX_BYTES = 1232;
 const KEY_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 function audit(principal: Principal, action: string, outcome: string, vault?: string, signature?: string): void {
   console.info("[manager-api]", JSON.stringify({ keyId: principal.id, manager: principal.manager, action, outcome, vault, signature }));
+  recordUsage(principal.id, usageAction(action), outcome);
 }
 
 function failure(error: unknown): Response {
@@ -52,7 +50,7 @@ export async function externalRoute(req: Request, path: string[], method: "GET" 
   const action = rawAction.length <= 80 && /^[a-z0-9/.-]+$/.test(rawAction) ? rawAction : "invalid";
   try {
     rateLimit(`external:ip:${clientIp(req)}`, [{ capacity: 60, windowMs: 60_000 }]);
-    principal = authenticate(req);
+    principal = await authenticate(req);
     rateLimit(`external:key:${principal.id}`, [{ capacity: 120, windowMs: 60_000 }]);
     const data = method === "GET" ? await read(principal, action, req) : await write(principal, action, req);
     audit(principal, action, "ok", "vault" in data && typeof data.vault === "string" ? data.vault : undefined);

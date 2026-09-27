@@ -39,7 +39,7 @@ const positionIcon = (p: PositionView): ReactNode =>
   );
 
 export function AllocationCard({ holdings: h }: { holdings: HoldingsView }) {
-  const [mode, setMode] = useState<Mode>("token");
+  const [mode, setMode] = useState<Mode>("position");
   const total = BigInt(h.totalValue);
 
   const rows: (SliceInput & { icon: ReactNode; amount: ReactNode })[] =
@@ -76,7 +76,7 @@ export function AllocationCard({ holdings: h }: { holdings: HoldingsView }) {
             size="sm"
             value={mode}
             onChange={setMode}
-            options={[{ id: "token", label: "By token" }, { id: "position", label: "By position" }]}
+            options={[{ id: "position", label: "By position" }, { id: "token", label: "By token" }]}
           />
         }
       />

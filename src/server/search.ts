@@ -1,9 +1,11 @@
 import "server-only";
+import { PublicKey } from "@solana/web3.js";
 import type { OrganicScoreLabel, PoolSearchPage, PoolSearchResult, TokenSearchResult } from "@/lib/types";
 import { cached } from "./cache";
 import { ApiError } from "./errors";
 import { getPrices, JUPITER_HOST, jupiterHeaders } from "./prices";
-import { getTokenLogos } from "./tokens";
+import { effectiveUiMultiplier } from "./rpc";
+import { getMintInfos, getTokenLogos, type MintInfo } from "./tokens";
 
 const METEORA_HOST = process.env.METEORA_DLMM_API_HOST?.trim() || "https://dlmm.datapi.meteora.ag";
 const TOKEN_TTL_MS = 60 * 60_000;
@@ -44,8 +46,22 @@ const SCORE_LABELS = new Set(["high", "medium", "low"]);
  */
 export async function searchTokens(query: string): Promise<TokenSearchResult[]> {
   const rows = await searchTokenRows(query);
-  const prices = await getPrices(rows.map((r) => r.mint));
-  return rows.map((r) => ({ ...r, priceUsd: prices.get(r.mint) ?? null }));
+  const [prices, mints] = await Promise.all([getPrices(rows.map((r) => r.mint)), scaledMints(rows.map((r) => r.mint))]);
+  const nowSec = Date.now() / 1000;
+  return rows.map((r) => {
+    const uiMultiplier = effectiveUiMultiplier(mints.get(r.mint)?.scaledUi ?? null, nowSec);
+    return { ...r, priceUsd: prices.get(r.mint) ?? null, ...(uiMultiplier !== 1 && { uiMultiplier }) };
+  });
+}
+
+/** Mint infos for the ScaledUiAmount multiplier; an unreadable batch only costs the display scaling. */
+async function scaledMints(mints: string[]): Promise<Map<string, MintInfo>> {
+  try {
+    return await getMintInfos(mints.map((m) => new PublicKey(m)));
+  } catch (e) {
+    console.warn("[search] mint read failed:", e instanceof Error ? e.message : e);
+    return new Map();
+  }
 }
 
 const searchTokenRows = (query: string) => {

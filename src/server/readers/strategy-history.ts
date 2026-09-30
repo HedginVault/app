@@ -70,10 +70,10 @@ export async function readStrategyHistory(vault: string): Promise<StrategyHistor
   );
 
   const mints = [...new Set(result.rows.flatMap((row) => (row.mint ? [row.mint] : [])))];
-  let tokenInfos = new Map<string, { symbol: string; decimals: number }>();
+  let tokenInfos = new Map<string, { symbol: string; decimals: number; uiMultiplier?: number }>();
   try {
     const infos = await getTokenInfos(mints.map((mint) => new PublicKey(mint)));
-    tokenInfos = new Map([...infos].map(([mint, info]) => [mint, { symbol: info.symbol, decimals: info.decimals }]));
+    tokenInfos = new Map([...infos].map(([mint, info]) => [mint, { symbol: info.symbol, decimals: info.decimals, uiMultiplier: info.uiMultiplier }]));
   } catch {
     // History remains usable with raw base units if metadata providers are unavailable.
   }
@@ -103,6 +103,7 @@ export async function readStrategyHistory(vault: string): Promise<StrategyHistor
       mint: row.mint,
       symbol: metadata?.symbol ?? null,
       decimals: metadata?.decimals ?? null,
+      ...(metadata?.uiMultiplier && { uiMultiplier: metadata.uiMultiplier }),
       contributed: row.contributed ?? "0",
       returned: row.returned ?? "0",
       feesGross: row.fees_gross ?? "0",

@@ -14,6 +14,9 @@ import {
   formatUsd,
   formatPrice,
   formatShare,
+  toRawPrice,
+  toUiPrice,
+  uiPriceUsd,
 } from "@/lib/format";
 
 describe("formatTokenAmount", () => {
@@ -113,5 +116,45 @@ describe("amount display helpers", () => {
     expect(rawToInput("1234500000", 6)).toBe("1234.5");
     expect(rawToInput(0n, 9)).toBe("0");
     expect(rawToInput("1", 9)).toBe("0.000000001");
+  });
+});
+
+describe("ScaledUiAmount units", () => {
+  // OPENAI PreStocks: 9 decimals, UI amount = raw × 1.4861347.
+  const openai = { decimals: 9, uiMultiplier: 1.4861347 };
+  const usdc = { decimals: 6 };
+
+  it("shows raw amounts in UI units", () => {
+    expect(formatTokenAmount(1_000_000_000n, openai)).toBe("1.4861347");
+    expect(toUiNumber(49_887n, openai)).toBeCloseTo(0.0000741388, 10);
+    expect(displayFraction(1_000_000_000n, openai)).toBe(4);
+    expect(formatTokenAmount(1_000_000_000n, 9)).toBe("1");
+  });
+
+  it("parses typed UI amounts back to raw, never above what was typed", () => {
+    expect(parseTokenAmount("1.4861347", openai)).toBe(1_000_000_000n);
+    const raw = parseTokenAmount("1", openai)!;
+    expect(raw).toBe(672_886_515n); // floor(1e9 / 1.4861347)
+    expect(toUiNumber(raw, openai)).toBeLessThanOrEqual(1);
+    expect(parseTokenAmount("1", usdc)).toBe(1_000_000n);
+  });
+
+  it("round-trips a balance through the input without exceeding it", () => {
+    for (const bal of [1n, 49_887n, 17_071_078_999n, 123_456_789_012n]) {
+      const back = parseTokenAmount(rawToInput(bal, openai), openai)!;
+      expect(back).toBeLessThanOrEqual(bal);
+      expect(bal - back).toBeLessThanOrEqual(1n);
+    }
+  });
+
+  it("converts pool and USD prices between raw and UI units", () => {
+    // The live pool: 2288.58 USDC per raw OPENAI is 1539.96 per UI OPENAI, as Meteora shows.
+    expect(toUiPrice(2288.5808, openai, usdc)).toBeCloseTo(1539.96, 2);
+    expect(toRawPrice(toUiPrice(2288.5808, openai, usdc), openai, usdc)).toBeCloseTo(2288.5808, 9);
+    expect(toUiPrice(1.5, usdc, openai)).toBeCloseTo(1.5 * 1.4861347, 9);
+    expect(uiPriceUsd({ priceUsd: 2245.2615, uiMultiplier: 1.4861347 })).toBeCloseTo(1510.806, 3);
+    expect(uiPriceUsd({ priceUsd: 2, uiMultiplier: undefined })).toBe(2);
+    // USD math stays raw: the raw-unit price times the raw amount.
+    expect(usdValue(1_000_000_000n, openai.decimals, 2245.2615)).toBeCloseTo(2245.2615, 6);
   });
 });

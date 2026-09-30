@@ -4,13 +4,15 @@ import { getCached, setCached } from "./cache";
 import { ApiError } from "./errors";
 import { getPrices, JUPITER_HOST, jupiterHeaders } from "./prices";
 import { CLUSTER, getConnection, TOKEN_PROGRAM_ID } from "./program";
-import { decodeMint, getMultipleAccounts } from "./rpc";
+import { decodeMint, decodeScaledUiConfig, effectiveUiMultiplier, getMultipleAccounts, type ScaledUiConfig } from "./rpc";
 
 export const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 
 export interface MintInfo {
   decimals: number;
   tokenProgram: PublicKey;
+  /** Token-2022 ScaledUiAmount config; absent for every other mint. */
+  scaledUi?: ScaledUiConfig;
 }
 
 /** Mainnet mints answered with zero RPC. Decimals and symbol here are authoritative; name and logo still come from Jupiter. */
@@ -50,7 +52,8 @@ export async function getMintInfos(mints: PublicKey[]): Promise<Map<string, Mint
       const key = missing[i].toBase58();
       const mint = decodeMint(info);
       if (!info || !mint) throw new ApiError(404, "NotFound", `Mint ${key} not found`);
-      const value = { decimals: mint.decimals, tokenProgram: info.owner };
+      const scaledUi = decodeScaledUiConfig(info);
+      const value: MintInfo = { decimals: mint.decimals, tokenProgram: info.owner, ...(scaledUi && { scaledUi }) };
       setCached(`mint:${key}`, value, MINT_TTL_MS);
       out.set(key, value);
     });
@@ -111,18 +114,22 @@ export async function getTokenInfos(mints: PublicKey[]): Promise<Map<string, Tok
     getMetadata(keys),
     getPrices(keys),
   ]);
+  const nowSec = Date.now() / 1000;
   return new Map(
     keys.map((key) => {
       const m = meta.get(key);
+      const mintInfo = mintInfos.get(key)!;
+      const uiMultiplier = effectiveUiMultiplier(mintInfo.scaledUi ?? null, nowSec);
       return [
         key,
         {
           mint: key,
           symbol: knownMint(key)?.symbol ?? m?.symbol ?? shortSymbol(key),
           name: m?.name,
-          decimals: mintInfos.get(key)!.decimals,
+          decimals: mintInfo.decimals,
           logo: m?.icon ?? null,
           priceUsd: prices.get(key) ?? null,
+          ...(uiMultiplier !== 1 && { uiMultiplier }),
         },
       ];
     }),

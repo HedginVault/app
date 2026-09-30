@@ -20,7 +20,7 @@ import {
   type Placement,
 } from "@/lib/dlmm-range";
 import { DLMM_MAX_ADD_BINS_PER_TX } from "@/lib/dlmm-wide";
-import { formatPrice, formatTokenAmount, formatUsd, parseTokenAmount, toUiNumber, usdValue } from "@/lib/format";
+import { formatPrice, formatTokenAmount, formatUsd, parseTokenAmount, toRawPrice, toUiNumber, toUiPrice, usdValue } from "@/lib/format";
 import { depositTokenOf } from "@/lib/holdings";
 import { isOperational } from "@/lib/swap-logic";
 import type { StepProgress } from "@/lib/tx-steps";
@@ -47,7 +47,10 @@ export function toInput(ui: number, decimals: number): string {
   return ui.toFixed(Math.min(decimals, 6)).replace(/\.?0+$/, "");
 }
 
-/** Amount of the deposit token (with 1% headroom) that buys `shortUi` of `token`, when both are priced. */
+/**
+ * Amount of the deposit token (with 1% headroom) that buys `shortUi` of `token`, when both are priced.
+ * `shortUi` is in raw whole tokens (amount / 10^decimals), the unit `priceUsd` is quoted in.
+ */
 export function depositNeeded(shortUi: number, token: TokenInfo, deposit: TokenInfo): string | undefined {
   if (token.priceUsd === null || deposit.priceUsd === null || deposit.priceUsd <= 0) return undefined;
   return toInput(((shortUi * token.priceUsd) / deposit.priceUsd) * 1.01, deposit.decimals);
@@ -72,7 +75,7 @@ export function LiquidityCard({
   onSwapFor: (p: { to: string; amount?: string }) => void;
   /** The position was created but funding it failed; the caller can send the manager to add liquidity. */
   onOpenedPartially?: (position: string) => void;
-  /** Draft range in raw pool prices (token Y per token X), null while there is none; drives the chart overlay. */
+  /** Draft range in UI-unit pool prices (token Y per token X), null while there is none; drives the chart overlay. */
   onRangeChange?: (range: PriceRange | null) => void;
   /** A Min/Max Bin line being dragged on the chart; feeds back into the range picker and price inputs. */
   dragRange?: { range: PriceRange; seq: number } | null;
@@ -164,16 +167,19 @@ function ConfigurePosition({
   const [rangeError, setRangeError] = useState<string | null>(null);
   const { send, pending } = useSendTransaction();
 
-  const price = (bin: number) => binIdToPrice(bin, binStep, x.decimals, y.decimals);
-  const activePrice = Number(pool.activePrice);
+  // Everything shown or typed is in UI units (what wallets and Meteora show, which differ from raw
+  // units for a ScaledUiAmount mint); bins are keyed on raw-unit prices, converted only at the edge.
+  const price = (bin: number) => toUiPrice(binIdToPrice(bin, binStep, x.decimals, y.decimals), x, y);
+  const activePrice = toUiPrice(Number(pool.activePrice), x, y);
+  const binOf = (uiPrice: number, round: "floor" | "ceil") => priceToBinId(toRawPrice(uiPrice, x, y), binStep, x.decimals, y.decimals, round);
   const show = (p: number) => formatPrice(inverted ? 1 / p : p);
 
   const balX = vaultBalance(holdings, x.mint);
   const balY = vaultBalance(holdings, y.mint);
-  const amountX = parseTokenAmount(inputX || "0", x.decimals);
-  const amountY = parseTokenAmount(inputY || "0", y.decimals);
-  const uiX = amountX ? toUiNumber(amountX, x.decimals) : 0;
-  const uiY = amountY ? toUiNumber(amountY, y.decimals) : 0;
+  const amountX = parseTokenAmount(inputX || "0", x);
+  const amountY = parseTokenAmount(inputY || "0", y);
+  const uiX = amountX ? toUiNumber(amountX, x) : 0;
+  const uiY = amountY ? toUiNumber(amountY, y) : 0;
   const shortX = amountX !== null && amountX > balX;
   const shortY = amountY !== null && amountY > balY;
 
@@ -239,7 +245,7 @@ function ConfigurePosition({
   /** A raw (non-inverted) pool price moves only the bin it names, through setBins's placement/width clamps. */
   const applyRawPrice = (own: "lower" | "last", raw: number) => {
     if (!(raw > 0 && Number.isFinite(raw))) return;
-    const bin = priceToBinId(raw, binStep, x.decimals, y.decimals, own === "lower" ? "floor" : "ceil");
+    const bin = binOf(raw, own === "lower" ? "floor" : "ceil");
     if (bin !== null) setBins(own === "lower" ? bin : range.lowerBinId, own === "last" ? bin : last, own);
   };
   /** A typed price moves only its own edge: displayed min/max map to lower/last bin (swapped when inverted). */
@@ -259,7 +265,7 @@ function ConfigurePosition({
     const { min, max } = dragRange.range;
     const rawEdge: "lower" | "last" = Math.abs(max - maxPrice) > Math.abs(min - minPrice) ? "last" : "lower";
     const raw = rawEdge === "last" ? max : min;
-    const bin = raw > 0 && Number.isFinite(raw) ? priceToBinId(raw, binStep, x.decimals, y.decimals, rawEdge === "lower" ? "floor" : "ceil") : null;
+    const bin = raw > 0 && Number.isFinite(raw) ? binOf(raw, rawEdge === "lower" ? "floor" : "ceil") : null;
     if (bin !== null) {
       if (autoBothSide && placement === "below" && rawEdge === "last" && bin > active) {
         const upperBinId = Math.min(bin + 1, range.lowerBinId + DLMM_MAX_POSITION_WIDTH);
@@ -306,7 +312,7 @@ function ConfigurePosition({
   const shortfall = (token: TokenInfo, amount: bigint | null, bal: bigint) =>
     amount !== null && amount > bal && token.mint !== deposit.mint ? (
       <div className="flex items-center justify-between rounded-[10px] bg-warning-soft px-3 py-2 text-[12px] text-amber-200">
-        <span>Vault holds {formatTokenAmount(bal, token.decimals, { maxFraction: 4 })} {token.symbol}</span>
+        <span>Vault holds {formatTokenAmount(bal, token, { maxFraction: 4 })} {token.symbol}</span>
         <Button
           size="sm"
           variant="secondary"
@@ -577,8 +583,8 @@ function ConfigurePosition({
           { label: "Position rent deposit", value: reviewed ? `${formatTokenAmount(reviewed.rentLamports, 9, { maxFraction: 6 })} SOL` : rentLabel },
           { label: "Refunded when closed", value: reviewed ? `${formatTokenAmount(reviewed.rentLamports, 9, { maxFraction: 6 })} SOL` : rentLabel },
           { label: "Shape", value: SHAPES.find((s) => s.id === shape)!.label },
-          { label: `Deposit ${x.symbol}`, value: `${formatTokenAmount(amountX ?? 0n, x.decimals, { maxFraction: 6 })} (${formatUsd(usdValue(amountX ?? 0n, x.decimals, x.priceUsd))})` },
-          { label: `Deposit ${y.symbol}`, value: `${formatTokenAmount(amountY ?? 0n, y.decimals, { maxFraction: 6 })} (${formatUsd(usdValue(amountY ?? 0n, y.decimals, y.priceUsd))})` },
+          { label: `Deposit ${x.symbol}`, value: `${formatTokenAmount(amountX ?? 0n, x, { maxFraction: 6 })} (${formatUsd(usdValue(amountX ?? 0n, x.decimals, x.priceUsd))})` },
+          { label: `Deposit ${y.symbol}`, value: `${formatTokenAmount(amountY ?? 0n, y, { maxFraction: 6 })} (${formatUsd(usdValue(amountY ?? 0n, y.decimals, y.priceUsd))})` },
         ]}
         notes={[
           "Your wallet pays position rent. Network fees and any new bin arrays cost extra.",

@@ -1,5 +1,5 @@
-import { AccountLayout, MintLayout } from "@solana/spl-token";
-import type { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
+import { AccountLayout, getScaledUiAmountConfig, MintLayout, TOKEN_2022_PROGRAM_ID, unpackMint } from "@solana/spl-token";
+import { type AccountInfo, type Connection, PublicKey } from "@solana/web3.js";
 
 export interface OwnedTokenAccount {
   mint: string;
@@ -48,4 +48,35 @@ export function decodeMint(info: AccountInfo<Buffer> | null): { decimals: number
   if (!info || info.data.length < MintLayout.span) return null;
   const raw = MintLayout.decode(info.data.subarray(0, MintLayout.span));
   return { decimals: raw.decimals, supply: raw.supply };
+}
+
+/** Token-2022 ScaledUiAmount config: UI amount = raw amount × the multiplier in effect. */
+export interface ScaledUiConfig {
+  multiplier: number;
+  newMultiplier: number;
+  /** Unix seconds from which `newMultiplier` applies. */
+  newMultiplierEffectiveTs: number;
+}
+
+/** The mint's ScaledUiAmount config, or null for a classic SPL mint or a Token-2022 mint without one. */
+export function decodeScaledUiConfig(info: AccountInfo<Buffer> | null): ScaledUiConfig | null {
+  if (!info || !info.owner.equals(TOKEN_2022_PROGRAM_ID)) return null;
+  try {
+    const cfg = getScaledUiAmountConfig(unpackMint(PublicKey.default, info, info.owner));
+    if (!cfg) return null;
+    return {
+      multiplier: cfg.multiplier,
+      newMultiplier: cfg.newMultiplier,
+      newMultiplierEffectiveTs: Number(cfg.newMultiplierEffectiveTimestamp),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Multiplier in effect at `nowSec`; 1 for an unusable value so display falls back to raw units. */
+export function effectiveUiMultiplier(cfg: ScaledUiConfig | null, nowSec: number): number {
+  if (!cfg) return 1;
+  const m = nowSec >= cfg.newMultiplierEffectiveTs ? cfg.newMultiplier : cfg.multiplier;
+  return Number.isFinite(m) && m > 0 ? m : 1;
 }

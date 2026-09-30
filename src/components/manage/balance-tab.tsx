@@ -113,7 +113,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
                   panel: "swap",
                   from: p.token.mint,
                   to: v.depositMint,
-                  amount: rawToInput(p.amount, p.token.decimals),
+                  amount: rawToInput(p.amount, p.token),
                 }),
             },
           ];
@@ -124,7 +124,7 @@ export function BalanceTab({ v, owner }: { v: VaultDetail; owner: string }) {
           label: `Sell ${p.token.symbol}`,
           disabled: BigInt(p.amount) === 0n,
           reason: "Nothing to sell",
-          onSelect: () => prefill({ panel: "swap", from: p.token.mint, to: v.depositMint, amount: rawToInput(p.amount, p.token.decimals) }),
+          onSelect: () => prefill({ panel: "swap", from: p.token.mint, to: v.depositMint, amount: rawToInput(p.amount, p.token) }),
         },
         {
           label: "Close strategy",

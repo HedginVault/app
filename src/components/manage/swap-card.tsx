@@ -154,7 +154,7 @@ export function SwapCard({
         label="You receive"
         token={to}
         tokenSlot={tokenButton(to, buy)}
-        value={out !== null && to ? formatTokenAmount(out, to.decimals, { maxFraction: 6 }).replace(/,/g, "") : ""}
+        value={out !== null && to ? formatTokenAmount(out, to, { maxFraction: 6 }).replace(/,/g, "") : ""}
         readOnly
         balance={to ? (balances.get(to.mint) ?? "0") : null}
         usd={out !== null && to ? usdValue(out, to.decimals, to.priceUsd) : undefined}
@@ -176,7 +176,7 @@ export function SwapCard({
             <dt className="text-muted">Price impact</dt>
             <dd className={severity === "high" ? "text-red-300" : severity === "warn" ? "text-amber-300" : "tabular-nums"}>{impact.toFixed(2)}%</dd>
           </div>
-          <div className="flex justify-between"><dt className="text-muted">Minimum received</dt><dd className="tabular-nums">{formatTokenAmount(minReceived(out!, slippageBps), to.decimals, { maxFraction: 6 })} {to.symbol}</dd></div>
+          <div className="flex justify-between"><dt className="text-muted">Minimum received</dt><dd className="tabular-nums">{formatTokenAmount(minReceived(out!, slippageBps), to, { maxFraction: 6 })} {to.symbol}</dd></div>
           <div className="flex min-w-0 justify-between"><dt className="shrink-0 text-muted">Route</dt><dd className="min-w-0 truncate pl-4 text-right">{quote.data.routeLabels.join(" → ")}</dd></div>
         </dl>
       )}
@@ -212,9 +212,9 @@ export function SwapCard({
           progress={progress}
           steps={needsStrategy ? [{ label: `Set up ${to === deposit ? from.symbol : to.symbol} strategy` }, { label: "Swap" }] : []}
           rows={[
-            { label: "You pay", value: `${formatTokenAmount(amount, from.decimals, { maxFraction: 6 })} ${from.symbol}` },
-            { label: "You receive (est.)", value: `${formatTokenAmount(out, to.decimals, { maxFraction: 6 })} ${to.symbol}` },
-            { label: "Minimum received", value: `${formatTokenAmount(minReceived(out, slippageBps), to.decimals, { maxFraction: 6 })} ${to.symbol}` },
+            { label: "You pay", value: `${formatTokenAmount(amount, from, { maxFraction: 6 })} ${from.symbol}` },
+            { label: "You receive (est.)", value: `${formatTokenAmount(out, to, { maxFraction: 6 })} ${to.symbol}` },
+            { label: "Minimum received", value: `${formatTokenAmount(minReceived(out, slippageBps), to, { maxFraction: 6 })} ${to.symbol}` },
             { label: "Price impact", value: `${impact.toFixed(2)}%`, tone: severity === "high" ? "danger" : severity === "warn" ? "warn" : undefined },
             { label: "Slippage", value: formatBps(slippageBps) },
           ]}

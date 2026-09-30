@@ -65,7 +65,7 @@ export function useSwapForm({
 
   const from = buy ? deposit : target;
   const to = buy ? target : deposit;
-  const amount = from ? parseTokenAmount(input, from.decimals) : null;
+  const amount = from ? parseTokenAmount(input, from) : null;
   const balance = from ? BigInt(balances.get(from.mint) ?? "0") : 0n;
   const debouncedAmount = useDebounce(amount?.toString() ?? "", 400);
 
@@ -102,7 +102,7 @@ export function useSwapForm({
   const out = quote.data ? BigInt(quote.data.outAmount) : null;
   const impact = quote.data ? impactPercent(quote.data.priceImpactPct) : 0;
   const severity = impactSeverity(impact);
-  const rate = from && to && amount && out && amount > 0n ? toUiNumber(out, to.decimals) / toUiNumber(amount, from.decimals) : null;
+  const rate = from && to && amount && out && amount > 0n ? toUiNumber(out, to) / toUiNumber(amount, from) : null;
   const invertedRate = rate ? 1 / rate : null;
   const needsStrategy = !!target && !holdings.positions.some((p) => p.kind === "swap" && p.token.mint === target.mint);
 

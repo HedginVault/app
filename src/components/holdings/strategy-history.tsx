@@ -8,12 +8,12 @@ import { formatTokenAmount } from "@/lib/format";
 import type { StrategyHistoryToken } from "@/lib/types";
 
 const amount = (value: string, token: StrategyHistoryToken) =>
-  token.decimals === null ? `${value} base units` : formatTokenAmount(value, token.decimals);
+  token.decimals === null ? `${value} base units` : formatTokenAmount(value, { decimals: token.decimals, uiMultiplier: token.uiMultiplier });
 
 const signedAmount = (value: string, token: StrategyHistoryToken) => {
   const raw = BigInt(value);
   const magnitude = raw < 0n ? -raw : raw;
-  const formatted = token.decimals === null ? magnitude.toString() : formatTokenAmount(magnitude.toString(), token.decimals);
+  const formatted = token.decimals === null ? magnitude.toString() : formatTokenAmount(magnitude.toString(), { decimals: token.decimals, uiMultiplier: token.uiMultiplier });
   return `${raw > 0n ? "+" : raw < 0n ? "−" : ""}${formatted}`;
 };
 

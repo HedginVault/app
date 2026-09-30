@@ -4,16 +4,45 @@ const toBig = (v: string | bigint) => (typeof v === "bigint" ? v : BigInt(v));
 
 const groupInt = (s: string) => s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-export function toUiNumber(raw: string | bigint, decimals: number): number {
-  return Number(toBig(raw)) / 10 ** decimals;
+/**
+ * How a token's base units are shown: its decimals, plus for a Token-2022 ScaledUiAmount mint the
+ * multiplier wallets and explorers apply (UI amount = raw × uiMultiplier). A bare number is decimals
+ * with no scaling, which is what USD math (`usdValue`, priced per raw token) always wants.
+ */
+export type TokenUnit = number | { decimals: number; uiMultiplier?: number };
+
+const unitOf = (unit: TokenUnit) =>
+  typeof unit === "number" ? { decimals: unit, m: 1 } : { decimals: unit.decimals, m: unit.uiMultiplier ?? 1 };
+
+/** Multipliers as a 1e12 fixed-point bigint, so raw ⇄ UI scaling stays exact integer math. */
+const M_SCALE = 1_000_000_000_000n;
+const fixedM = (m: number) => BigInt(Math.round(m * Number(M_SCALE)));
+
+/** Raw base units → UI base units (same decimals), rounded toward zero. */
+export const rawToUiUnits = (raw: bigint, m: number) => (m === 1 ? raw : (raw * fixedM(m)) / M_SCALE);
+/** UI base units → raw base units, rounded toward zero so a parsed amount never exceeds what was typed. */
+export const uiToRawUnits = (ui: bigint, m: number) => (m === 1 ? ui : (ui * M_SCALE) / fixedM(m));
+
+/** Pool price (token Y per token X) in raw units → the UI-unit price wallets and Meteora show. */
+export const toUiPrice = (rawPrice: number, x: TokenUnit, y: TokenUnit) => (rawPrice * unitOf(y).m) / unitOf(x).m;
+/** Inverse of `toUiPrice`: a UI-unit price typed by the user → the raw-unit price bins are keyed on. */
+export const toRawPrice = (uiPrice: number, x: TokenUnit, y: TokenUnit) => (uiPrice * unitOf(x).m) / unitOf(y).m;
+/** USD per UI token, for showing a token's price (`priceUsd` itself is per raw token). */
+export const uiPriceUsd = (token: { priceUsd: number | null; uiMultiplier?: number }) =>
+  token.priceUsd === null ? null : token.priceUsd / (token.uiMultiplier ?? 1);
+
+export function toUiNumber(raw: string | bigint, unit: TokenUnit): number {
+  const { decimals, m } = unitOf(unit);
+  return (Number(toBig(raw)) / 10 ** decimals) * m;
 }
 
 export function formatTokenAmount(
   raw: string | bigint,
-  decimals: number,
+  unit: TokenUnit,
   opts: { compact?: boolean; maxFraction?: number } = {},
 ): string {
-  const value = toBig(raw);
+  const { decimals, m } = unitOf(unit);
+  const value = rawToUiUnits(toBig(raw), m);
   const negative = value < 0n;
   const abs = negative ? -value : value;
   const base = 10n ** BigInt(decimals);
@@ -90,14 +119,15 @@ export function formatDate(ts: number): string {
   });
 }
 
-export function parseTokenAmount(input: string, decimals: number): bigint | null {
+export function parseTokenAmount(input: string, unit: TokenUnit): bigint | null {
+  const { decimals, m } = unitOf(unit);
   const trimmed = input.trim();
   if (!/^\d*(\.\d*)?$/.test(trimmed) || trimmed === "" || trimmed === ".") return null;
   const [int = "0", frac = ""] = trimmed.split(".");
   if (frac.length > decimals) return null;
-  const raw =
+  const ui =
     BigInt(int || "0") * 10n ** BigInt(decimals) + BigInt((frac || "0").padEnd(decimals, "0"));
-  return raw;
+  return uiToRawUnits(ui, m);
 }
 
 /** USD value of a base-unit amount, or null when the price is unknown. */
@@ -133,12 +163,12 @@ export function formatShare(bps: number | null): string {
 }
 
 /** Fraction digits for display: 2 at or above 1,000, 4 at or above 1, 6 below. */
-export function displayFraction(raw: string | bigint, decimals: number): number {
-  const ui = Math.abs(toUiNumber(raw, decimals));
+export function displayFraction(raw: string | bigint, unit: TokenUnit): number {
+  const ui = Math.abs(toUiNumber(raw, unit));
   return ui >= 1000 ? 2 : ui >= 1 ? 4 : 6;
 }
 
 /** Base units as a plain decimal string for an input field (no grouping, no trailing zeros). */
-export function rawToInput(raw: string | bigint, decimals: number): string {
-  return formatTokenAmount(raw, decimals).replace(/,/g, "");
+export function rawToInput(raw: string | bigint, unit: TokenUnit): string {
+  return formatTokenAmount(raw, unit).replace(/,/g, "");
 }

@@ -21,7 +21,7 @@ export function AmountInput({
   error,
 }: {
   label: string;
-  token: (TokenLike & { decimals: number }) | null;
+  token: (TokenLike & { decimals: number; uiMultiplier?: number }) | null;
   /** Replaces the static token badge, e.g. with a token-select button. */
   tokenSlot?: ReactNode;
   value: string;
@@ -37,7 +37,7 @@ export function AmountInput({
 }) {
   const setPct = (pct: number) => {
     if (!token || balance == null || !onChange) return;
-    onChange(rawToInput((BigInt(balance) * BigInt(pct)) / 100n, token.decimals));
+    onChange(rawToInput((BigInt(balance) * BigInt(pct)) / 100n, token));
   };
   return (
     <div
@@ -51,7 +51,7 @@ export function AmountInput({
         <span className="font-medium">{label}</span>
         {token && balance != null && (
           <span className="tabular-nums">
-            {balanceLabel} {formatTokenAmount(balance, token.decimals, { maxFraction: 4 })} {token.symbol}
+            {balanceLabel} {formatTokenAmount(balance, token, { maxFraction: 4 })} {token.symbol}
           </span>
         )}
       </div>

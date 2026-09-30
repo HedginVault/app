@@ -10,7 +10,7 @@ export function TokenAmount({
   className,
 }: {
   raw: string | bigint;
-  token: { symbol: string; decimals: number };
+  token: { symbol: string; decimals: number; uiMultiplier?: number };
   usd?: number | null;
   align?: "left" | "right";
   className?: string;
@@ -18,7 +18,7 @@ export function TokenAmount({
   return (
     <span className={cn("inline-flex flex-col", align === "right" && "items-end", className)}>
       <span className="font-mono text-[13px] tabular-nums">
-        {formatTokenAmount(raw, token.decimals, { maxFraction: displayFraction(raw, token.decimals) })}{" "}
+        {formatTokenAmount(raw, token, { maxFraction: displayFraction(raw, token) })}{" "}
         <span className="text-muted">{token.symbol}</span>
       </span>
       {usd !== undefined && <span className="text-[12px] tabular-nums text-muted">{formatUsd(usd)}</span>}

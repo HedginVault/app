@@ -3,7 +3,6 @@ import { cached } from "./cache";
 import type { Candle, ChartTarget, MarketTimeframe, OhlcvView } from "@/lib/types";
 import { ApiError } from "./errors";
 import { PHOENIX_API_URL } from "./phoenix";
-import { getPrices } from "./prices";
 import { getTokenInfo } from "./tokens";
 import { readPoolInfo } from "./tx/dlmm";
 
@@ -66,7 +65,9 @@ async function usdSeries(mint: string, tf: MarketTimeframe, before?: number): Pr
   const candles = await usdCandles(mint, tf, before);
   // Paging back past the start of a real history is the end of the chart, not a missing series.
   if (candles.length || (before && (await usdCandles(mint, tf)).length)) return candles;
-  return (await getPrices([mint])).get(mint) ?? null;
+  // Jupiter candles are per UI token; `priceUsd` is per raw token, so undo the ScaledUiAmount factor.
+  const token = await getTokenInfo(new PublicKey(mint));
+  return token.priceUsd === null ? null : token.priceUsd / (token.uiMultiplier ?? 1);
 }
 
 const at = (s: Candle[] | number, time: number): Candle | undefined =>

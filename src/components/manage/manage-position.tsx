@@ -55,8 +55,8 @@ export function ManagePosition({
   const operational = isOperational(v);
   const sides = sidesForRange({ lowerBinId: range.lowerBinId, upperBinId: range.upperBinId + 1 }, range.activeBinId);
 
-  const amountX = sides.x ? parseTokenAmount(inputX || "0", x.decimals) : 0n;
-  const amountY = sides.y ? parseTokenAmount(inputY || "0", y.decimals) : 0n;
+  const amountX = sides.x ? parseTokenAmount(inputX || "0", x) : 0n;
+  const amountY = sides.y ? parseTokenAmount(inputY || "0", y) : 0n;
   const balX = vaultBalance(holdings, x.mint);
   const balY = vaultBalance(holdings, y.mint);
   const removeX = (BigInt(p.amountX) * BigInt(pct)) / 100n;

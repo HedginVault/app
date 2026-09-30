@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
-import { displayFraction, formatPrice, formatTokenAmount, formatUsd, toUiNumber } from "@/lib/format";
+import { displayFraction, formatPrice, formatTokenAmount, formatUsd, toUiNumber, usdValue } from "@/lib/format";
 import type { TokenInfo } from "@/lib/types";
 
 export interface PositionBin {
@@ -12,18 +12,19 @@ export interface PositionBin {
   amountY: string;
 }
 
-/** What a bin still holds, valued in USD when prices are known and in quote terms otherwise. */
+/**
+ * What a bin still holds, valued in USD when prices are known and in quote terms otherwise.
+ * `activePrice` is the UI-unit pool price, so the quote-terms fallback works in UI amounts.
+ */
 function binSplit(b: PositionBin, x: TokenInfo, y: TokenInfo, activePrice: number) {
-  const ux = toUiNumber(b.amountX, x.decimals);
-  const uy = toUiNumber(b.amountY, y.decimals);
   const priced = x.priceUsd !== null && y.priceUsd !== null;
-  const vx = priced ? ux * x.priceUsd! : ux * activePrice;
-  const vy = priced ? uy * y.priceUsd! : uy;
+  const vx = priced ? usdValue(b.amountX, x.decimals, x.priceUsd)! : toUiNumber(b.amountX, x) * activePrice;
+  const vy = priced ? usdValue(b.amountY, y.decimals, y.priceUsd)! : toUiNumber(b.amountY, y);
   return { vx, vy, total: vx + vy, priced };
 }
 
 const amountOf = (raw: string, t: TokenInfo) =>
-  `${formatTokenAmount(raw, t.decimals, { maxFraction: displayFraction(raw, t.decimals) })} ${t.symbol}`;
+  `${formatTokenAmount(raw, t, { maxFraction: displayFraction(raw, t) })} ${t.symbol}`;
 
 /**
  * The position's range and its remaining liquidity in one chart. One bar per owned bin: height is

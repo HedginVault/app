@@ -6,7 +6,11 @@ const JUP = "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN";
 const POOL = "BGm1tav58oGcsQJehL9WXBFXF7D27vZsKefj4xJKD5Y";
 
 vi.mock("@/server/tokens", () => ({
-  getTokenInfo: async (mint: { toBase58(): string }) => ({ symbol: mint.toBase58() === SOL ? "SOL" : "JUP" }),
+  getTokenInfo: async (mint: { toBase58(): string }) => ({
+    symbol: mint.toBase58() === SOL ? "SOL" : "JUP",
+    // USDC's flat fallback: per-raw-token price 1.5 at multiplier 1.5, i.e. $1 per UI token.
+    ...(mint.toBase58() === USDC ? { priceUsd: 1.5, uiMultiplier: 1.5 } : { priceUsd: null }),
+  }),
 }));
 vi.mock("@/server/tx/dlmm", () => ({
   readPoolInfo: async () => ({ tokenX: { mint: SOL, symbol: "SOL" }, tokenY: { mint: USDC, symbol: "USDC" } }),
@@ -17,13 +21,12 @@ import { getOhlcv, pairCandles } from "@/server/markets";
 
 const candle = (time: number, price: number) => ({ time, open: price, high: price + 1, low: price - 1, close: price, volume: 10 });
 
-/** Jupiter's charts endpoint: SOL at 100/102, JUP at 2, nothing for USDC (priced at $1 by /price/v3). */
+/** Jupiter's charts endpoint: SOL at 100/102, JUP at 2, nothing for USDC (flat $1 per UI token from its token info). */
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   clearCache();
   fetchMock = vi.fn(async (url: string) => {
     const u = new URL(url);
-    if (u.pathname.endsWith("/price/v3")) return new Response(JSON.stringify({ [USDC]: { usdPrice: 1 } }));
     const mint = u.pathname.split("/").at(-1);
     const to = Number(u.searchParams.get("to")) / 1000;
     const candles =

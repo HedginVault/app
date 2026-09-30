@@ -102,6 +102,7 @@ async function jupiterViewsFor(
       decimals: token.decimals,
       logo: token.logo,
       priceUsd: token.priceUsd,
+      ...(token.uiMultiplier && { uiMultiplier: token.uiMultiplier }),
       vaultBalance: decodeTokenAmount(infos[idx]).toString(),
     };
   });

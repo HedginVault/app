@@ -6,7 +6,13 @@ export interface TokenInfo {
   name?: string;
   decimals: number;
   logo: string | null;
+  /** USD per whole raw token (amount / 10^decimals), the unit every amount in the app is in. */
   priceUsd: number | null;
+  /**
+   * Token-2022 ScaledUiAmount multiplier in effect: wallets, Jupiter and Meteora show raw × this.
+   * Absent for unscaled mints. Display only; all math stays in raw units.
+   */
+  uiMultiplier?: number;
 }
 
 export interface VaultMetadata {
@@ -126,6 +132,7 @@ export interface JupiterStrategyView extends StrategyBase {
   decimals: number;
   logo: string | null;
   priceUsd: number | null;
+  uiMultiplier?: number;
   vaultBalance: string;
 }
 
@@ -430,6 +437,8 @@ export interface StrategyHistoryToken {
   mint: string;
   symbol: string | null;
   decimals: number | null;
+  /** ScaledUiAmount multiplier in effect now; absent when unscaled. */
+  uiMultiplier?: number;
   contributed: string;
   returned: string;
   feesGross: string;

@@ -138,6 +138,16 @@ describe("buildHoldingsView", () => {
     ]);
   });
 
+  it("shows a ScaledUiAmount LP's range in UI units but values it in raw units", () => {
+    // Base token scaled ×2: raw prices 90/110/100 are 45/55/50 per UI token; $100 per raw token.
+    const scaled = dlmm(100);
+    scaled.tokenX = { ...scaled.tokenX, uiMultiplier: 2 };
+    const lp = buildHoldingsView(vault(), [scaled]).positions.find((p) => p.kind === "lp");
+    expect(lp?.kind === "lp" && lp.range).toMatchObject({ lowerPrice: "45", upperPrice: "55", activePrice: "50" });
+    const plain = buildHoldingsView(vault(), [dlmm(100)]).positions.find((p) => p.kind === "lp");
+    expect(lp?.usd).toBe(plain?.usd);
+  });
+
   it("flags closable positions and out-of-range LPs", () => {
     const empty = { ...jupiter(100), vaultBalance: "0" };
     const lpOut = { ...dlmm(100), activeBinId: 200, amountX: "0", amountY: "0", pendingFeeX: "0", pendingFeeY: "0" };

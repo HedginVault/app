@@ -13,6 +13,7 @@ vi.mock("@/server/program", async (orig) => ({
 import { clearCache } from "@/server/cache";
 import { getTokenInfo, getTokenInfos, getTokenProgram, TOKEN_2022_PROGRAM_ID } from "@/server/tokens";
 import { TOKEN_PROGRAM_ID } from "@/server/program";
+import openaiMint from "./data/openai-prestock-mint.json";
 
 const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 const NEARKAT = new PublicKey("6UtY9iTZMQQ5QZVrbzFnNaJntV7oySm9k97mvwnuZcxr");
@@ -45,6 +46,14 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("getTokenInfos", () => {
+  it("reports a ScaledUiAmount mint's multiplier in effect, and none for plain mints", async () => {
+    const openai = { data: Buffer.from(openaiMint.data, "base64"), owner: TOKEN_2022_PROGRAM_ID, executable: false, lamports: 1 };
+    getMultipleAccountsInfo.mockResolvedValueOnce([openai, mintAccount(6, TOKEN_2022_PROGRAM_ID)]);
+    const infos = await getTokenInfos([new PublicKey(openaiMint.mint), pk(5)]);
+    expect(infos.get(openaiMint.mint)).toMatchObject({ decimals: 9, uiMultiplier: 1.4861347 });
+    expect(infos.get(pk(5).toBase58())).not.toHaveProperty("uiMultiplier");
+  });
+
   it("answers known mints with zero RPC and batches unknown mints into one read", async () => {
     getMultipleAccountsInfo.mockResolvedValueOnce([mintAccount(9, TOKEN_PROGRAM_ID), mintAccount(8, TOKEN_2022_PROGRAM_ID)]);
     const infos = await getTokenInfos([USDC, pk(3), pk(4)]);

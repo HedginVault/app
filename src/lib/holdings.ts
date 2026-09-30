@@ -1,5 +1,5 @@
 import { shareBps } from "./allocation";
-import { usdValue } from "./format";
+import { toUiPrice, usdValue } from "./format";
 import type {
   HoldingsView,
   Money,
@@ -10,6 +10,9 @@ import type {
   VaultDetail,
 } from "./types";
 import { valueHoldings, type RawHolding, type ValuedHolding } from "./valuation";
+
+/** A server pool price (per raw token) in UI units, as a string like the server's. */
+const uiPoolPrice = (raw: string, s: { tokenX: TokenInfo; tokenY: TokenInfo }) => String(toUiPrice(Number(raw), s.tokenX, s.tokenY));
 
 export const depositTokenOf = (v: VaultDetail): TokenInfo => ({
   mint: v.depositMint,
@@ -68,7 +71,7 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
   for (const s of strategies) {
     if (s.type === "jupiter") {
       if (!tokens.has(s.targetMint))
-        tokens.set(s.targetMint, { mint: s.targetMint, symbol: s.symbol, decimals: s.decimals, logo: s.logo, priceUsd: s.priceUsd });
+        tokens.set(s.targetMint, { mint: s.targetMint, symbol: s.symbol, decimals: s.decimals, logo: s.logo, priceUsd: s.priceUsd, ...(s.uiMultiplier && { uiMultiplier: s.uiMultiplier }) });
       raw.push({ kind: "jupiter", strategy: s.address, mint: s.targetMint, decimals: s.decimals, amount: BigInt(s.vaultBalance) });
     } else if (s.type === "dlmm") {
       for (const t of [s.tokenX, s.tokenY]) if (!tokens.has(t.mint)) tokens.set(t.mint, t);
@@ -168,9 +171,10 @@ export function buildHoldingsView(v: VaultDetail, strategies: StrategyView[]): H
         upperBinId: s.upperBinId,
         activeBinId: s.activeBinId,
         binStep: s.binStep,
-        lowerPrice: s.lowerPrice,
-        upperPrice: s.upperPrice,
-        activePrice: s.activePrice,
+        // UI-unit prices (what Meteora and wallets show); the server's are per raw token.
+        lowerPrice: uiPoolPrice(s.lowerPrice, s),
+        upperPrice: uiPoolPrice(s.upperPrice, s),
+        activePrice: uiPoolPrice(s.activePrice, s),
         inRange: s.activeBinId >= s.lowerBinId && s.activeBinId <= s.upperBinId,
       },
       bins: s.bins,

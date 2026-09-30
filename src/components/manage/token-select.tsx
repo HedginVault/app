@@ -49,7 +49,7 @@ function Row({ token, balance, onPick }: { token: TokenInfo & Partial<TokenSearc
           </span>
         </span>
         <span className="text-right text-[12px] tabular-nums text-muted">
-          {balance !== undefined ? `${formatTokenAmount(balance, token.decimals, { maxFraction: 4 })} held` : token.liquidityUsd != null ? `${formatUsd(token.liquidityUsd, { compact: true })} liq.` : ""}
+          {balance !== undefined ? `${formatTokenAmount(balance, token, { maxFraction: 4 })} held` : token.liquidityUsd != null ? `${formatUsd(token.liquidityUsd, { compact: true })} liq.` : ""}
         </span>
       </button>
     </li>

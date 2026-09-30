@@ -2,7 +2,7 @@ import "server-only";
 import type { OrganicScoreLabel, PoolSearchPage, PoolSearchResult, TokenSearchResult } from "@/lib/types";
 import { cached } from "./cache";
 import { ApiError } from "./errors";
-import { JUPITER_HOST, jupiterHeaders } from "./prices";
+import { getPrices, JUPITER_HOST, jupiterHeaders } from "./prices";
 import { getTokenLogos } from "./tokens";
 
 const METEORA_HOST = process.env.METEORA_DLMM_API_HOST?.trim() || "https://dlmm.datapi.meteora.ag";
@@ -30,7 +30,6 @@ interface JupiterSearchToken {
   name: string;
   icon: string | null;
   decimals: number;
-  usdPrice?: number | null;
   liquidity?: number | null;
   isVerified?: boolean;
   organicScore?: number | null;
@@ -39,10 +38,19 @@ interface JupiterSearchToken {
 
 const SCORE_LABELS = new Set(["high", "medium", "low"]);
 
-/** Jupiter token search by symbol, name or mint. One HTTP call per distinct query per hour. */
-export const searchTokens = (query: string) => {
+/**
+ * Jupiter token search by symbol, name or mint. One search call per distinct query per hour; prices
+ * come from the price API (60 s cache) because search's usdPrice is per UI token, not per raw token.
+ */
+export async function searchTokens(query: string): Promise<TokenSearchResult[]> {
+  const rows = await searchTokenRows(query);
+  const prices = await getPrices(rows.map((r) => r.mint));
+  return rows.map((r) => ({ ...r, priceUsd: prices.get(r.mint) ?? null }));
+}
+
+const searchTokenRows = (query: string) => {
   const q = normalize(query);
-  return cached(`tokensearch:${q}`, TOKEN_TTL_MS, async (): Promise<TokenSearchResult[]> => {
+  return cached(`tokensearch:${q}`, TOKEN_TTL_MS, async (): Promise<Omit<TokenSearchResult, "priceUsd">[]> => {
     const rows = await getJson<JupiterSearchToken[]>(
       `${JUPITER_HOST}/tokens/v2/search?query=${encodeURIComponent(q)}`,
       { headers: jupiterHeaders() },
@@ -53,7 +61,6 @@ export const searchTokens = (query: string) => {
       name: t.name,
       decimals: t.decimals,
       logo: t.icon ?? null,
-      priceUsd: t.usdPrice ?? null,
       verified: t.isVerified ?? false,
       liquidityUsd: t.liquidity ?? null,
       organicScore: typeof t.organicScore === "number" ? t.organicScore : null,

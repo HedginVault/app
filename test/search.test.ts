@@ -39,6 +39,10 @@ beforeEach(() => {
         JSON.stringify(ids.map((id) => jupToken(id, id === USDC ? { isVerified: false, usdPrice: null, organicScore: undefined, organicScoreLabel: "bogus" } : {}))),
       );
     }
+    if (u.pathname.endsWith("/price/v3")) {
+      // SOL priced, USDC unpriced; the search body's usdPrice (100) must not leak through.
+      return new Response(JSON.stringify({ [SOL]: { usdPrice: 90, scaledUiConfig: { multiplier: 1, newMultiplier: 1.5, newMultiplierEffectiveAt: "2020-01-01T00:00:00Z" } }, [USDC]: null }));
+    }
     if (u.pathname === "/pools") {
       return new Response(
         JSON.stringify({ total: 2, pages: 1, current_page: 1, page_size: 20, data: [meteoraPool(), meteoraPool({ address: "bad", is_blacklisted: true })] }),
@@ -53,10 +57,11 @@ afterEach(() => vi.unstubAllGlobals());
 describe("searchTokens", () => {
   it("maps Jupiter results and caches per trimmed query", async () => {
     const r = await searchTokens(" SOL ");
-    expect(r[0]).toEqual({ mint: SOL, symbol: "SOL", name: "n", decimals: 9, logo: `https://x/${SOL}.png`, priceUsd: 100, verified: true, liquidityUsd: 5_000_000, organicScore: 98.4, organicScoreLabel: "high" });
+    expect(r[0]).toEqual({ mint: SOL, symbol: "SOL", name: "n", decimals: 9, logo: `https://x/${SOL}.png`, priceUsd: 135, verified: true, liquidityUsd: 5_000_000, organicScore: 98.4, organicScoreLabel: "high" });
     expect(r[1]).toMatchObject({ mint: USDC, verified: false, priceUsd: null, organicScore: null, organicScoreLabel: null });
     await searchTokens("SOL");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const searches = fetchMock.mock.calls.filter(([url]) => new URL(url as string).pathname.endsWith("/tokens/v2/search"));
+    expect(searches).toHaveLength(1);
   });
 
   it("sends the query to Jupiter in its original case (mint addresses are case-sensitive)", async () => {

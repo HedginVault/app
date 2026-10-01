@@ -3,9 +3,11 @@ name: Build & Deploy
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**/*.md'
+      - 'public/**/*.md'
   workflow_dispatch:
 
 # Serialize production deploys; never cancel an in-flight rollout.

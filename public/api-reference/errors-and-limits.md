@@ -17,4 +17,4 @@ The app limits each key to 120 requests per minute and each IP to 60 per minute 
 
 A network or RPC error during send can be ambiguous. After local validation, the API returns `status: "unknown"` with a signature and receipt. Poll [transaction status](send-and-status.md) before rebuilding or retrying an action.
 
-Use synthetic keys and a test cluster for development. The app defaults to mainnet-beta, so do not treat its default endpoint as a test network. See the [complete V1 reference](https://raw.githubusercontent.com/HedginVault/app/main/docs/manager-api.md).
+Use synthetic keys and a test cluster for development. The app defaults to mainnet-beta, so do not treat its default endpoint as a test network. See [transaction lifecycle](https://hedgin.xyz/guides/transactions.md) and [call examples](examples.md).

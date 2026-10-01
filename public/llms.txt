@@ -1,10 +1,31 @@
-# Hedgin Manager Bot API
+# Hedgin
 
-- [Getting started](https://hedgin.xyz/api-reference/getting-started.md): Base URL, supported actions, and the build, sign, send, confirm workflow.
-- [Authentication and API keys](https://hedgin.xyz/api-reference/authentication.md): Bearer keys, scopes, vault authority, provisioning, and rotation.
-- [Read endpoints](https://hedgin.xyz/api-reference/reads.md): Vaults, holdings, strategies, Jupiter quotes, and Meteora DLMM pool search.
-- [Transaction builders](https://hedgin.xyz/api-reference/transactions.md): Every supported Jupiter, DLMM, and strategy-close action, its request fields, and multi-step execution.
-- [Send and status](https://hedgin.xyz/api-reference/send-and-status.md): Local signing, signed transaction relay, confirmation polling, and safe retries.
-- [Errors and limits](https://hedgin.xyz/api-reference/errors-and-limits.md): Error responses, HTTP statuses, rate limits, and ambiguous outcomes.
-- [Complete V1 reference](https://raw.githubusercontent.com/HedginVault/app/main/docs/manager-api.md): Full manager API contract and examples in the repository.
-- [JSON response types](https://raw.githubusercontent.com/HedginVault/app/main/src/lib/types.ts): Source definitions for vault, holdings, strategy, quote, and pool views.
+> Solana vaults with program-enforced custody. This index helps agents discover current product features, choose a supported access path, and integrate with the manager bot API.
+
+## Product and agent guides
+
+- [Start here](https://hedgin.xyz/guides/start-here.md): Choose between public reads, the manager bot API, wallet-driven web flows, and direct on-chain integration.
+- [Hedge Vault protocol](https://hedgin.xyz/guides/protocol.md): Roles, custody, accounts, strategy boundaries, NAV, and what the API key can authorize.
+- [Vault discovery and NAV](https://hedgin.xyz/guides/vaults-and-nav.md): Find vaults; interpret status, holdings, posted NAV, historical NAV, and partial valuations.
+- [Deposits and withdrawals](https://hedgin.xyz/guides/deposits-and-withdrawals.md): Request, escrow, later-epoch settlement, cancellation, and current access path.
+- [Manager operations](https://hedgin.xyz/guides/manager-operations.md): Vault creation, settings, fees, requests, portfolio, and which actions V1 bots can automate.
+- [Jupiter swaps](https://hedgin.xyz/guides/jupiter-swaps.md): Quotes, deposit-mint restriction, strategy initialization, slippage, and swap confirmation.
+- [Meteora DLMM](https://hedgin.xyz/guides/meteora-dlmm.md): Pool discovery, position open/add/remove/claim/zap-out, wide batches, and continuation steps.
+- [Phoenix perps](https://hedgin.xyz/guides/phoenix-perps.md): USDC-vault trader onboarding, collateral, orders, positions, and the current bot API boundary.
+- [Transaction lifecycle](https://hedgin.xyz/guides/transactions.md): Build, local signature, relay, confirmation, ambiguous sends, retries, and partial batches.
+
+## Manager bot API V1
+
+- [API structure and endpoint map](https://hedgin.xyz/api-reference/index.md): Base URL, all GET and POST routes, required scopes, supported builder actions, and the full call sequence.
+- [Getting started](https://hedgin.xyz/api-reference/getting-started.md): Set up a scoped bot and make its first read and transaction.
+- [Authentication and API keys](https://hedgin.xyz/api-reference/authentication.md): Bearer key format, vault and action scopes, current authority checks, provisioning, and rotation.
+- [Read endpoints](https://hedgin.xyz/api-reference/reads.md): List vaults, inspect holdings and strategies, request Jupiter quotes, and search Meteora pools.
+- [Response views and units](https://hedgin.xyz/api-reference/view-types.md): JSON envelopes, important fields, base-unit strings, partial valuations, and transaction status shapes.
+- [Transaction builders](https://hedgin.xyz/api-reference/transactions.md): Request bodies and responses for Jupiter, DLMM, strategy close, and continuation actions.
+- [Send and status](https://hedgin.xyz/api-reference/send-and-status.md): Sign v0 transactions locally, relay with build tickets, and poll receipts.
+- [Call examples](https://hedgin.xyz/api-reference/examples.md): Curl reads and builds plus a Node signing, send, and status example.
+- [Errors and limits](https://hedgin.xyz/api-reference/errors-and-limits.md): Error codes, rate limits, provider outages, and unknown transaction outcomes.
+
+## On-chain interface
+
+- [Hedge Vault program IDL](https://hedgin.xyz/idl/hedge_vault.json): Machine-readable Solana instruction and account interface for direct program integrations. It is not a list of HTTP bot routes.

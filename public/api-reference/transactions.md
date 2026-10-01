@@ -13,7 +13,7 @@ Call `POST https://hedgin.xyz/api/external/v1/transactions/{action}` with a bear
 | `strategy/close` | `strategy` |
 | `dlmm/extend`, `dlmm/add-range`, `dlmm/zap-out/swap` | Continuation actions: pass `next.body` from the preceding build after its transaction confirms. |
 
-`amount`, `amountX`, and `amountY` are decimal strings in token base units. Consult the [complete V1 reference](https://raw.githubusercontent.com/HedginVault/app/main/docs/manager-api.md) and builder validation for other bounds and accepted `shape` values.
+`amount`, `amountX`, and `amountY` are decimal strings in token base units. `shape` is `spot`, `curve`, or `bidAsk`. Other numeric fields and pool/position relationships are validated by the builder and on-chain program. Read [Meteora DLMM](https://hedgin.xyz/guides/meteora-dlmm.md) for range and batch behavior.
 
 The build response is `{ vault, result }`. `result` is one transaction object or an array. Each object includes `transaction` (unsigned base64 Solana v0 transaction), `simulation`, `ticket`, and `blockhash`. It may include `next`, `sendConcurrently`, or action metadata. `simulation.deferred: true` means the step depends on earlier confirmed state and will be checked at send preflight. The build ticket expires after 90 seconds and binds the exact transaction message, key, vault, action, cluster, and program.
 

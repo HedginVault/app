@@ -7,7 +7,7 @@ on:
       - '**'
       - '!docs/**'
       - '!**/*.md'
-      - 'public/api-reference/**'
+      - 'public/**/*.md'
   workflow_dispatch:
 
 # Serialize production deploys; never cancel an in-flight rollout.

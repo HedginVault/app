@@ -8,4 +8,4 @@ The API sets `payer` from the key's manager public key. The bot must still sign 
 
 Database-backed edits and revocations take effect after an app cache of about five seconds. If the key database is unavailable or its record is invalid, authentication fails closed with HTTP 503. Revoking an API key does not rotate a compromised Solana manager key; rotate vault authority on chain separately.
 
-See the [complete V1 reference](https://raw.githubusercontent.com/HedginVault/app/main/docs/manager-api.md) for provisioning and server-only configuration.
+For an integration, ask a Hedgin administrator to provision the key with the correct manager public key, vault allowlist, `read` and `send` scopes, and exact builder actions. Rotate by creating a new key, moving the bot to it, and revoking the old key. See [getting started](getting-started.md), [builder actions](transactions.md), and [call examples](examples.md).

@@ -1247,6 +1247,20 @@ export type HedgeVault = {
           "writable": true
         },
         {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
           "name": "vaultTokenX",
           "writable": true,
           "pda": {
@@ -1447,6 +1461,20 @@ export type HedgeVault = {
         {
           "name": "strategy",
           "writable": true
+        },
+        {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
         },
         {
           "name": "vaultTokenX",
@@ -1764,6 +1792,20 @@ export type HedgeVault = {
         {
           "name": "strategy",
           "writable": true
+        },
+        {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
         },
         {
           "name": "vaultTokenX",
@@ -2115,11 +2157,28 @@ export type HedgeVault = {
           }
         },
         {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
           "name": "position",
           "writable": true
         },
         {
-          "name": "lbPair"
+          "name": "lbPair",
+          "docs": [
+            "Checked against PositionV2 and by Meteora's CPI, read for the pair mints."
+          ]
         },
         {
           "name": "eventAuthority"
@@ -2195,12 +2254,29 @@ export type HedgeVault = {
           }
         },
         {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
           "name": "position",
           "writable": true,
           "signer": true
         },
         {
           "name": "lbPair",
+          "docs": [
+            "Meteora DLMM Lb Pair, read for the pair mints and validated in dlmm program"
+          ],
           "writable": true
         },
         {
@@ -2252,6 +2328,20 @@ export type HedgeVault = {
         {
           "name": "strategy",
           "writable": true
+        },
+        {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
         },
         {
           "name": "vaultTokenX",
@@ -2457,6 +2547,20 @@ export type HedgeVault = {
         {
           "name": "strategy",
           "writable": true
+        },
+        {
+          "name": "strategyX",
+          "docs": [
+            "Jupiter strategy tracking token X, `None` only when token X is the deposit mint."
+          ],
+          "optional": true
+        },
+        {
+          "name": "strategyY",
+          "docs": [
+            "Jupiter strategy tracking token Y, `None` only when token Y is the deposit mint."
+          ],
+          "optional": true
         },
         {
           "name": "vaultTokenX",
@@ -4979,6 +5083,19 @@ export type HedgeVault = {
       ]
     },
     {
+      "name": "lbPair",
+      "discriminator": [
+        33,
+        11,
+        49,
+        98,
+        181,
+        101,
+        177,
+        13
+      ]
+    },
+    {
       "name": "manager",
       "discriminator": [
         221,
@@ -5868,6 +5985,16 @@ export type HedgeVault = {
       "code": 6075,
       "name": "invalidPositionBinRange",
       "msg": "Position bin range is outside the supported bounds"
+    },
+    {
+      "code": 6076,
+      "name": "pairStrategyMissing",
+      "msg": "Pair mint has no Jupiter strategy, initialize one for it first"
+    },
+    {
+      "code": 6077,
+      "name": "invalidPairStrategy",
+      "msg": "Pair strategy does not track this pair mint"
     }
   ],
   "types": [
@@ -6503,6 +6630,211 @@ export type HedgeVault = {
           {
             "name": "destinationReceived",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "lbPair",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "parameters",
+            "type": {
+              "defined": {
+                "name": "staticParameters"
+              }
+            }
+          },
+          {
+            "name": "vParameters",
+            "type": {
+              "defined": {
+                "name": "variableParameters"
+              }
+            }
+          },
+          {
+            "name": "bumpSeed",
+            "type": {
+              "array": [
+                "u8",
+                1
+              ]
+            }
+          },
+          {
+            "name": "binStepSeed",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "pairType",
+            "type": "u8"
+          },
+          {
+            "name": "activeId",
+            "type": "i32"
+          },
+          {
+            "name": "binStep",
+            "type": "u16"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "requireBaseFactorSeed",
+            "type": "u8"
+          },
+          {
+            "name": "baseFactorSeed",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "activationType",
+            "type": "u8"
+          },
+          {
+            "name": "creatorPoolOnOffControl",
+            "type": "u8"
+          },
+          {
+            "name": "tokenXMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenYMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "reserveX",
+            "type": "pubkey"
+          },
+          {
+            "name": "reserveY",
+            "type": "pubkey"
+          },
+          {
+            "name": "protocolFee",
+            "type": {
+              "defined": {
+                "name": "protocolFee"
+              }
+            }
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "rewardInfos",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "rewardInfo"
+                  }
+                },
+                2
+              ]
+            }
+          },
+          {
+            "name": "oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "binArrayBitmap",
+            "type": {
+              "array": [
+                "u64",
+                16
+              ]
+            }
+          },
+          {
+            "name": "lastUpdatedAt",
+            "type": "i64"
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "preActivationSwapAddress",
+            "type": "pubkey"
+          },
+          {
+            "name": "baseKey",
+            "type": "pubkey"
+          },
+          {
+            "name": "activationPoint",
+            "type": "u64"
+          },
+          {
+            "name": "preActivationDuration",
+            "type": "u64"
+          },
+          {
+            "name": "padding3",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "padding4",
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenMintXProgramFlag",
+            "type": "u8"
+          },
+          {
+            "name": "tokenMintYProgramFlag",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                22
+              ]
+            }
           }
         ]
       }
@@ -7459,6 +7791,26 @@ export type HedgeVault = {
       }
     },
     {
+      "name": "protocolFee",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amountX",
+            "type": "u64"
+          },
+          {
+            "name": "amountY",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "protocolPaused",
       "type": {
         "kind": "struct",
@@ -7524,6 +7876,117 @@ export type HedgeVault = {
           {
             "name": "length",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rewardInfo",
+      "docs": [
+        "Stores the state relevant for tracking liquidity mining rewards"
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "funder",
+            "type": "pubkey"
+          },
+          {
+            "name": "rewardDuration",
+            "type": "u64"
+          },
+          {
+            "name": "rewardDurationEnd",
+            "type": "u64"
+          },
+          {
+            "name": "rewardRate",
+            "type": "u128"
+          },
+          {
+            "name": "lastUpdateTime",
+            "type": "u64"
+          },
+          {
+            "name": "cumulativeSecondsWithEmptyLiquidityReward",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "staticParameters",
+      "docs": [
+        "Parameter that set by the protocol"
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseFactor",
+            "type": "u16"
+          },
+          {
+            "name": "filterPeriod",
+            "type": "u16"
+          },
+          {
+            "name": "decayPeriod",
+            "type": "u16"
+          },
+          {
+            "name": "reductionFactor",
+            "type": "u16"
+          },
+          {
+            "name": "variableFeeControl",
+            "type": "u32"
+          },
+          {
+            "name": "maxVolatilityAccumulator",
+            "type": "u32"
+          },
+          {
+            "name": "minBinId",
+            "type": "i32"
+          },
+          {
+            "name": "maxBinId",
+            "type": "i32"
+          },
+          {
+            "name": "protocolShare",
+            "type": "u16"
+          },
+          {
+            "name": "baseFeePowerFactor",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
           }
         ]
       }
@@ -7735,6 +8198,55 @@ export type HedgeVault = {
               "array": [
                 "u64",
                 2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "variableParameters",
+      "docs": [
+        "Parameters that changes based on dynamic of the market"
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "volatilityAccumulator",
+            "type": "u32"
+          },
+          {
+            "name": "volatilityReference",
+            "type": "u32"
+          },
+          {
+            "name": "indexReference",
+            "type": "i32"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          },
+          {
+            "name": "lastUpdateTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u8",
+                8
               ]
             }
           }

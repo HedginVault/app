@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const pk = (n: number) => new PublicKey(new Uint8Array(32).fill(n));
 const { resize, assemble, fits } = vi.hoisted(() => ({
-  resize: vi.fn(async (...args: [unknown, unknown, unknown, unknown, unknown, number]) => {
+  resize: vi.fn(async (...args: [unknown, unknown, unknown, unknown, unknown, unknown, number]) => {
     void args;
     return { kind: "resize" };
   }),
@@ -14,6 +14,11 @@ const { resize, assemble, fits } = vi.hoisted(() => ({
   fits: vi.fn((_payer, instructions: unknown[]) => instructions.length <= 3),
 }));
 
+// the vault already holds a Jupiter strategy for every pair mint
+vi.mock("@/server/tx/pair-strategy", () => ({
+  pairStrategySetupIxs: vi.fn(async () => []),
+  readPairMints: vi.fn(async () => ({})),
+}));
 vi.mock("@/server/tx/context", () => ({
   loadVaultCtx: vi.fn(async () => ({ key: pk(1) })),
   assertAuthority: vi.fn(),
@@ -29,6 +34,7 @@ vi.mock("@/server/tx/dlmm", () => ({
   dlmmAddLiquidityForRangeIx: vi.fn(async () => [{ kind: "add" }]),
   missingBinArrayIxs: vi.fn(async () => []),
   onChainUpper: (exclusive: number) => exclusive - 1,
+  pairMints: () => ({}),
 }));
 vi.mock("@/server/tx/assemble", () => ({ assemble }));
 vi.mock("@/server/tx/size", () => ({ fitsInTransaction: fits }));
@@ -50,7 +56,7 @@ describe("wide position creation", () => {
     const response = await post(200);
     expect(response.status).toBe(200);
     expect(resize).toHaveBeenCalledTimes(2);
-    expect(resize.mock.calls.map((call) => call[5])).toEqual([91, 39]);
+    expect(resize.mock.calls.map((call) => call[6])).toEqual([91, 39]);
     expect(assemble.mock.calls[0]?.[1]).toHaveLength(3);
     const built = await response.json();
     expect(built).toHaveLength(3);

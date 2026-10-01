@@ -9,6 +9,7 @@ import { handlePost, pubkey } from "@/server/route";
 import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
 import { dlmmRemoveLiquidityIx } from "@/server/tx/dlmm";
+import { pairStrategySetupIxs, readPairMints } from "@/server/tx/pair-strategy";
 import { fitsInTransaction } from "@/server/tx/size";
 
 export const POST = handlePost(
@@ -21,12 +22,14 @@ export const POST = handlePost(
     const program = getProgram();
     const account = await program.account.positionV2.fetch(position);
     if (!account.owner.equals(ctx.key)) throw new ApiError(403, "Denied", "position does not belong to this vault");
+    // a position opened before pair strategies were enforced needs them before it can be unwound
+    const setup = await pairStrategySetupIxs(program, ctx, authority, await readPairMints(program, account.lbPair));
     if (b.cursorBinId === undefined && account.upperBinId - account.lowerBinId + 1 <= DLMM_INITIAL_POSITION_WIDTH)
-      return assemble(authority, await dlmmRemoveLiquidityIx(program, ctx, authority, position, b.bpsToRemove));
+      return assemble(authority, [...setup, ...(await dlmmRemoveLiquidityIx(program, ctx, authority, position, b.bpsToRemove))]);
     let lowerBinId = b.cursorBinId ?? account.lowerBinId;
     if (lowerBinId < account.lowerBinId || lowerBinId > account.upperBinId)
       throw new ApiError(400, "Validation", "cursor must be inside the position");
-    const built: BuiltTransaction[] = [];
+    const built: BuiltTransaction[] = setup.length ? [await assemble(authority, setup)] : [];
     while (lowerBinId <= account.upperBinId) {
       let chunkSize = DLMM_MAX_EXIT_BINS_PER_TX;
       while (chunkSize >= 1) {
@@ -37,7 +40,7 @@ export const POST = handlePost(
           chunkSize = Math.max(1, Math.floor(chunkSize / 2));
           continue;
         }
-        built.push({ ...(await assemble(authority, ixs)), sendConcurrently: true });
+        built.push({ ...(await assemble(authority, ixs, { deferSimulation: setup.length > 0 })), sendConcurrently: true });
         lowerBinId = upperBinId + 1;
         break;
       }

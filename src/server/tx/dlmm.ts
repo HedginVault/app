@@ -40,6 +40,7 @@ import { getMultipleAccounts } from "../rpc";
 import { getTokenInfos } from "../tokens";
 import type { VaultCtx } from "./context";
 import { jupiterInitializeIx, jupiterTokenLedgerSwapIx } from "./jupiter";
+import { pairStrategyAccounts, type PairMints } from "./pair-strategy";
 import { closeStrategyIx } from "./vault";
 
 type P = Program<HedgeVault>;
@@ -95,15 +96,21 @@ export const readPoolInfo = (address: string) => {
 
 export type DlmmContext = ReturnType<typeof dlmmContextFor>;
 
+export const pairMints = (dlmm: DLMM): PairMints => ({
+  tokenXMint: dlmm.tokenX.publicKey,
+  tokenYMint: dlmm.tokenY.publicKey,
+});
+
 /** Accounts and remaining accounts for a position over `[lowerBinId, upperBinId]` (inclusive) in `dlmm`. No I/O. */
 export function dlmmContextFor(
-  vault: PublicKey,
+  ctx: Pick<VaultCtx, "key" | "depositMint">,
   position: PublicKey,
   payer: PublicKey,
   dlmm: DLMM,
   lowerBinId: number,
   upperBinId: number,
 ) {
+  const vault = ctx.key;
   const lbPair = dlmm.pubkey;
   const vaultTokenX = getAssociatedTokenAddressSync(dlmm.tokenX.publicKey, vault, true, dlmm.tokenX.owner);
   const vaultTokenY = getAssociatedTokenAddressSync(dlmm.tokenY.publicKey, vault, true, dlmm.tokenY.owner);
@@ -139,6 +146,7 @@ export function dlmmContextFor(
     tokenYProgram: dlmm.tokenY.owner,
     config: getConfigPda(),
     strategy: getStrategyPda(vault, position),
+    ...pairStrategyAccounts(ctx, pairMints(dlmm)),
     eventAuthority: DLMM_EVENT_AUTHORITY,
   };
 
@@ -150,7 +158,7 @@ export function dlmmContextFor(
  * the position account. Costs 1 RPC for the position plus the pool hydration (cached 5 minutes).
  */
 export async function getDlmmContext(
-  vault: PublicKey,
+  ctx: Pick<VaultCtx, "key" | "depositMint">,
   position: PublicKey,
   payer: PublicKey,
   range?: { lowerBinId: number; upperBinId: number },
@@ -160,7 +168,7 @@ export async function getDlmmContext(
     throw new ApiError(400, "Validation", "bin range must be inside the position");
   const dlmm = await getPool(positionAccount.lbPair);
   return dlmmContextFor(
-    vault, position, payer, dlmm,
+    ctx, position, payer, dlmm,
     range?.lowerBinId ?? positionAccount.lowerBinId,
     range?.upperBinId ?? positionAccount.upperBinId,
   );
@@ -172,6 +180,7 @@ export async function dlmmInitializePositionIx(
   ctx: VaultCtx,
   authority: PublicKey,
   lbPair: PublicKey,
+  mints: PairMints,
   lowerBinId: number,
   upperBinId: number,
 ) {
@@ -182,6 +191,7 @@ export async function dlmmInitializePositionIx(
       authority,
       config: getConfigPda(),
       vault: ctx.key,
+      ...pairStrategyAccounts(ctx, mints),
       position: position.publicKey,
       lbPair,
       eventAuthority: DLMM_EVENT_AUTHORITY,
@@ -199,6 +209,7 @@ export async function dlmmExtendPositionIx(
   authority: PublicKey,
   position: PublicKey,
   lbPair: PublicKey,
+  mints: PairMints,
   binsToAdd: number,
 ) {
   return program.methods
@@ -207,6 +218,7 @@ export async function dlmmExtendPositionIx(
       authority,
       config: getConfigPda(),
       vault: ctx.key,
+      ...pairStrategyAccounts(ctx, mints),
       position,
       lbPair,
       eventAuthority: DLMM_EVENT_AUTHORITY,
@@ -234,7 +246,7 @@ export async function dlmmAddLiquidityForRangeIx(
   shape: DlmmShape,
   maxActiveBinSlippage: number,
 ): Promise<TransactionInstruction[]> {
-  const c = dlmmContextFor(ctx.key, position, authority, dlmm, lowerBinId, upperBinIdInclusive);
+  const c = dlmmContextFor(ctx, position, authority, dlmm, lowerBinId, upperBinIdInclusive);
   const activeId = (await getActiveBinIds([dlmm])).get(dlmm.pubkey.toBase58()) ?? dlmm.lbPair.activeId;
   const ix = await program.methods
     .meteoraDlmmAddLiquidity({
@@ -267,7 +279,7 @@ export async function dlmmAddLiquidityIx(
   shape: DlmmShape,
   maxActiveBinSlippage: number,
 ) {
-  const { dlmm, lowerBinId, upperBinId } = await getDlmmContext(ctx.key, position, authority);
+  const { dlmm, lowerBinId, upperBinId } = await getDlmmContext(ctx, position, authority);
   return dlmmAddLiquidityForRangeIx(
     program, ctx, authority, position, dlmm, lowerBinId, upperBinId, amountX, amountY, shape, maxActiveBinSlippage,
   );
@@ -301,7 +313,7 @@ export async function dlmmRemoveLiquidityIx(
   range?: { lowerBinId: number; upperBinId: number },
 ) {
   const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
-    ctx.key,
+    ctx,
     position,
     authority,
     range,
@@ -331,7 +343,7 @@ async function buildDlmmClosePosition(
   treasuryAuthority: PublicKey,
 ) {
   const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
-    ctx.key,
+    ctx,
     position,
     authority,
   );
@@ -345,7 +357,7 @@ async function buildDlmmClosePosition(
     .accounts({ ...accounts, authority, treasuryAuthority, memoProgram: MEMO_PROGRAM_ID })
     .remainingAccounts(remainingAccounts)
     .instruction();
-  const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy);
+  const closeIx = await closeStrategyIx(program, ctx, authority, accounts.strategy, accounts);
   return {
     ixs: [...createAtaIxs, removeIx, claimIx, closeIx],
     tokenMints: [dlmm.tokenX.publicKey, dlmm.tokenY.publicKey],
@@ -402,7 +414,7 @@ async function zapOutParts(
   range?: BinRange,
 ) {
   const { dlmm, accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
-    ctx.key,
+    ctx,
     position,
     authority,
     range,
@@ -459,9 +471,10 @@ async function ledgerSwapAround(
   strategyExists: boolean,
   produce: TransactionInstruction[],
 ) {
-  if (amount.isZero())
-    return { ixs: produce, lookupTables: [] as AddressLookupTableAccount[], initializesStrategy: false };
+  // remove and claim pay the source mint into the vault, so the program requires its strategy either way
   const initIxs = strategyExists ? [] : [await jupiterInitializeIx(program, ctx, authority, sourceMint)];
+  if (amount.isZero())
+    return { ixs: [...initIxs, ...produce], lookupTables: [] as AddressLookupTableAccount[], initializesStrategy: !strategyExists };
   const swap = await jupiterTokenLedgerSwapIx(program, ctx, authority, sourceMint, ctx.depositMint, amount, slippageBps);
   return {
     ixs: [...initIxs, swap.tokenLedgerInstruction, ...produce, swap.ix],
@@ -490,14 +503,13 @@ export async function dlmmZapOutIxs(
 ) {
   const parts = await zapOutParts(program, ctx, authority, position, treasuryAuthority, range);
   const estimatedAmount = zapOutEstimatedAmount(parts.positionAmount, parts.pendingFee);
-  const strategyExists =
-    estimatedAmount.isZero() || jupiterStrategyInitialized || (await jupiterStrategyExists(ctx, parts.sourceMint));
+  const strategyExists = jupiterStrategyInitialized || (await jupiterStrategyExists(ctx, parts.sourceMint));
   const swap = await ledgerSwapAround(
     program, ctx, authority, parts.sourceMint, estimatedAmount, slippageBps, strategyExists,
     [parts.removeIx, parts.claimIx],
   );
   // A wide position closes in the last batch transaction after every range has confirmed.
-  const closeIxs = range ? [] : [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy)];
+  const closeIxs = range ? [] : [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy, parts.accounts)];
   return {
     ixs: [...parts.createAtaIxs, ...swap.ixs, ...closeIxs],
     lookupTables: swap.lookupTables,
@@ -521,8 +533,7 @@ export async function dlmmZapOutSplitIxs(
   const parts = await zapOutParts(program, ctx, authority, position, treasuryAuthority);
   const liquidityAmount = zapOutEstimatedAmount(parts.positionAmount, new BN(0));
   const feeAmount = zapOutEstimatedAmount(new BN(0), parts.pendingFee);
-  const strategyExists =
-    (liquidityAmount.isZero() && feeAmount.isZero()) || (await jupiterStrategyExists(ctx, parts.sourceMint));
+  const strategyExists = await jupiterStrategyExists(ctx, parts.sourceMint);
   const remove = await ledgerSwapAround(
     program, ctx, authority, parts.sourceMint, liquidityAmount, slippageBps, strategyExists, [parts.removeIx],
   );
@@ -541,7 +552,7 @@ export async function dlmmZapOutSplitIxs(
     { ...remove, ixs: [...parts.createAtaIxs, ...remove.ixs] },
     claim,
     {
-      ixs: [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy)],
+      ixs: [await closeStrategyIx(program, ctx, authority, parts.accounts.strategy, parts.accounts)],
       lookupTables: [] as AddressLookupTableAccount[],
       initializesStrategy: false,
     },
@@ -557,7 +568,7 @@ export async function dlmmClaimFeeIx(
   range?: { lowerBinId: number; upperBinId: number },
 ) {
   const { accounts, createAtaIxs, remainingAccountsInfo, remainingAccounts } = await getDlmmContext(
-    ctx.key,
+    ctx,
     position,
     authority,
     range,

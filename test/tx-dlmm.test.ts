@@ -92,10 +92,19 @@ describe("zapOutEstimatedAmount", () => {
   });
 });
 
+/** Token X is the deposit mint, token Y needs the vault's Jupiter strategy. */
+const mints = { tokenXMint: ctx.depositMint, tokenYMint: pk(4) };
+
+/** Named accounts of `name` in IDL order, so a test can read a key by its account name. */
+const namedKeys = (name: string, ix: { keys: { pubkey: PublicKey }[] }) => {
+  const idlIx = getProgram().idl.instructions.find((i) => i.name === name)!;
+  return Object.fromEntries(idlIx.accounts.map((a, i) => [a.name, ix.keys[i].pubkey.toBase58()]));
+};
+
 describe("dlmmInitializePositionIx", () => {
   it("names the generated position as a signer alongside the config and strategy PDAs", async () => {
     const lbPair = pk(9);
-    const { ix, position } = await dlmmInitializePositionIx(getProgram(), ctx, pk(5), lbPair, -10, 59);
+    const { ix, position } = await dlmmInitializePositionIx(getProgram(), ctx, pk(5), lbPair, mints, -10, 59);
     const keys = ix.keys.map((k) => k.pubkey.toBase58());
 
     expect(keys).toEqual(
@@ -115,16 +124,27 @@ describe("dlmmInitializePositionIx", () => {
     expect(ix.data.readInt32LE(12)).toBe(59);
     expect(onChainUpper(ix.data.readInt32LE(12))).toBe(58);
   });
+
+  it("passes the Jupiter strategy for the non-deposit pair mint and None for the deposit mint", async () => {
+    const { ix } = await dlmmInitializePositionIx(getProgram(), ctx, pk(5), pk(9), mints, -10, 59);
+    const named = namedKeys("meteoraDlmmInitializePosition", ix);
+    // Anchor encodes None as the program id
+    expect(named.strategyX).toBe(getProgram().programId.toBase58());
+    expect(named.strategyY).toBe(getStrategyPda(ctx.key, pk(4)).toBase58());
+  });
 });
 
 describe("dlmmExtendPositionIx", () => {
   it("builds the vault-authorized Meteora resize instruction", async () => {
     const position = pk(8);
-    const ix = await dlmmExtendPositionIx(getProgram(), ctx, pk(5), position, pk(9), 91);
+    const ix = await dlmmExtendPositionIx(getProgram(), ctx, pk(5), position, pk(9), mints, 91);
     expect(ix.keys.map((k) => k.pubkey.toBase58())).toEqual(expect.arrayContaining([
       ctx.key.toBase58(), position.toBase58(), getStrategyPda(ctx.key, position).toBase58(),
     ]));
     expect(ix.data.readUInt16LE(8)).toBe(91);
+    const named = namedKeys("meteoraDlmmExtendPosition", ix);
+    expect(named.strategyX).toBe(getProgram().programId.toBase58());
+    expect(named.strategyY).toBe(getStrategyPda(ctx.key, pk(4)).toBase58());
   });
 });
 

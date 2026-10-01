@@ -7,6 +7,7 @@ import { handlePost } from "@/server/route";
 import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
 import { dlmmAddLiquidityIx } from "@/server/tx/dlmm";
+import { pairStrategySetupIxs, readPairMints } from "@/server/tx/pair-strategy";
 import { dlmmAddBody } from "@/server/tx/schemas";
 import { buildWideAdd } from "@/server/tx/wide-add";
 
@@ -28,6 +29,7 @@ export const POST = handlePost(
         activeBinId,
       });
     }
+    const setup = await pairStrategySetupIxs(getProgram(), ctx, authority, await readPairMints(getProgram(), account.lbPair));
     const ixs = await dlmmAddLiquidityIx(
       getProgram(),
       ctx,
@@ -38,6 +40,6 @@ export const POST = handlePost(
       b.shape,
       b.maxActiveBinSlippage,
     );
-    return assemble(authority, ixs);
+    return assemble(authority, [...setup, ...ixs]);
   },
 );

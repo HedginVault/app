@@ -7,6 +7,7 @@ import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
 import { dlmmExtendPositionIx } from "@/server/tx/dlmm";
 import { wideStepBody } from "@/server/tx/next-steps";
+import { pairStrategySetupIxs, readPairMints } from "@/server/tx/pair-strategy";
 import { dlmmWideStepBody } from "@/server/tx/schemas";
 
 export const POST = handlePost(dlmmWideStepBody, async (b) => {
@@ -21,11 +22,13 @@ export const POST = handlePost(dlmmWideStepBody, async (b) => {
   if (width < 1 || width > DLMM_MAX_POSITION_WIDTH || b.targetUpperBinId <= account.upperBinId)
     throw new ApiError(400, "Validation", `target range must span at most ${DLMM_MAX_POSITION_WIDTH} bins and extend the position`);
   const binsToAdd = Math.min(DLMM_MAX_RESIZE_LENGTH, b.targetUpperBinId - account.upperBinId);
-  const ix = await dlmmExtendPositionIx(program, ctx, authority, position, account.lbPair, binsToAdd);
+  const mints = await readPairMints(program, account.lbPair);
+  const setup = await pairStrategySetupIxs(program, ctx, authority, mints);
+  const ix = await dlmmExtendPositionIx(program, ctx, authority, position, account.lbPair, mints, binsToAdd);
   const nextUpper = account.upperBinId + binsToAdd;
   const nextBody = wideStepBody(b);
   return {
-    ...(await assemble(authority, [ix])),
+    ...(await assemble(authority, [...setup, ix])),
     next: nextUpper < b.targetUpperBinId
       ? { path: "dlmm/extend", body: nextBody }
       : { path: "dlmm/add-range", body: { ...nextBody, cursorBinId: account.lowerBinId } },

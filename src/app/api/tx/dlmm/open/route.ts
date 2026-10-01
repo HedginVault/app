@@ -13,7 +13,9 @@ import {
   dlmmInitializePositionIx,
   missingBinArrayIxs,
   onChainUpper,
+  pairMints,
 } from "@/server/tx/dlmm";
+import { pairStrategySetupIxs } from "@/server/tx/pair-strategy";
 import { dlmmOpenBody } from "@/server/tx/schemas";
 import { fitsInTransaction } from "@/server/tx/size";
 import { buildWideAddPlan } from "@/server/tx/wide-add";
@@ -39,6 +41,9 @@ export const POST = handlePost(
     const lbPair = new PublicKey(b.lbPair);
     const dlmm = await getPool(lbPair);
     const upper = onChainUpper(b.upperBinId);
+    const mints = pairMints(dlmm);
+    // the program refuses the position until each non-deposit pair mint has its Jupiter strategy
+    const setup = await pairStrategySetupIxs(program, ctx, authority, mints);
 
     if (b.upperBinId - b.lowerBinId > DLMM_INITIAL_POSITION_WIDTH) {
       const activeBinId = (await getActiveBinIds([dlmm])).get(lbPair.toBase58()) ?? dlmm.lbPair.activeId;
@@ -46,14 +51,14 @@ export const POST = handlePost(
         throw new ApiError(400, "Validation", "the selected range cannot hold the supplied token amount");
       const initialUpperExclusive = b.lowerBinId + DLMM_INITIAL_POSITION_WIDTH;
       const { ix, position } = await dlmmInitializePositionIx(
-        program, ctx, authority, lbPair, b.lowerBinId, initialUpperExclusive,
+        program, ctx, authority, lbPair, mints, b.lowerBinId, initialUpperExclusive,
       );
       const positionAddress = position.publicKey.toBase58();
-      const instructionGroups = [[ix]];
+      const instructionGroups = [[...setup, ix]];
       let createdUpper = onChainUpper(initialUpperExclusive);
       while (createdUpper < upper) {
         const binsToAdd = Math.min(DLMM_MAX_RESIZE_LENGTH, upper - createdUpper);
-        const resize = await dlmmExtendPositionIx(program, ctx, authority, position.publicKey, lbPair, binsToAdd);
+        const resize = await dlmmExtendPositionIx(program, ctx, authority, position.publicKey, lbPair, mints, binsToAdd);
         const current = instructionGroups.at(-1)!;
         if (fitsInTransaction(authority, [...current, resize])) current.push(resize);
         else instructionGroups.push([resize]);
@@ -94,18 +99,18 @@ export const POST = handlePost(
       ];
     }
 
-    const { ix: initIx, position } = await dlmmInitializePositionIx(program, ctx, authority, lbPair, b.lowerBinId, b.upperBinId);
+    const { ix: initIx, position } = await dlmmInitializePositionIx(program, ctx, authority, lbPair, mints, b.lowerBinId, b.upperBinId);
     const binArrays = await missingBinArrayIxs(dlmm, b.lowerBinId, upper, authority);
     const add = await dlmmAddLiquidityForRangeIx(
       program, ctx, authority, position.publicKey, dlmm, b.lowerBinId, upper,
       new BN(b.amountX), new BN(b.amountY), b.shape, b.maxActiveBinSlippage,
     );
     const meta = { position: position.publicKey.toBase58(), lowerBinId: b.lowerBinId, upperBinId: upper };
-    const all = [...binArrays, initIx, ...add];
+    const all = [...binArrays, ...setup, initIx, ...add];
 
     if (fitsInTransaction(authority, all)) return { ...(await assemble(authority, all, { signers: [position] })), ...meta };
     return [
-      { ...(await assemble(authority, [...binArrays, initIx], { signers: [position] })), ...meta },
+      { ...(await assemble(authority, [...binArrays, ...setup, initIx], { signers: [position] })), ...meta },
       await assemble(authority, add, { deferSimulation: true }),
     ];
   },

@@ -9,6 +9,11 @@ const account = {
   upperBinId: 69,
 };
 const { resize } = vi.hoisted(() => ({ resize: vi.fn(async () => ({})) }));
+// the vault already holds a Jupiter strategy for every pair mint
+vi.mock("@/server/tx/pair-strategy", () => ({
+  pairStrategySetupIxs: vi.fn(async () => []),
+  readPairMints: vi.fn(async () => ({})),
+}));
 vi.mock("@/server/tx/context", () => ({
   loadVaultCtx: vi.fn(async () => ({ key: pk(1) })),
   assertAuthority: vi.fn(),
@@ -38,7 +43,7 @@ describe("wide position extension route", () => {
   it("extends by at most 91 bins and continues only after confirmation", async () => {
     const response = await post(1399);
     expect(response.status).toBe(200);
-    expect(resize).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything(), pk(8), pk(7), 91);
+    expect(resize).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything(), pk(8), pk(7), expect.anything(), 91);
     expect((await response.json()).next).toMatchObject({ path: "dlmm/extend", body: { targetUpperBinId: 1399 } });
   });
 

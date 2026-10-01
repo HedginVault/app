@@ -8,6 +8,7 @@ import { handlePost, pubkey } from "@/server/route";
 import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
 import { dlmmClosePositionIx } from "@/server/tx/dlmm";
+import { pairStrategySetupIxs, readPairMints } from "@/server/tx/pair-strategy";
 import { closeStrategyIx } from "@/server/tx/vault";
 
 export const POST = handlePost(z.object({ payer: pubkey, vault: pubkey, position: pubkey }), async (b) => {
@@ -17,10 +18,13 @@ export const POST = handlePost(z.object({ payer: pubkey, vault: pubkey, position
   const program = getProgram();
   const position = new PublicKey(b.position);
   const account = await program.account.positionV2.fetch(position);
+  const pair = { lbPair: account.lbPair, ...(await readPairMints(program, account.lbPair)) };
+  // a position opened before pair strategies were enforced needs them before it can be closed
+  const setup = await pairStrategySetupIxs(program, ctx, authority, pair);
   if (account.upperBinId - account.lowerBinId + 1 > DLMM_INITIAL_POSITION_WIDTH) {
     // Wide positions are unwound in range transactions first. The program rejects this close
     // unless every bin is empty and all fees have been claimed.
-    return assemble(authority, [await closeStrategyIx(program, ctx, authority, getStrategyPda(ctx.key, position))]);
+    return assemble(authority, [...setup, await closeStrategyIx(program, ctx, authority, getStrategyPda(ctx.key, position), pair)]);
   }
   const config = await readConfig();
   const ixs = await dlmmClosePositionIx(
@@ -30,5 +34,5 @@ export const POST = handlePost(z.object({ payer: pubkey, vault: pubkey, position
     position,
     new PublicKey(config.treasuryAuthority),
   );
-  return assemble(authority, ixs);
+  return assemble(authority, [...setup, ...ixs]);
 });

@@ -97,9 +97,18 @@ describe("range zap instruction safety", () => {
   it("does not create a swap for empty source bins, even if other bins have tokens", async () => {
     mocks.pool.mockResolvedValue(pool(false, [bin(-700, "999999", "999999"), bin(0, "0", "100")]));
     const built = await build();
-    expect(built.ixs.slice(2).map((instruction) => instruction.programId)).toEqual([pk(11), pk(12)]);
+    // remove and claim still need the source mint's Jupiter strategy, the program enforces it
+    expect(built.ixs.slice(2).map((instruction) => instruction.programId)).toEqual([pk(10), pk(11), pk(12)]);
+    expect(built.initializesStrategy).toBe(true);
     expect(mocks.swap).not.toHaveBeenCalled();
     expect(mocks.close).not.toHaveBeenCalled();
+  });
+  it("does not re-initialize an existing strategy when nothing is swapped", async () => {
+    mocks.pool.mockResolvedValue(pool(false, [bin(0, "0", "100")]));
+    mocks.strategy.mockResolvedValue({});
+    const built = await build();
+    expect(built.ixs.slice(2).map((instruction) => instruction.programId)).toEqual([pk(11), pk(12)]);
+    expect(built.initializesStrategy).toBe(false);
   });
   it("preserves existing Jupiter strategies", async () => {
     mocks.strategy.mockResolvedValue({});

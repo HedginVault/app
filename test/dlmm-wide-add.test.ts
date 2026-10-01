@@ -11,6 +11,11 @@ const { add, fits, assemble } = vi.hoisted(() => ({
     return { transaction: "unsigned", simulation: { unitsConsumed: 1 } };
   }),
 }));
+// the vault already holds a Jupiter strategy for every pair mint
+vi.mock("@/server/tx/pair-strategy", () => ({
+  pairStrategySetupIxs: vi.fn(async () => []),
+  readPairMints: vi.fn(async () => ({})),
+}));
 vi.mock("@/server/tx/context", () => ({
   loadVaultCtx: vi.fn(async () => ({ key: pk(1) })),
   assertAuthority: vi.fn(),
@@ -28,6 +33,7 @@ vi.mock("@/server/dlmm-pool", () => ({
 vi.mock("@/server/tx/dlmm", () => ({
   dlmmAddLiquidityForRangeIx: add,
   missingBinArrayIxs: vi.fn(async () => []),
+  pairMints: () => ({}),
 }));
 vi.mock("@/server/tx/assemble", () => ({ assemble }));
 vi.mock("@/server/tx/size", () => ({ fitsInTransaction: fits }));

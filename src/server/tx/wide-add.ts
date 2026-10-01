@@ -9,7 +9,8 @@ import { ApiError } from "@/server/errors";
 import { getProgram } from "@/server/program";
 import { assemble } from "@/server/tx/assemble";
 import { assertAuthority, loadVaultCtx } from "@/server/tx/context";
-import { dlmmAddLiquidityForRangeIx, missingBinArrayIxs } from "@/server/tx/dlmm";
+import { dlmmAddLiquidityForRangeIx, missingBinArrayIxs, pairMints } from "@/server/tx/dlmm";
+import { pairStrategySetupIxs } from "@/server/tx/pair-strategy";
 import { dlmmWideAddBody } from "@/server/tx/schemas";
 import { fitsInTransaction } from "@/server/tx/size";
 
@@ -116,7 +117,10 @@ export async function buildWideAdd(b: z.infer<typeof dlmmWideAddBody>) {
   const liveActiveBinId = (await getActiveBinIds([dlmm])).get(account.lbPair.toBase58()) ?? dlmm.lbPair.activeId;
   if (Math.abs(liveActiveBinId - b.activeBinId) > b.maxActiveBinSlippage)
     throw new ApiError(409, "Stale", "pool price moved during the wide position flow; refresh before adding more liquidity");
-  return buildWideAddPlan({
+  // a position opened before pair strategies were enforced gets them in a leading transaction
+  const setupIxs = await pairStrategySetupIxs(program, ctx, authority, pairMints(dlmm));
+  const setup = setupIxs.length ? [await assemble(authority, setupIxs)] : [];
+  const funding = await buildWideAddPlan({
     authority,
     ctx,
     position,
@@ -130,5 +134,7 @@ export async function buildWideAdd(b: z.infer<typeof dlmmWideAddBody>) {
     amountYBaseUnits,
     shape: b.shape,
     maxActiveBinSlippage: b.maxActiveBinSlippage,
+    deferFirstSimulation: setup.length > 0,
   });
+  return [...setup, ...funding];
 }

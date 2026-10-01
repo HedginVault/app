@@ -87,15 +87,32 @@ describe("closeStrategyIx", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it("passes the DLMM position, program and event authority as remaining accounts", async () => {
+  it("passes the DLMM position, program, event authority, lb_pair and pair strategies as remaining accounts", async () => {
     stub({ vault: ctx.key, strategyType: { meteoraDlmm: { position: pk(7) } } });
+    type Position = Awaited<ReturnType<typeof program.account.positionV2.fetch>>;
+    type LbPair = Awaited<ReturnType<typeof program.account.lbPair.fetch>>;
+    vi.spyOn(program.account.positionV2, "fetch").mockResolvedValue({ lbPair: pk(10) } as Position);
+    // token X is the deposit mint, token Y needs the vault's Jupiter strategy
+    vi.spyOn(program.account.lbPair, "fetch").mockResolvedValue({ tokenXMint: ctx.depositMint, tokenYMint: pk(11) } as LbPair);
     const ix = await closeStrategyIx(program, ctx, pk(5), pk(6));
     // The 4 named accounts (authority, config, vault, strategy) plus system_program precede them.
-    expect(ix.keys.slice(-3)).toEqual([
+    expect(ix.keys.slice(-6)).toEqual([
       { pubkey: pk(7), isWritable: true, isSigner: false },
       { pubkey: DLMM_PROGRAM_ID, isWritable: false, isSigner: false },
       { pubkey: DLMM_EVENT_AUTHORITY, isWritable: false, isSigner: false },
+      { pubkey: pk(10), isWritable: false, isSigner: false },
+      // the hedge_vault program id stands for "no strategy" on the deposit mint side
+      { pubkey: program.programId, isWritable: false, isSigner: false },
+      { pubkey: getStrategyPda(ctx.key, pk(11)), isWritable: false, isSigner: false },
     ]);
+  });
+
+  it("uses a known DLMM pair without reading the position", async () => {
+    stub({ vault: ctx.key, strategyType: { meteoraDlmm: { position: pk(7) } } });
+    const fetch = vi.spyOn(program.account.positionV2, "fetch");
+    const ix = await closeStrategyIx(program, ctx, pk(5), pk(6), { lbPair: pk(10), tokenXMint: pk(11), tokenYMint: pk(12) });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(ix.keys.slice(-2).map((k) => k.pubkey)).toEqual([getStrategyPda(ctx.key, pk(11)), getStrategyPda(ctx.key, pk(12))]);
   });
 
   it("rejects a strategy belonging to another vault with 400", async () => {

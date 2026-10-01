@@ -14,6 +14,11 @@ const { remove, claim, assemble } = vi.hoisted(() => ({
   assemble: vi.fn(async () => ({ transaction: "unsigned", simulation: { unitsConsumed: 1 } })),
 }));
 
+// the vault already holds a Jupiter strategy for every pair mint
+vi.mock("@/server/tx/pair-strategy", () => ({
+  pairStrategySetupIxs: vi.fn(async () => []),
+  readPairMints: vi.fn(async () => ({})),
+}));
 vi.mock("@/server/tx/context", () => ({
   loadVaultCtx: vi.fn(async () => ({ key: pk(1) })),
   assertAuthority: vi.fn(),

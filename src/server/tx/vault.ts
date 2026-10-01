@@ -10,6 +10,7 @@ import { DLMM_EVENT_AUTHORITY, DLMM_PROGRAM_ID, getConnection, TOKEN_PROGRAM_ID 
 import { getTokenProgram } from "../tokens";
 import { PHOENIX_GLOBAL_CONFIG, parseGlobalConfig } from "../phoenix";
 import type { VaultCtx } from "./context";
+import { pairStrategy, readPairMints, type PairMints } from "./pair-strategy";
 
 type P = Program<HedgeVault>;
 
@@ -103,11 +104,20 @@ type StrategyType =
   | { meteoraDlmm: { position: PublicKey } }
   | { phoenixPerp: { traderAccount: PublicKey } };
 
+/** The lb_pair of a DLMM position and its mints, read from chain when the caller does not have them. */
+export type DlmmPair = PairMints & { lbPair: PublicKey };
+
 /**
  * Closes a strategy; the remaining accounts depend on the strategy type
- * (mirrors tests/handler/vault_close_strategy.ts).
+ * (mirrors tests/handler/vault_close_strategy.ts). `dlmmPair` saves two reads for a DLMM strategy.
  */
-export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: PublicKey, strategy: PublicKey) {
+export async function closeStrategyIx(
+  program: P,
+  ctx: VaultCtx,
+  authority: PublicKey,
+  strategy: PublicKey,
+  dlmmPair?: DlmmPair,
+) {
   const account = await program.account.strategy.fetchNullable(strategy);
   if (!account) throw new ApiError(404, "NotFound", "Strategy not found");
   // Guard before deriving anything from the payload: a foreign strategy would otherwise build an
@@ -117,10 +127,17 @@ export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: Publ
   const strategyType = account.strategyType as StrategyType;
   let remainingAccounts: AccountMeta[];
   if ("meteoraDlmm" in strategyType) {
+    const { position } = strategyType.meteoraDlmm;
+    const pair = dlmmPair ?? (await readDlmmPair(program, position));
+    // the hedge_vault program id stands for "no strategy" on the deposit mint side
+    const pairStrategyMeta = (mint: PublicKey) => readonly(pairStrategy(ctx, mint) ?? program.programId);
     remainingAccounts = [
-      writable(strategyType.meteoraDlmm.position),
+      writable(position),
       readonly(DLMM_PROGRAM_ID),
       readonly(DLMM_EVENT_AUTHORITY),
+      readonly(pair.lbPair),
+      pairStrategyMeta(pair.tokenXMint),
+      pairStrategyMeta(pair.tokenYMint),
     ];
   } else if ("phoenixPerp" in strategyType) {
     // The program closes the vault's canonical-mint ATA (SPL Token) if it exists; the mint comes from Phoenix.
@@ -153,6 +170,12 @@ export async function closeStrategyIx(program: P, ctx: VaultCtx, authority: Publ
     .accounts({ authority, config: getConfigPda(), vault: ctx.key, strategy })
     .remainingAccounts(remainingAccounts)
     .instruction();
+}
+
+/** The program reads the pair mints from the position's own lb_pair. */
+export async function readDlmmPair(program: P, position: PublicKey): Promise<DlmmPair> {
+  const { lbPair } = await program.account.positionV2.fetch(position);
+  return { lbPair, ...(await readPairMints(program, lbPair)) };
 }
 
 /** Builds the existing close-strategy instruction when the Jupiter target is already known. */

@@ -1,5 +1,7 @@
 # Manager bot API (V1)
 
+The public [`llms.txt`](https://hedgin.xyz/llms.txt) indexes short Markdown pages for AI tools. This file remains the complete V1 contract; update the public pages when the contract changes.
+
 The manager bot API is a versioned interface at `/api/external/v1`. It lets an approved bot read its manager's vaults and request server-built Solana transactions. The bot signs transactions locally with the vault's **current authority key**. The API server never holds that key. The bearer API key controls access to this HTTP service; it is not a Solana signing key or a replacement for the program's authority checks.
 
 V1 supports Jupiter swaps and the app's existing Meteora DLMM actions. The app has no Phoenix transaction builder, so Phoenix actions are not available here. Admin, depositor, resolver, vault settings, and fee claims are also outside V1.

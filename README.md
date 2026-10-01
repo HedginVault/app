@@ -161,6 +161,8 @@ the first is checked by relay preflight immediately before it is sent. Every bui
 
 `/api/external/v1/*` provides authenticated manager-scoped reads, Jupiter and DLMM builders, an exact-build signed transaction relay, and status polling. Bots use a bearer API key for HTTP access and sign locally with the vault's current on-chain authority key. See [`docs/manager-api.md`](docs/manager-api.md) for endpoints, bodies, signing, retries, key provisioning, and limits. API keys do not grant on-chain authority.
 
+AI tools can discover the public API reference and integration steps at [`/llms.txt`](https://hedgin.xyz/llms.txt).
+
 Manager-only routes call `assertAuthority` before assembling anything; the UI guard is convenience,
 the server check plus the program's `validate_authority()` check in each handler is the enforcement.
 

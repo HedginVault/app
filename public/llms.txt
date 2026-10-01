@@ -1,0 +1,10 @@
+# Hedgin Manager Bot API
+
+- [Getting started](https://hedgin.xyz/api-reference/getting-started.md): Base URL, supported actions, and the build, sign, send, confirm workflow.
+- [Authentication and API keys](https://hedgin.xyz/api-reference/authentication.md): Bearer keys, scopes, vault authority, provisioning, and rotation.
+- [Read endpoints](https://hedgin.xyz/api-reference/reads.md): Vaults, holdings, strategies, Jupiter quotes, and Meteora DLMM pool search.
+- [Transaction builders](https://hedgin.xyz/api-reference/transactions.md): Every supported Jupiter, DLMM, and strategy-close action, its request fields, and multi-step execution.
+- [Send and status](https://hedgin.xyz/api-reference/send-and-status.md): Local signing, signed transaction relay, confirmation polling, and safe retries.
+- [Errors and limits](https://hedgin.xyz/api-reference/errors-and-limits.md): Error responses, HTTP statuses, rate limits, and ambiguous outcomes.
+- [Complete V1 reference](https://raw.githubusercontent.com/HedginVault/app/main/docs/manager-api.md): Full manager API contract and examples in the repository.
+- [JSON response types](https://raw.githubusercontent.com/HedginVault/app/main/src/lib/types.ts): Source definitions for vault, holdings, strategy, quote, and pool views.
